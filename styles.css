@@ -554,12 +554,13 @@ body {
 .goal-card {
     background: var(--surface);
     border-radius: 1.25rem;
-    padding: 2rem;
+    padding: 1.75rem;
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
     animation: slideInUp 0.4s ease both;
     position: relative;
     overflow: hidden;
+    margin-bottom: 1rem;
 }
 
 .goal-card:hover {
@@ -631,9 +632,20 @@ body {
 }
 
 .goal-status.completed {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(16, 185, 129, 0.15);
     color: var(--success-color);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+}
+
+.goal-card.completed {
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(16, 185, 129, 0.02) 100%);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.goal-card.completed:hover {
+    border-color: var(--success-color);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
 .goal-content h3 {
@@ -662,6 +674,25 @@ body {
     display: flex;
     gap: 1rem;
     margin-top: 1.5rem;
+}
+
+.completion-disabled {
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 0.75rem;
+    text-align: center;
+    color: var(--danger-color);
+}
+
+.completion-disabled p {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.completion-disabled small {
+    color: var(--text-secondary);
+    font-style: italic;
 }
 
 .goal-screenshot {

@@ -675,7 +675,7 @@ function displayGoals(goals) {
         const isToday = new Date(goal.createdAt).toDateString() === today;
         
         return `
-            <div class="goal-card${isToday ? ' today-goal' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
+            <div class="goal-card${isToday ? ' today-goal' : ''}${goal.status === 'completed' ? ' completed' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
                 <div class="goal-header">
                     <div class="goal-status ${goal.status}">
                         <span>${goal.status === 'completed' ? '✅' : '🎯'}</span>
@@ -720,10 +720,17 @@ function displayGoals(goals) {
                 
                 ${goal.status === 'active' ? `
                     <div class="goal-actions">
-                        <button class="btn btn-success" onclick="completeGoal('${goal.id}')">
-                            <span class="btn-icon">✅</span>
-                            Mark Complete
-                        </button>
+                        ${canCompleteGoal(goal.createdAt) ? `
+                            <button class="btn btn-success" onclick="completeGoal('${goal.id}')">
+                                <span class="btn-icon">✅</span>
+                                Mark Complete
+                            </button>
+                        ` : `
+                            <div class="completion-disabled">
+                                <p><span>🕛</span> Goal completion deadline passed (midnight CST)</p>
+                                <small>Goals must be completed on the same day they were created</small>
+                            </div>
+                        `}
                     </div>
                 ` : ''}
             </div>
@@ -873,6 +880,23 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
+
+// CST timezone helper functions
+function getCSTDate(date = new Date()) {
+    return new Date(date.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+}
+
+function canCompleteGoal(createdAt) {
+    const now = new Date();
+    const cstNow = getCSTDate(now);
+    const goalCreatedDate = new Date(createdAt);
+    const goalCreatedCST = getCSTDate(goalCreatedDate);
+    
+    // Check if goal was created today in CST
+    const goalCreatedTodayCST = goalCreatedCST.toDateString() === cstNow.toDateString();
+    
+    return goalCreatedTodayCST;
+}
 
 // Utility function
 function escapeHtml(text) {
