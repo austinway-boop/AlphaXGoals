@@ -120,6 +120,43 @@ function handleDynamicButtonClicks(e) {
         if (userId) {
             cancelNameEdit(userId);
         }
+    } else if (e.target.matches('.edit-goal-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const goalId = e.target.dataset.goalId;
+        console.log('Edit goal button clicked for goalId:', goalId);
+        
+        // Check if admin name is provided
+        if (!adminState.adminName || adminState.adminName.trim() === '') {
+            showToast('Please enter your admin name in the header before editing goals', 'warning');
+            const adminNameInput = document.getElementById('adminNameInput');
+            if (adminNameInput) {
+                adminNameInput.focus();
+                adminNameInput.style.border = '2px solid orange';
+                setTimeout(() => {
+                    adminNameInput.style.border = '';
+                }, 3000);
+            }
+            return;
+        }
+        
+        if (goalId) {
+            showGoalEditor(goalId);
+        } else {
+            console.error('No goalId found on edit button:', e.target);
+        }
+    } else if (e.target.matches('.save-goal-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            saveGoalEdit(goalId);
+        }
+    } else if (e.target.matches('.cancel-goal-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            cancelGoalEdit(goalId);
+        }
     }
 }
 
@@ -442,7 +479,20 @@ function displayGoals(goals) {
                 </div>
                 
                 <div class="goal-content-simple">
-                    <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                    <div class="goal-text-section">
+                        <div class="goal-display" id="goalDisplay_${escapeHtml(goal.id)}">
+                            <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                            <button class="edit-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Edit goal">✏️</button>
+                        </div>
+                        <div class="goal-editor hidden" id="goalEditor_${escapeHtml(goal.id)}">
+                            <textarea class="goal-edit-input" data-goal-id="${escapeHtml(goal.id)}" rows="3">${escapeHtml(goal.goal)}</textarea>
+                            <div class="goal-editor-actions">
+                                <button class="save-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Save">✅</button>
+                                <button class="cancel-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Cancel">❌</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                     
                     ${goal.screenshotData ? `
@@ -461,6 +511,7 @@ function displayGoals(goals) {
                         <span>📅 Created: ${new Date(goal.createdAt).toLocaleDateString()}</span>
                         ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
                         ${goal.invalidatedAt ? `<span class="invalidation-date">❌ Invalidated: ${new Date(goal.invalidatedAt).toLocaleDateString()}</span>` : ''}
+                        ${goal.lastEditedBy ? `<span class="last-edited">✏️ Edited by ${escapeHtml(goal.lastEditedBy)}</span>` : ''}
                     </div>
                 </div>
                 
@@ -874,6 +925,173 @@ async function saveNameEdit(userId) {
         
         // Always reset editing state on error
         window.editingUser = null;
+    }
+}
+
+// Goal editing functions
+let editingGoal = null;
+
+function showGoalEditor(goalId) {
+    console.log('showGoalEditor called for goalId:', goalId);
+    
+    // Prevent multiple edits
+    if (editingGoal === goalId) {
+        console.log('Already editing this goal, ignoring duplicate call');
+        return;
+    }
+    editingGoal = goalId;
+    
+    const goalDisplay = document.getElementById(`goalDisplay_${goalId}`);
+    const goalEditor = document.getElementById(`goalEditor_${goalId}`);
+    
+    if (!goalDisplay || !goalEditor) {
+        console.error('Goal display or editor elements not found for goalId:', goalId);
+        editingGoal = null;
+        return;
+    }
+    
+    const textarea = goalEditor.querySelector('.goal-edit-input');
+    if (!textarea) {
+        console.error('Textarea element not found for goalId:', goalId);
+        editingGoal = null;
+        return;
+    }
+    
+    console.log('Showing goal editor for goalId:', goalId);
+    
+    // Force show/hide with direct style manipulation
+    goalDisplay.style.display = 'none';
+    goalEditor.style.display = 'flex';
+    goalEditor.classList.remove('hidden');
+    goalDisplay.classList.add('hidden');
+    
+    // Small delay to ensure DOM is updated
+    setTimeout(() => {
+        textarea.focus();
+        textarea.select();
+    }, 10);
+}
+
+function cancelGoalEdit(goalId) {
+    console.log('cancelGoalEdit called for goalId:', goalId);
+    
+    // Reset editing state
+    editingGoal = null;
+    
+    const goalDisplay = document.getElementById(`goalDisplay_${goalId}`);
+    const goalEditor = document.getElementById(`goalEditor_${goalId}`);
+    
+    if (!goalDisplay || !goalEditor) {
+        console.error('Goal display or editor elements not found for goalId:', goalId);
+        return;
+    }
+    
+    const textarea = goalEditor.querySelector('.goal-edit-input');
+    if (!textarea) {
+        console.error('Textarea element not found for goalId:', goalId);
+        return;
+    }
+    
+    // Reset textarea to original value
+    const originalGoal = goalDisplay.querySelector('h4').textContent.replace('🎯 ', '');
+    textarea.value = originalGoal;
+    
+    // Force hide/show with direct style manipulation
+    goalEditor.style.display = 'none';
+    goalDisplay.style.display = '';
+    goalEditor.classList.add('hidden');
+    goalDisplay.classList.remove('hidden');
+}
+
+async function saveGoalEdit(goalId) {
+    console.log('saveGoalEdit called for goalId:', goalId);
+    
+    const goalEditor = document.getElementById(`goalEditor_${goalId}`);
+    if (!goalEditor) {
+        console.error('Goal editor not found for goalId:', goalId);
+        showToast('Goal editor not found', 'error');
+        return;
+    }
+    
+    const textarea = goalEditor.querySelector('.goal-edit-input');
+    if (!textarea) {
+        console.error('Textarea element not found for goalId:', goalId);
+        showToast('Textarea element not found', 'error');
+        return;
+    }
+    
+    const newGoalText = textarea.value.trim();
+    if (!newGoalText) {
+        showToast('Goal text cannot be empty', 'warning');
+        textarea.focus();
+        return;
+    }
+    
+    // Show saving state
+    const saveBtn = goalEditor.querySelector('.save-goal-btn');
+    let originalText = '✅';
+    if (saveBtn) {
+        originalText = saveBtn.textContent;
+        saveBtn.textContent = '⏳';
+        saveBtn.disabled = true;
+    }
+    
+    try {
+        console.log('Updating goal for goalId:', goalId, 'to:', newGoalText);
+        const response = await fetch('/api/update-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                goalId, 
+                newGoalText,
+                adminName: adminState.adminName 
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Goal update response:', data);
+        
+        if (data.success) {
+            showToast(`Goal updated successfully by ${adminState.adminName}`, 'success');
+            await logAdminAction('goal_update', `Updated goal to: "${newGoalText}"`, { goalId, newGoalText });
+            
+            // Update the display immediately
+            const goalDisplay = document.getElementById(`goalDisplay_${goalId}`);
+            if (goalDisplay) {
+                const h4Element = goalDisplay.querySelector('h4');
+                if (h4Element) {
+                    h4Element.textContent = `🎯 ${newGoalText}`;
+                }
+                
+                // Hide editor and show display
+                goalEditor.style.display = 'none';
+                goalDisplay.style.display = '';
+                goalEditor.classList.add('hidden');
+                goalDisplay.classList.remove('hidden');
+            }
+            
+            // Reset editing state
+            editingGoal = null;
+            
+            // Refresh data in background
+            loadGoals();
+        } else {
+            showToast(data.error || 'Failed to update goal', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating goal:', error);
+        showToast('Failed to update goal - network error', 'error');
+    } finally {
+        // Restore button state
+        if (saveBtn) {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+        
+        // Always reset editing state on error
+        editingGoal = null;
     }
 }
 
@@ -1399,6 +1617,7 @@ function displayLogs(logs) {
 function getLogTypeDisplay(type) {
     const types = {
         'goal_invalidation': '🎯 Goal Invalidation',
+        'goal_update': '✏️ Goal Edit',
         'user_update': '👤 User Update',
         'user_removal': '🗑️ User Removal',
         'house_change': '🏛️ House Change'

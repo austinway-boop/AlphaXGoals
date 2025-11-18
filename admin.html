@@ -800,6 +800,123 @@
             margin-top: 0.5rem;
         }
         
+        /* Goal editing functionality */
+        .goal-text-section {
+            margin-bottom: 1rem;
+        }
+        
+        .goal-display {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .goal-display h4 {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .edit-goal-btn {
+            background: var(--surface-light);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            min-width: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .edit-goal-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .goal-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--surface-light);
+            border-radius: 0.5rem;
+            border: 2px solid var(--primary-color);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .goal-edit-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--background);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .goal-edit-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+        }
+        
+        .goal-editor-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .save-goal-btn,
+        .cancel-goal-btn {
+            background: var(--surface-light);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .save-goal-btn {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .save-goal-btn:hover {
+            background: var(--success-color);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .cancel-goal-btn {
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .cancel-goal-btn:hover {
+            background: var(--danger-color);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .last-edited {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+        
         /* Invalidation History */
         .invalidation-history {
             margin-bottom: 1rem;
