@@ -34,14 +34,20 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goalId, screenshotData } = req.body;
+  const { goalId, screenshotData, textProof, videoData } = req.body;
   
   if (!goalId) {
     return res.status(400).json({ success: false, error: 'Goal ID is required' });
   }
   
-  if (!screenshotData) {
-    return res.status(400).json({ success: false, error: 'Screenshot proof is required to complete a goal' });
+  // Require at least one form of proof
+  if (!screenshotData && !textProof && !videoData) {
+    return res.status(400).json({ success: false, error: 'At least one form of proof (screenshot, text, or video) is required to complete a goal' });
+  }
+  
+  // Validate text proof length if provided
+  if (textProof && textProof.length < 200) {
+    return res.status(400).json({ success: false, error: 'Text proof must be at least 200 characters' });
   }
 
   try {
@@ -88,13 +94,29 @@ export default async function handler(req, res) {
       });
     }
 
-    // Update goal status to completed with screenshot
-    const updatedGoal = await updateGoal(goalId, {
+    // Update goal status to completed with proof
+    const updateData = {
       status: 'completed',
-      completedAt: new Date().toISOString(),
-      screenshotData,
-      hasScreenshot: true
-    });
+      completedAt: new Date().toISOString()
+    };
+    
+    // Add proof data based on what was provided
+    if (screenshotData) {
+      updateData.screenshotData = screenshotData;
+      updateData.hasScreenshot = true;
+    }
+    
+    if (textProof) {
+      updateData.textProof = textProof;
+      updateData.hasTextProof = true;
+    }
+    
+    if (videoData) {
+      updateData.videoData = videoData;
+      updateData.hasVideo = true;
+    }
+    
+    const updatedGoal = await updateGoal(goalId, updateData);
     
     res.json({ success: true, goal: updatedGoal });
   } catch (error) {

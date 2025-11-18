@@ -342,6 +342,100 @@ body {
     min-width: 120px;
 }
 
+/* Proof Tabs Styling */
+.proof-tabs {
+    margin-bottom: 2rem;
+}
+
+.tab-navigation {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tab-btn {
+    background: var(--surface-light);
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.tab-btn:hover {
+    background: var(--background);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.proof-tab {
+    padding: 1rem 0;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.proof-tab h5 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.proof-tab p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.completion-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--background);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+}
+
+.completion-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.character-count {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.completion-requirement {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--surface-light);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--warning-color);
+}
+
+.completion-requirement p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;

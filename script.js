@@ -67,6 +67,202 @@ function handleCompletionFileUpload(goalId) {
     });
 }
 
+// Goal completion modal functions
+function showCompletionModal(goalId) {
+    console.log('Showing completion modal for goalId:', goalId);
+    const modal = document.getElementById(`completionModal_${goalId}`);
+    if (modal) {
+        modal.classList.remove('hidden');
+        // Initialize character counter for text tab
+        const textarea = document.getElementById(`completionText_${goalId}`);
+        const counter = document.getElementById(`textCount_${goalId}`);
+        if (textarea && counter) {
+            textarea.addEventListener('input', () => {
+                counter.textContent = textarea.value.length;
+                counter.style.color = textarea.value.length >= 200 ? 'var(--success-color)' : 'var(--warning-color)';
+            });
+        }
+    } else {
+        console.error('Completion modal not found for goalId:', goalId);
+        console.log('Available modals:', document.querySelectorAll('[id^="completionModal_"]'));
+    }
+}
+
+function hideCompletionModal(goalId) {
+    const modal = document.getElementById(`completionModal_${goalId}`);
+    if (modal) {
+        modal.classList.add('hidden');
+        // Reset all inputs
+        resetCompletionModal(goalId);
+    }
+}
+
+function resetCompletionModal(goalId) {
+    // Reset screenshot
+    const screenshotInput = document.getElementById(`completionScreenshot_${goalId}`);
+    if (screenshotInput) screenshotInput.value = '';
+    
+    // Reset text
+    const textInput = document.getElementById(`completionText_${goalId}`);
+    if (textInput) textInput.value = '';
+    
+    // Reset video
+    const videoInput = document.getElementById(`completionVideo_${goalId}`);
+    if (videoInput) videoInput.value = '';
+    
+    // Reset file displays
+    const displays = document.querySelectorAll(`#completionModal_${goalId} .file-upload-display`);
+    displays.forEach(display => {
+        display.classList.remove('file-selected');
+        const text = display.querySelector('.file-upload-text span:last-child');
+        if (text) {
+            if (display.closest('#screenshotTab_' + goalId)) {
+                text.textContent = 'Upload Completion Screenshot';
+            } else if (display.closest('#videoTab_' + goalId)) {
+                text.textContent = 'Upload Completion Video';
+            }
+        }
+    });
+    
+    // Reset tab to screenshot
+    switchProofTab(goalId, 'screenshot');
+}
+
+function switchProofTab(goalId, tabType) {
+    console.log('Switching to tab:', tabType, 'for goal:', goalId);
+    
+    // Update tab buttons
+    const modal = document.getElementById(`completionModal_${goalId}`);
+    if (!modal) return;
+    
+    modal.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.tab === tabType) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Show/hide tab content
+    modal.querySelectorAll('.proof-tab').forEach(tab => {
+        tab.classList.add('hidden');
+        tab.classList.remove('active');
+    });
+    
+    const activeTab = document.getElementById(`${tabType}Tab_${goalId}`);
+    if (activeTab) {
+        activeTab.classList.remove('hidden');
+        activeTab.classList.add('active');
+    }
+}
+
+function initializeCompletionModal(goalId) {
+    // Initialize file upload handlers
+    handleCompletionFileUpload(goalId);
+    handleCompletionVideoUpload(goalId);
+}
+
+function handleCompletionVideoUpload(goalId) {
+    const fileInput = document.getElementById(`completionVideo_${goalId}`);
+    const escapedGoalId = goalId.replace(/:/g, '\\:');
+    const display = document.querySelector(`#videoTab_${escapedGoalId} .file-upload-display`);
+    const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
+    
+    if (!fileInput) return;
+    
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith('video/')) {
+                showToast('Please upload a video file', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                showToast('Video file size must be less than 50MB', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            if (display && text) {
+                display.classList.add('file-selected');
+                text.textContent = `✅ ${file.name}`;
+            }
+        } else {
+            if (display && text) {
+                display.classList.remove('file-selected');
+                text.textContent = 'Upload Completion Video';
+            }
+        }
+    });
+}
+
+async function confirmCompletion(goalId) {
+    console.log('Confirming completion for goalId:', goalId);
+    
+    // Check what proof methods are filled
+    const screenshotFile = document.getElementById(`completionScreenshot_${goalId}`)?.files[0];
+    const textProof = document.getElementById(`completionText_${goalId}`)?.value.trim();
+    const videoFile = document.getElementById(`completionVideo_${goalId}`)?.files[0];
+    
+    // Validate that at least one proof method is provided
+    if (!screenshotFile && !textProof && !videoFile) {
+        showToast('Please provide at least one form of proof (screenshot, text, or video)', 'error');
+        return;
+    }
+    
+    // Validate text proof length if provided
+    if (textProof && textProof.length < 200) {
+        showToast('Text proof must be at least 200 characters', 'error');
+        switchProofTab(goalId, 'text');
+        return;
+    }
+    
+    showLoading('Processing proof and completing goal...');
+    
+    try {
+        // Process files to base64
+        let screenshotData = null;
+        let videoData = null;
+        
+        if (screenshotFile) {
+            screenshotData = await fileToBase64(screenshotFile);
+        }
+        
+        if (videoFile) {
+            videoData = await fileToBase64(videoFile);
+        }
+        
+        const response = await fetch('/api/complete-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                goalId, 
+                screenshotData, 
+                textProof: textProof || null,
+                videoData 
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast('Goal completed successfully! 🎉', 'success');
+            hideCompletionModal(goalId);
+            loadGoals();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error completing goal:', error);
+        showToast('Failed to complete goal. Please try again.', 'error');
+    }
+}
+
 // Goal text change monitoring
 function setupGoalTextMonitoring() {
     const goalInput = document.getElementById('goalInput');
@@ -914,20 +1110,60 @@ function displayGoals(goals) {
                     ${goal.alphaXProject ? `<p class="alpha-project">🚀 Project: ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                 </div>
                 
-                <div class="screenshot-requirement">
-                    <h5>📷 Upload Completion Proof</h5>
-                    <p>Please upload a screenshot showing you completed this goal:</p>
+                <div class="proof-tabs">
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('${goal.id}', 'screenshot')">📷 Screenshot</button>
+                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('${goal.id}', 'text')">📝 Text Proof</button>
+                        <button class="tab-btn" data-tab="video" onclick="switchProofTab('${goal.id}', 'video')">🎥 Video</button>
+                    </div>
                     
-                    <div class="file-upload-wrapper">
-                        <input type="file" id="completionScreenshot_${goal.id}" accept="image/*" required>
-                        <div class="file-upload-display">
-                            <div class="file-upload-text">
-                                <span class="upload-icon">📷</span>
-                                <span>Upload Completion Screenshot</span>
+                    <!-- Screenshot Tab -->
+                    <div id="screenshotTab_${goal.id}" class="proof-tab active">
+                        <h5>📷 Upload Screenshot Proof</h5>
+                        <p>Upload a screenshot showing you completed this goal:</p>
+                        
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="completionScreenshot_${goal.id}" accept="image/*">
+                            <div class="file-upload-display">
+                                <div class="file-upload-text">
+                                    <span class="upload-icon">📷</span>
+                                    <span>Upload Completion Screenshot</span>
+                                </div>
+                                <div class="file-upload-hint">Show proof of goal completion</div>
                             </div>
-                            <div class="file-upload-hint">Required: Show proof of goal completion</div>
                         </div>
                     </div>
+                    
+                    <!-- Text Proof Tab -->
+                    <div id="textTab_${goal.id}" class="proof-tab hidden">
+                        <h5>📝 Describe Your Completion</h5>
+                        <p>Describe how you completed this goal and what you accomplished:</p>
+                        <textarea id="completionText_${goal.id}" rows="6" placeholder="Describe in detail how you completed this goal, what you accomplished, what challenges you faced, and what you learned..." class="completion-textarea"></textarea>
+                        <div class="character-count">
+                            <span id="textCount_${goal.id}">0</span> / 200 characters minimum
+                        </div>
+                    </div>
+                    
+                    <!-- Video Tab -->
+                    <div id="videoTab_${goal.id}" class="proof-tab hidden">
+                        <h5>🎥 Upload Video Proof</h5>
+                        <p>Upload a video showing your goal completion (max 50MB):</p>
+                        
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="completionVideo_${goal.id}" accept="video/*">
+                            <div class="file-upload-display">
+                                <div class="file-upload-text">
+                                    <span class="upload-icon">🎥</span>
+                                    <span>Upload Completion Video</span>
+                                </div>
+                                <div class="file-upload-hint">Upload video proof of completion</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="completion-requirement">
+                    <p><strong>⚠️ Requirement:</strong> Choose at least one proof method above before submitting.</p>
                 </div>
                 
                 <div class="modal-actions">
@@ -946,9 +1182,9 @@ function displayGoals(goals) {
     if (completionModals) {
         goalsList.innerHTML += completionModals;
         
-        // Initialize file upload handlers for completion modals
+        // Initialize handlers for completion modals
         goals.filter(goal => goal.status === 'active').forEach(goal => {
-            handleCompletionFileUpload(goal.id);
+            initializeCompletionModal(goal.id);
         });
     }
 }
