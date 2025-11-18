@@ -365,20 +365,20 @@ function displayGoals(goals) {
             <div class="quick-invalidate">
                 <h6>⚡ Quick Invalidate</h6>
                 <div class="invalidation-reasons">
-                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not ambitious enough">Not Ambitious</button>
-                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not measurable">Not Measurable</button>
-                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not relevant">Not Relevant</button>
-                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="BrainLift goal missing additional tasks">BrainLift Only</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not ambitious enough" onclick="quickInvalidate('${escapeHtml(goal.id)}', 'Not ambitious enough')">Not Ambitious</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not measurable" onclick="quickInvalidate('${escapeHtml(goal.id)}', 'Not measurable')">Not Measurable</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not relevant" onclick="quickInvalidate('${escapeHtml(goal.id)}', 'Not relevant')">Not Relevant</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="BrainLift goal missing additional tasks" onclick="quickInvalidate('${escapeHtml(goal.id)}', 'BrainLift goal missing additional tasks')">BrainLift Only</button>
                 </div>
-                <button class="btn btn-danger btn-sm custom-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}" style="margin-top: 0.5rem;">
+                <button class="btn btn-danger btn-sm custom-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="showInvalidationForm('${escapeHtml(goal.id)}')" style="margin-top: 0.5rem;">
                     ✏️ Custom Reason
                 </button>
                 <div id="invalidationForm_${escapeHtml(goal.id)}" class="invalidation-form hidden">
                     <label for="reason_${escapeHtml(goal.id)}">Custom invalidation reason:</label>
                     <textarea id="reason_${escapeHtml(goal.id)}" rows="3" placeholder="Enter detailed reason..."></textarea>
                     <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                        <button class="btn btn-danger btn-sm confirm-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}">Confirm</button>
-                        <button class="btn btn-secondary btn-sm cancel-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}">Cancel</button>
+                        <button class="btn btn-danger btn-sm confirm-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="invalidateGoal('${escapeHtml(goal.id)}')">Confirm</button>
+                        <button class="btn btn-secondary btn-sm cancel-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="hideInvalidationForm('${escapeHtml(goal.id)}')">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -424,7 +424,7 @@ function displayGoals(goals) {
                 
                 <div class="house-assignment">
                     <label>🏛️ House:</label>
-                    <select class="house-selector" data-user-id="${escapeHtml(goal.userId)}">
+                    <select class="house-selector" data-user-id="${escapeHtml(goal.userId)}" onchange="updateUserHouse('${escapeHtml(goal.userId)}', this.value)">
                         <option value="">No House</option>
                         <option value="sparta" ${goal.user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
                         <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
@@ -438,7 +438,7 @@ function displayGoals(goals) {
                 
                 ${goal.aiQuestions && goal.aiAnswers ? `
                     <div class="ai-qa-toggle">
-                        <button class="qa-toggle-btn" data-goal-id="${escapeHtml(goal.id)}">
+                        <button class="qa-toggle-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="toggleQASection('${escapeHtml(goal.id)}')">
                             <span class="qa-arrow" id="arrow-${escapeHtml(goal.id)}">▼</span>
                             🤖 View AI Questions & Student Answers
                         </button>
@@ -1005,14 +1005,14 @@ function displayUsers(users) {
                         <div class="user-name-section">
                             <div class="name-display">
                                 <h4>${escapeHtml(user.username)}</h4>
-                                ${!isDeleted ? `<button class="edit-name-btn" data-user-id="${escapeHtml(user.id)}" title="Edit display name">✏️</button>` : ''}
+                                ${!isDeleted ? `<button class="edit-name-btn" data-user-id="${escapeHtml(user.id)}" onclick="showNameEditor('${escapeHtml(user.id)}')" title="Edit display name">✏️</button>` : ''}
                             </div>
                             <div class="name-editor hidden" id="nameEditor_${escapeHtml(user.id)}">
                                 <input type="text" class="inline-name-input" data-user-id="${escapeHtml(user.id)}" 
                                        value="${escapeHtml(user.username)}" placeholder="Enter display name...">
                                 <div class="name-editor-actions">
-                                    <button class="save-name-btn" data-user-id="${escapeHtml(user.id)}" title="Save">✅</button>
-                                    <button class="cancel-name-btn" data-user-id="${escapeHtml(user.id)}" title="Cancel">❌</button>
+                                    <button class="save-name-btn" data-user-id="${escapeHtml(user.id)}" onclick="saveNameEdit('${escapeHtml(user.id)}')" title="Save">✅</button>
+                                    <button class="cancel-name-btn" data-user-id="${escapeHtml(user.id)}" onclick="cancelNameEdit('${escapeHtml(user.id)}')" title="Cancel">❌</button>
                                 </div>
                             </div>
                         </div>
@@ -1028,7 +1028,7 @@ function displayUsers(users) {
                 <div class="user-management-controls">
                     <div class="house-management">
                         <label>🏛️ House Assignment:</label>
-                        <select class="user-house-selector" data-user-id="${escapeHtml(user.id)}" ${isDeleted ? 'disabled' : ''}>
+                        <select class="user-house-selector" data-user-id="${escapeHtml(user.id)}" onchange="updateUserHouse('${escapeHtml(user.id)}', this.value)" ${isDeleted ? 'disabled' : ''}>
                             <option value="">No House</option>
                             <option value="sparta" ${user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
                             <option value="athens" ${user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
@@ -1048,7 +1048,7 @@ function displayUsers(users) {
                 <div class="user-actions">
                     ${!isDeleted ? `
                         <button class="btn btn-danger-confirm remove-user-btn" data-user-id="${escapeHtml(user.id)}" 
-                                data-username="${escapeHtml(user.username)}">
+                                data-username="${escapeHtml(user.username)}" onclick="removeUser('${escapeHtml(user.id)}', '${escapeHtml(user.username)}')">
                             🗑️ Remove User
                         </button>
                     ` : `
