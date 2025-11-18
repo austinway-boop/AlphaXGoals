@@ -151,6 +151,22 @@
                                 <div class="form-hint">This goal will be validated against your Alpha X project</div>
                             </div>
 
+                            <!-- Screenshot Upload (Required) -->
+                            <div class="form-group">
+                                <label for="screenshot">Screenshot Proof <span class="required">*</span></label>
+                                <div class="file-upload-wrapper">
+                                    <input type="file" id="screenshot" accept="image/*" required>
+                                    <div class="file-upload-display">
+                                        <div class="file-upload-text">
+                                            <span class="upload-icon">📷</span>
+                                            <span>Upload Screenshot</span>
+                                        </div>
+                                        <div class="file-upload-hint">Required: Upload a screenshot proving your goal was completed</div>
+                                    </div>
+                                </div>
+                                <div class="form-hint">Screenshots must show proof of goal completion (progress bars, completed tasks, etc.)</div>
+                            </div>
+
                             <div class="form-actions">
                                 <button type="button" class="btn btn-secondary" onclick="validateGoal()">
                                     <span class="btn-icon">🤖</span>

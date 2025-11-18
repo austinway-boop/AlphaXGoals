@@ -7,10 +7,67 @@ let appState = {
     userAlphaXProject: null
 };
 
+// File upload utility functions
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+function resetFileUploadDisplay() {
+    const display = document.querySelector('.file-upload-display');
+    const text = document.querySelector('.file-upload-text span:last-child');
+    if (display && text) {
+        display.classList.remove('file-selected');
+        text.textContent = 'Upload Screenshot';
+    }
+}
+
+function handleFileUpload() {
+    const fileInput = document.getElementById('screenshot');
+    const display = document.querySelector('.file-upload-display');
+    const text = document.querySelector('.file-upload-text span:last-child');
+    
+    if (!fileInput) return; // Element might not exist yet
+    
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Please upload an image file', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                showToast('File size must be less than 10MB', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            if (display && text) {
+                display.classList.add('file-selected');
+                text.textContent = `✅ ${file.name}`;
+            }
+        } else {
+            if (display && text) {
+                display.classList.remove('file-selected');
+                text.textContent = 'Upload Screenshot';
+            }
+        }
+    });
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Goal Tracker initialized');
     checkSession();
+    
+    // Initialize file upload after DOM is ready
+    setTimeout(handleFileUpload, 100);
     setupEventListeners();
 });
 
@@ -606,12 +663,29 @@ async function handleGoalSubmit(e) {
         return;
     }
     
+    // Check if screenshot is uploaded
+    const screenshotFile = document.getElementById('screenshot').files[0];
+    if (!screenshotFile) {
+        showToast('Please upload a screenshot proving your goal was completed', 'error');
+        return;
+    }
+    
     const goal = document.getElementById('goalInput').value;
     const alphaXProject = appState.userAlphaXProject;
+    
+    let screenshotData = null;
+    try {
+        screenshotData = await fileToBase64(screenshotFile);
+    } catch (error) {
+        console.error('Failed to process screenshot:', error);
+        showToast('Failed to process screenshot. Please try again.', 'error');
+        return;
+    }
     
     const requestBody = {
         goal,
         alphaXProject,
+        screenshotData,
         // Include AI questions and answers if they exist
         aiQuestions: appState.aiQuestions || null,
         aiAnswers: appState.aiAnswers || null,
@@ -643,6 +717,9 @@ async function handleGoalSubmit(e) {
             appState.validationResult = null;
             appState.aiQuestions = null;
             appState.aiAnswers = null;
+            
+            // Reset file upload display
+            resetFileUploadDisplay();
             
             // Alpha X project persists, no need to reset
             

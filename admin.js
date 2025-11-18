@@ -88,6 +88,21 @@ function handleDynamicButtonClicks(e) {
         e.stopPropagation();
         const userId = e.target.dataset.userId;
         console.log('Edit name button clicked for userId:', userId);
+        
+        // Check if admin name is provided
+        if (!adminState.adminName || adminState.adminName.trim() === '') {
+            showToast('Please enter your admin name in the header before editing user names', 'warning');
+            const adminNameInput = document.getElementById('adminNameInput');
+            if (adminNameInput) {
+                adminNameInput.focus();
+                adminNameInput.style.border = '2px solid orange';
+                setTimeout(() => {
+                    adminNameInput.style.border = '';
+                }, 3000);
+            }
+            return;
+        }
+        
         if (userId) {
             showNameEditor(userId);
         } else {
@@ -430,6 +445,18 @@ function displayGoals(goals) {
                     <h4>🎯 ${escapeHtml(goal.goal)}</h4>
                     ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                     
+                    ${goal.screenshotData ? `
+                        <div class="goal-screenshot">
+                            <h6>📷 Screenshot Proof</h6>
+                            <div class="screenshot-container">
+                                <img src="${goal.screenshotData}" alt="Goal completion screenshot" 
+                                     onclick="openImageModal('${goal.screenshotData}')" 
+                                     style="max-width: 200px; max-height: 150px; cursor: pointer; border-radius: 0.5rem; border: 2px solid var(--border-color);">
+                                <p class="screenshot-hint">Click to view full size</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
                     <div class="goal-dates">
                         <span>📅 Created: ${new Date(goal.createdAt).toLocaleDateString()}</span>
                         ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
@@ -689,7 +716,7 @@ function showNameEditor(userId) {
 function cancelNameEdit(userId) {
     console.log('cancelNameEdit called for userId:', userId);
     
-    // Reset editing state
+    // Always reset editing state first
     window.editingUser = null;
     
     // Find the name display and editor elements
@@ -844,6 +871,9 @@ async function saveNameEdit(userId) {
             saveBtn.textContent = originalText;
             saveBtn.disabled = false;
         }
+        
+        // Always reset editing state on error
+        window.editingUser = null;
     }
 }
 
