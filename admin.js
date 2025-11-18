@@ -129,7 +129,10 @@ function handleDynamicChangeEvents(e) {
         
         displayNameUpdateTimer = setTimeout(() => {
             if (userId && newDisplayName) {
+                console.log('Debounced update for userId:', userId, 'displayName:', newDisplayName);
                 updateUserDisplayName(userId, newDisplayName);
+            } else if (userId && !newDisplayName) {
+                console.log('Empty display name for userId:', userId, '- not updating');
             }
         }, 1000); // Wait 1 second after user stops typing
     } else if (e.target.matches('#userSearchFilter')) {
@@ -395,8 +398,28 @@ function displayGoals(goals) {
                 </div>
                 
                 <div class="user-management">
-                    <label>✏️ Display Name:</label>
-                    <input type="text" class="display-name-input" data-user-id="${escapeHtml(goal.userId)}" value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
+                    <div class="user-name-section">
+                        <div class="name-display">
+                            <label>✏️ Display Name:</label>
+                            <div class="name-display-content">
+                                <span class="current-name">${escapeHtml(goal.user.username)}</span>
+                                <button class="edit-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="showNameEditor('${escapeHtml(goal.userId)}')" title="Edit display name">✏️</button>
+                            </div>
+                        </div>
+                        <div class="name-editor hidden" id="nameEditor_${escapeHtml(goal.userId)}">
+                            <input type="text" class="inline-name-input" data-user-id="${escapeHtml(goal.userId)}" 
+                                   value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
+                            <div class="name-editor-actions">
+                                <button class="save-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="saveNameEdit('${escapeHtml(goal.userId)}')" title="Save">✅</button>
+                                <button class="cancel-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="cancelNameEdit('${escapeHtml(goal.userId)}')" title="Cancel">❌</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fallback: Keep the old input for debounced updates -->
+                    <div class="fallback-input hidden">
+                        <input type="text" class="display-name-input" data-user-id="${escapeHtml(goal.userId)}" value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
+                    </div>
                 </div>
                 
                 <div class="goal-content-simple">
@@ -547,71 +570,159 @@ async function updateUserHouse(userId, house) {
 
 // Function to update user display name
 async function updateUserDisplayName(userId, newDisplayName) {
-    if (!newDisplayName) {
+    if (!newDisplayName || newDisplayName.trim() === '') {
         showToast('Display name cannot be empty', 'warning');
         return;
     }
     
     try {
+        console.log('Updating user display name for userId:', userId, 'to:', newDisplayName);
         const response = await fetch('/api/update-user-display-name', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ userId, displayName: newDisplayName })
+            body: JSON.stringify({ userId, displayName: newDisplayName.trim() })
         });
         
         const data = await response.json();
+        console.log('Display name update response:', data);
+        
         if (data.success) {
             showToast(`Display name updated to "${newDisplayName}"`, 'success');
             await logAdminAction('user_update', `Updated user display name to "${newDisplayName}"`, { userId, newDisplayName });
+            
+            // Update all display-name-input elements with this userId
+            document.querySelectorAll(`.display-name-input[data-user-id="${userId}"]`).forEach(input => {
+                input.value = newDisplayName;
+            });
+            
             loadGoals(); // Refresh to show updated display name
             // Also refresh users if they're loaded
             if (adminState.users.length > 0) {
                 loadUsers();
             }
         } else {
-            showToast(data.error, 'error');
+            showToast(data.error || 'Failed to update display name', 'error');
         }
     } catch (error) {
-        showToast('Failed to update display name', 'error');
+        console.error('Error updating display name:', error);
+        showToast('Failed to update display name - network error', 'error');
     }
 }
 
 // Inline name editing functions
 function showNameEditor(userId) {
-    const nameDisplay = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card').querySelector('.name-display');
-    const nameEditor = document.getElementById(`nameEditor_${userId}`);
-    const input = nameEditor.querySelector('.inline-name-input');
+    console.log('showNameEditor called for userId:', userId);
     
-    if (nameDisplay && nameEditor && input) {
-        nameDisplay.classList.add('hidden');
-        nameEditor.classList.remove('hidden');
-        input.focus();
-        input.select();
+    // Try to find in user card first (users section)
+    let userCard = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card');
+    let nameDisplay, nameEditor;
+    
+    if (userCard) {
+        // Found in users section
+        console.log('Found user card in users section');
+        nameDisplay = userCard.querySelector('.name-display');
+        nameEditor = document.getElementById(`nameEditor_${userId}`);
+    } else {
+        // Try to find in goals section
+        console.log('Looking in goals section');
+        nameDisplay = document.querySelector(`.name-display[data-user-id="${userId}"], .name-display:has([data-user-id="${userId}"])`);
+        nameEditor = document.getElementById(`nameEditor_${userId}`);
+        
+        // If still not found, try a broader search
+        if (!nameDisplay) {
+            const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+            if (editButton) {
+                nameDisplay = editButton.closest('.name-display');
+                console.log('Found via edit button');
+            }
+        }
     }
+    
+    if (!nameDisplay || !nameEditor) {
+        console.error('Name display or editor elements not found for userId:', userId);
+        console.log('nameDisplay:', nameDisplay);
+        console.log('nameEditor:', nameEditor);
+        return;
+    }
+    
+    const input = nameEditor.querySelector('.inline-name-input');
+    if (!input) {
+        console.error('Input element not found for userId:', userId);
+        return;
+    }
+    
+    console.log('Showing name editor for userId:', userId);
+    nameDisplay.classList.add('hidden');
+    nameEditor.classList.remove('hidden');
+    input.focus();
+    input.select();
 }
 
 function cancelNameEdit(userId) {
-    const nameDisplay = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card').querySelector('.name-display');
-    const nameEditor = document.getElementById(`nameEditor_${userId}`);
-    const input = nameEditor.querySelector('.inline-name-input');
+    console.log('cancelNameEdit called for userId:', userId);
     
-    if (nameDisplay && nameEditor && input) {
-        // Reset input to original value
-        const originalName = nameDisplay.querySelector('h4').textContent;
-        input.value = originalName;
-        
-        nameEditor.classList.add('hidden');
-        nameDisplay.classList.remove('hidden');
+    // Find the name display and editor elements
+    let nameDisplay, nameEditor;
+    const userCard = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card');
+    
+    if (userCard) {
+        // Found in users section
+        nameDisplay = userCard.querySelector('.name-display');
+    } else {
+        // Look in goals section
+        const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+        if (editButton) {
+            nameDisplay = editButton.closest('.name-display');
+        }
     }
+    
+    nameEditor = document.getElementById(`nameEditor_${userId}`);
+    
+    if (!nameDisplay || !nameEditor) {
+        console.error('Name display or editor elements not found for userId:', userId);
+        return;
+    }
+    
+    const input = nameEditor.querySelector('.inline-name-input');
+    if (!input) {
+        console.error('Input element not found for userId:', userId);
+        return;
+    }
+    
+    // Reset input to original value
+    const h4Element = nameDisplay.querySelector('h4');
+    const currentNameElement = nameDisplay.querySelector('.current-name');
+    
+    if (h4Element) {
+        // Users section format
+        input.value = h4Element.textContent;
+    } else if (currentNameElement) {
+        // Goals section format
+        input.value = currentNameElement.textContent;
+    }
+    
+    nameEditor.classList.add('hidden');
+    nameDisplay.classList.remove('hidden');
 }
 
 async function saveNameEdit(userId) {
     const nameEditor = document.getElementById(`nameEditor_${userId}`);
-    const input = nameEditor.querySelector('.inline-name-input');
-    const newDisplayName = input.value.trim();
+    if (!nameEditor) {
+        console.error('Name editor not found for userId:', userId);
+        showToast('Name editor not found', 'error');
+        return;
+    }
     
+    const input = nameEditor.querySelector('.inline-name-input');
+    if (!input) {
+        console.error('Input element not found for userId:', userId);
+        showToast('Input element not found', 'error');
+        return;
+    }
+    
+    const newDisplayName = input.value.trim();
     if (!newDisplayName) {
         showToast('Display name cannot be empty', 'warning');
         input.focus();
@@ -620,11 +731,15 @@ async function saveNameEdit(userId) {
     
     // Show saving state
     const saveBtn = nameEditor.querySelector('.save-name-btn');
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = '⏳';
-    saveBtn.disabled = true;
+    let originalText = '✅';
+    if (saveBtn) {
+        originalText = saveBtn.textContent;
+        saveBtn.textContent = '⏳';
+        saveBtn.disabled = true;
+    }
     
     try {
+        console.log('Updating display name for userId:', userId, 'to:', newDisplayName);
         const response = await fetch('/api/update-user-display-name', {
             method: 'POST',
             headers: {
@@ -634,18 +749,44 @@ async function saveNameEdit(userId) {
         });
         
         const data = await response.json();
+        console.log('Update response:', data);
+        
         if (data.success) {
             showToast(`Display name updated to "${newDisplayName}"`, 'success');
             await logAdminAction('user_update', `Updated user display name to "${newDisplayName}"`, { userId, newDisplayName });
             
             // Update the display immediately
-            const nameDisplay = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card').querySelector('.name-display');
-            nameDisplay.querySelector('h4').textContent = newDisplayName;
+            const userCard = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card');
+            let nameDisplay;
             
-            // Hide editor and show display
-            const nameEditor = document.getElementById(`nameEditor_${userId}`);
-            nameEditor.classList.add('hidden');
-            nameDisplay.classList.remove('hidden');
+            if (userCard) {
+                // Users section
+                nameDisplay = userCard.querySelector('.name-display');
+                if (nameDisplay) {
+                    const h4Element = nameDisplay.querySelector('h4');
+                    if (h4Element) {
+                        h4Element.textContent = newDisplayName;
+                    }
+                }
+            } else {
+                // Goals section - find by edit button
+                const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+                if (editButton) {
+                    nameDisplay = editButton.closest('.name-display');
+                    if (nameDisplay) {
+                        const currentNameElement = nameDisplay.querySelector('.current-name');
+                        if (currentNameElement) {
+                            currentNameElement.textContent = newDisplayName;
+                        }
+                    }
+                }
+            }
+            
+            if (nameDisplay) {
+                // Hide editor and show display
+                nameEditor.classList.add('hidden');
+                nameDisplay.classList.remove('hidden');
+            }
             
             // Refresh data in background
             if (adminState.users.length > 0) {
@@ -653,14 +794,17 @@ async function saveNameEdit(userId) {
             }
             loadGoals();
         } else {
-            showToast(data.error, 'error');
+            showToast(data.error || 'Failed to update display name', 'error');
         }
     } catch (error) {
-        showToast('Failed to update display name', 'error');
+        console.error('Error updating display name:', error);
+        showToast('Failed to update display name - network error', 'error');
     } finally {
         // Restore button state
-        saveBtn.textContent = originalText;
-        saveBtn.disabled = false;
+        if (saveBtn) {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
     }
 }
 

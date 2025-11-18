@@ -55,25 +55,41 @@ export default async function handler(req, res) {
   try {
     const client = await getRedisClient();
     
+    console.log('Updating display name for userId:', userId, 'to:', displayName);
+    
     // Check if user exists
     const user = await client.hGetAll(userId);
-    if (!user || !user.email) {
+    console.log('Found user:', user ? 'exists' : 'not found', Object.keys(user || {}));
+    
+    if (!user || Object.keys(user).length === 0) {
+      console.error('User not found:', userId);
       return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (!user.email) {
+      console.error('User missing email field:', userId, user);
+      return res.status(404).json({ success: false, error: 'Invalid user data - missing email' });
     }
 
     // Update user's display name (which is stored as username in our system)
     await client.hSet(userId, 'username', displayName);
+    console.log('Successfully updated username for userId:', userId);
+
+    // Verify the update
+    const updatedUser = await client.hGetAll(userId);
+    console.log('Verified update - new username:', updatedUser.username);
 
     res.json({ 
       success: true, 
       message: 'User display name updated successfully',
-      displayName: displayName
+      displayName: displayName,
+      userId: userId
     });
   } catch (error) {
     console.error('Error updating user display name:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to update user display name' 
+      error: `Failed to update user display name: ${error.message}` 
     });
   }
 }
