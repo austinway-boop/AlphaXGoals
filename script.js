@@ -674,14 +674,34 @@ async function loadGoals() {
         const response = await fetch('/api/goals');
         const data = await response.json();
         
+        console.log('Goals API response:', data);
+        
         if (data.success) {
-            appState.goals = data.goals;
-            displayGoals(data.goals);
+            appState.goals = data.goals || [];
+            displayGoals(data.goals || []);
+            
+            if (data.message) {
+                console.log('Goals API message:', data.message);
+            }
         } else {
-            goalsList.innerHTML = '<div class="loading">Failed to load goals</div>';
+            console.error('Goals API error:', data.error);
+            goalsList.innerHTML = `
+                <div class="no-data-message">
+                    <h3>Unable to load goals</h3>
+                    <p>${data.error || 'Unknown error occurred'}</p>
+                    <button class="btn btn-primary" onclick="loadGoals()">Try Again</button>
+                </div>
+            `;
         }
     } catch (error) {
-        goalsList.innerHTML = '<div class="loading">Failed to load goals</div>';
+        console.error('Goals loading error:', error);
+        goalsList.innerHTML = `
+            <div class="no-data-message">
+                <h3>Connection Error</h3>
+                <p>Unable to connect to the server. Please check your internet connection.</p>
+                <button class="btn btn-primary" onclick="loadGoals()">Retry</button>
+            </div>
+        `;
     }
 }
 
@@ -690,9 +710,10 @@ function displayGoals(goals) {
     
     if (!goals || goals.length === 0) {
         goalsList.innerHTML = `
-            <div class="goal-card text-center">
+            <div class="no-data-message">
+                <div class="no-data-icon">🎯</div>
                 <h3>No Goals Yet</h3>
-                <p>Submit your first goal above to get started!</p>
+                <p>Submit your first goal above to get started on your Alpha X journey!</p>
             </div>
         `;
         return;

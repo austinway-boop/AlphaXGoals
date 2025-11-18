@@ -35,14 +35,28 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Fetching goals for user:', userId);
     // Fetch user goals from Redis
     const userGoals = await getUserGoals(userId);
-    res.json({ success: true, goals: userGoals });
+    console.log('Successfully fetched goals:', userGoals.length);
+    res.json({ success: true, goals: userGoals || [] });
   } catch (error) {
-    console.error('Error fetching goals:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch goals. Please try again.' 
-    });
+    console.error('Error fetching goals for user', userId, ':', error);
+    console.error('Error stack:', error.stack);
+    
+    // Return empty array instead of error if it's just no data
+    if (error.message && error.message.includes('Redis')) {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Database connection error. Please check your Redis configuration.' 
+      });
+    } else {
+      // For other errors, return empty goals array
+      res.json({ 
+        success: true, 
+        goals: [],
+        message: 'No goals found or error retrieving goals'
+      });
+    }
   }
 }

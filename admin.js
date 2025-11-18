@@ -165,14 +165,28 @@ async function loadGoals() {
         const data = await response.json();
         
         if (data.success) {
-            adminState.goals = data.goals;
-            displayGoals(data.goals);
-            updateStats({ totalUsers: data.totalUsers });
+            adminState.goals = data.goals || [];
+            displayGoals(data.goals || []);
+            updateStats({ totalUsers: data.totalUsers || 0 });
         } else {
-            container.innerHTML = '<div class="loading">Failed to load goals</div>';
+            console.error('Admin goals error:', data.error);
+            container.innerHTML = `
+                <div class="no-data-message">
+                    <h3>Unable to load goals</h3>
+                    <p>${data.error || 'Unknown error occurred'}</p>
+                    <button class="btn btn-primary" onclick="loadGoals()">Try Again</button>
+                </div>
+            `;
         }
     } catch (error) {
-        container.innerHTML = '<div class="loading">Failed to load goals</div>';
+        console.error('Admin goals loading error:', error);
+        container.innerHTML = `
+            <div class="no-data-message">
+                <h3>Connection Error</h3>
+                <p>Unable to connect to the server. Please check your configuration.</p>
+                <button class="btn btn-primary" onclick="loadGoals()">Retry</button>
+            </div>
+        `;
     }
 }
 
@@ -181,9 +195,11 @@ function displayGoals(goals) {
     
     if (!goals || goals.length === 0) {
         container.innerHTML = `
-            <div class="admin-goal-card" style="text-align: center; grid-column: 1 / -1;">
+            <div class="no-data-message">
+                <div class="no-data-icon">📋</div>
                 <h3>No Goals Found</h3>
-                <p>No goals match the current filters.</p>
+                <p>No goals match the current filters, or no students have submitted goals yet.</p>
+                <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
             </div>
         `;
         return;

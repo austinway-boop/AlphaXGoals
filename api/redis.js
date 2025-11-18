@@ -15,8 +15,19 @@ export async function getRedisClient() {
       url: redisUrl
     });
     
-    redis.on('error', (err) => console.log('Redis Client Error', err));
-    await redis.connect();
+    redis.on('error', (err) => {
+      console.error('Redis Client Error:', err);
+      redis = null; // Reset client on error
+    });
+    
+    try {
+      await redis.connect();
+      console.log('Redis connected successfully');
+    } catch (error) {
+      console.error('Failed to connect to Redis:', error);
+      redis = null;
+      throw new Error(`Redis connection failed: ${error.message}`);
+    }
   }
   
   return redis;
@@ -140,39 +151,60 @@ export async function createGoal(goalData) {
 
 export async function getUserGoals(userId) {
   try {
+    console.log('getUserGoals called for userId:', userId);
     const client = await getRedisClient();
+    
+    // Check if user_goals set exists
     const goalIds = await client.sMembers(`user_goals:${userId}`);
+    console.log('Found goal IDs:', goalIds);
+    
+    if (!goalIds || goalIds.length === 0) {
+      console.log('No goals found for user:', userId);
+      return [];
+    }
     
     const goals = [];
     for (const goalId of goalIds) {
-      const goal = await client.hGetAll(goalId);
-      if (Object.keys(goal).length > 0) {
-        // Convert stored string values back to appropriate types
-        const parsedGoal = { id: goalId };
-        for (const [key, value] of Object.entries(goal)) {
-          if (key === 'xpAmount') {
-            parsedGoal[key] = value ? parseInt(value) : null;
-          } else if (key === 'hasScreenshot') {
-            parsedGoal[key] = value === 'true';
-          } else if (key === 'aiQuestions' || key === 'aiAnswers' || key === 'validationData') {
-            // Parse JSON arrays for AI questions, answers, and validation data
-            try {
-              parsedGoal[key] = value ? JSON.parse(value) : null;
-            } catch (e) {
-              console.warn(`Failed to parse ${key}:`, value);
-              parsedGoal[key] = null;
+      try {
+        const goal = await client.hGetAll(goalId);
+        console.log(`Goal ${goalId} data:`, Object.keys(goal));
+        
+        if (Object.keys(goal).length > 0) {
+          // Convert stored string values back to appropriate types
+          const parsedGoal = { id: goalId };
+          for (const [key, value] of Object.entries(goal)) {
+            if (key === 'xpAmount') {
+              parsedGoal[key] = value ? parseInt(value) : null;
+            } else if (key === 'hasScreenshot') {
+              parsedGoal[key] = value === 'true';
+            } else if (key === 'aiQuestions' || key === 'aiAnswers' || key === 'validationData') {
+              // Parse JSON arrays for AI questions, answers, and validation data
+              try {
+                parsedGoal[key] = value ? JSON.parse(value) : null;
+              } catch (e) {
+                console.warn(`Failed to parse ${key} for goal ${goalId}:`, value, e);
+                parsedGoal[key] = null;
+              }
+            } else {
+              parsedGoal[key] = value;
             }
-          } else {
-            parsedGoal[key] = value;
           }
+          goals.push(parsedGoal);
+        } else {
+          console.warn(`Empty goal data for ${goalId}`);
         }
-        goals.push(parsedGoal);
+      } catch (goalError) {
+        console.error(`Error processing goal ${goalId}:`, goalError);
+        // Continue with other goals instead of failing completely
       }
     }
+    
+    console.log('Returning goals:', goals.length);
     return goals;
   } catch (error) {
     console.error('Error in getUserGoals:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent complete failure
+    return [];
   }
 }
 
