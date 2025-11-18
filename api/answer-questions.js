@@ -111,8 +111,12 @@ MEASURABILITY (8/10 required):
 - Be generous with measurability scoring - most goals with numbers should pass
 
 RELEVANCE (8/10 required):
-- Must directly advance their Alpha X project based on their answers
-- Should build specific skills or knowledge needed for their project
+- If the goal is AT ALL related to their Alpha X project, give it 8/10 or higher
+- Even loosely related goals should get 8/10+ (be very generous)
+- Examples that should get 8/10+: writing, research, communication, technical skills, project planning
+- Only fail (below 8/10) if completely irrelevant like "learn cooking" for a tech project
+- When in doubt, score high - most educational/professional goals relate to Alpha X projects
+- Be generous - if you can see ANY connection to their project, give 8/10+
 
 Respond with a JSON object containing:
 {
@@ -130,9 +134,14 @@ Respond with a JSON object containing:
 }
 
 Score on these categories:
-- Ambition: How challenging and growth-oriented is this goal? (4/5 required to pass)
-- Measurable: How clearly defined and measurable are the success criteria? (8/10 required to pass)
-- Relevance: How relevant is this goal to their Alpha X project? (8/10 required to pass)
+- Ambition: How challenging and growth-oriented is this goal? (4/5 required - BE STRICT HERE)
+- Measurable: How clearly defined and measurable are the success criteria? (8/10 required - BE GENEROUS)
+- Relevance: How relevant is this goal to their Alpha X project? (8/10 required - BE GENEROUS)
+
+SCORING STRATEGY:
+- AMBITION: Be strict and critical - this is the main filter
+- MEASURABLE: Be generous - if it has numbers/specifics, give 8/10+
+- RELEVANCE: Be generous - if it relates to education/skills/project, give 8/10+
 
 Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevance to be valid. Overall score should be 8/10 minimum.`;
 
