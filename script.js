@@ -4,7 +4,10 @@ let appState = {
     goals: [],
     validationResult: null,
     pendingQuestions: null,
-    userAlphaXProject: null
+    aiQuestions: null,
+    aiAnswers: null,
+    userAlphaXProject: null,
+    lastValidatedGoalText: null // Track the goal text that was last validated
 };
 
 // File upload utility functions
@@ -61,13 +64,60 @@ function handleFileUpload() {
     });
 }
 
+// Goal text change monitoring
+function setupGoalTextMonitoring() {
+    const goalInput = document.getElementById('goalInput');
+    if (!goalInput) return;
+    
+    goalInput.addEventListener('input', () => {
+        const currentGoalText = goalInput.value.trim();
+        
+        // Check if goal text has changed since last validation
+        if (appState.validationResult && appState.lastValidatedGoalText && 
+            currentGoalText !== appState.lastValidatedGoalText) {
+            
+            console.log('Goal text changed since last validation - requiring re-validation');
+            
+            // Clear validation state
+            appState.validationResult = null;
+            appState.lastValidatedGoalText = null;
+            appState.aiQuestions = null;
+            appState.aiAnswers = null;
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('submitGoalBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+            
+            // Hide validation results and show re-validation message
+            const validationResults = document.getElementById('validationResults');
+            if (validationResults) {
+                validationResults.classList.add('hidden');
+            }
+            
+            // Show revalidation hint
+            const revalidationHint = document.getElementById('revalidationHint');
+            if (revalidationHint) {
+                revalidationHint.classList.remove('hidden');
+            }
+            
+            // Show toast notification
+            showToast('Goal text changed - please validate again before submitting', 'warning');
+        }
+    });
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Goal Tracker initialized');
     checkSession();
     
     // Initialize file upload after DOM is ready
-    setTimeout(handleFileUpload, 100);
+    setTimeout(() => {
+        handleFileUpload();
+        setupGoalTextMonitoring();
+    }, 100);
     setupEventListeners();
 });
 
@@ -430,7 +480,14 @@ async function validateGoal() {
         
         if (data.success) {
             appState.validationResult = data.validation;
+            appState.lastValidatedGoalText = goal; // Store the validated goal text
             displayValidationResults(data.validation);
+            
+            // Hide revalidation hint
+            const revalidationHint = document.getElementById('revalidationHint');
+            if (revalidationHint) {
+                revalidationHint.classList.add('hidden');
+            }
             
             // Enable submit button if goal is valid
             document.getElementById('submitGoalBtn').disabled = !data.validation.isValid;
@@ -628,11 +685,18 @@ async function submitAnswers() {
         
         if (data.success) {
             appState.validationResult = data.validation;
+            appState.lastValidatedGoalText = goal; // Store the validated goal text
             appState.pendingQuestions = null;
             // Store AI questions and answers for goal submission
             appState.aiQuestions = questions;
             appState.aiAnswers = answers;
             displayValidationResults(data.validation);
+            
+            // Hide revalidation hint
+            const revalidationHint = document.getElementById('revalidationHint');
+            if (revalidationHint) {
+                revalidationHint.classList.add('hidden');
+            }
             
             // Enable submit button if goal is valid
             document.getElementById('submitGoalBtn').disabled = !data.validation.isValid;
@@ -658,8 +722,16 @@ async function submitAnswers() {
 async function handleGoalSubmit(e) {
     e.preventDefault();
     
+    // Check if goal is validated and current text matches validated text
+    const currentGoalText = document.getElementById('goalInput').value.trim();
+    
     if (!appState.validationResult || !appState.validationResult.isValid) {
         showToast('Please validate your goal first', 'warning');
+        return;
+    }
+    
+    if (!appState.lastValidatedGoalText || currentGoalText !== appState.lastValidatedGoalText) {
+        showToast('Goal text has changed since validation - please validate again', 'warning');
         return;
     }
     
@@ -715,6 +787,7 @@ async function handleGoalSubmit(e) {
             document.getElementById('validationResults').classList.add('hidden');
             document.getElementById('submitGoalBtn').disabled = true;
             appState.validationResult = null;
+            appState.lastValidatedGoalText = null;
             appState.aiQuestions = null;
             appState.aiAnswers = null;
             
