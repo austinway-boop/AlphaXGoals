@@ -549,8 +549,11 @@ body {
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
     animation: slideInUp 0.4s ease both;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     position: relative;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .goal-card-minimal:hover {
@@ -568,12 +571,13 @@ body {
     background: linear-gradient(135deg, #fef3c7, #fde68a);
     border-color: #f59e0b;
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+    margin-top: 1.5rem;
 }
 
 .goal-card-minimal.today-goal::before {
     content: "⭐ Today";
     position: absolute;
-    top: -8px;
+    top: -10px;
     left: 1rem;
     background: var(--warning-color);
     color: white;
@@ -582,6 +586,7 @@ body {
     font-size: 0.75rem;
     font-weight: 600;
     box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    z-index: 2;
 }
 
 .goal-header-minimal {
@@ -644,10 +649,11 @@ body {
 
 .scores-minimal {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 1.5rem;
+    right: 1.5rem;
     display: flex;
     gap: 0.25rem;
+    z-index: 1;
 }
 
 .score-mini {
@@ -706,7 +712,8 @@ body {
 }
 
 .goals-list {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
 }
 
