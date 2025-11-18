@@ -139,31 +139,41 @@ export async function createGoal(goalData) {
 }
 
 export async function getUserGoals(userId) {
-  const client = await getRedisClient();
-  const goalIds = await client.sMembers(`user_goals:${userId}`);
-  
-  const goals = [];
-  for (const goalId of goalIds) {
-    const goal = await client.hGetAll(goalId);
-    if (Object.keys(goal).length > 0) {
-      // Convert stored string values back to appropriate types
-      const parsedGoal = { id: goalId };
-      for (const [key, value] of Object.entries(goal)) {
-        if (key === 'xpAmount') {
-          parsedGoal[key] = value ? parseInt(value) : null;
-        } else if (key === 'hasScreenshot') {
-          parsedGoal[key] = value === 'true';
-        } else if (key === 'aiQuestions' || key === 'aiAnswers') {
-          // Parse JSON arrays for AI questions and answers
-          parsedGoal[key] = value ? JSON.parse(value) : null;
-        } else {
-          parsedGoal[key] = value;
+  try {
+    const client = await getRedisClient();
+    const goalIds = await client.sMembers(`user_goals:${userId}`);
+    
+    const goals = [];
+    for (const goalId of goalIds) {
+      const goal = await client.hGetAll(goalId);
+      if (Object.keys(goal).length > 0) {
+        // Convert stored string values back to appropriate types
+        const parsedGoal = { id: goalId };
+        for (const [key, value] of Object.entries(goal)) {
+          if (key === 'xpAmount') {
+            parsedGoal[key] = value ? parseInt(value) : null;
+          } else if (key === 'hasScreenshot') {
+            parsedGoal[key] = value === 'true';
+          } else if (key === 'aiQuestions' || key === 'aiAnswers' || key === 'validationData') {
+            // Parse JSON arrays for AI questions, answers, and validation data
+            try {
+              parsedGoal[key] = value ? JSON.parse(value) : null;
+            } catch (e) {
+              console.warn(`Failed to parse ${key}:`, value);
+              parsedGoal[key] = null;
+            }
+          } else {
+            parsedGoal[key] = value;
+          }
         }
+        goals.push(parsedGoal);
       }
-      goals.push(parsedGoal);
     }
+    return goals;
+  } catch (error) {
+    console.error('Error in getUserGoals:', error);
+    throw error;
   }
-  return goals;
 }
 
 export async function updateGoal(goalId, updates) {

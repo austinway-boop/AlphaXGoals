@@ -541,6 +541,135 @@ body {
     border-left: 3px solid var(--primary-color);
 }
 
+/* Minimalistic Goal Cards */
+.goal-card-minimal {
+    background: var(--surface);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    animation: slideInUp 0.4s ease both;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.goal-card-minimal:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
+}
+
+.goal-card-minimal.completed {
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(16, 185, 129, 0.03) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.goal-card-minimal.today-goal {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-color: #f59e0b;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+}
+
+.goal-card-minimal.today-goal::before {
+    content: "⭐ Today";
+    position: absolute;
+    top: -8px;
+    left: 1rem;
+    background: var(--warning-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.goal-header-minimal {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.goal-status-minimal {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+.goal-title {
+    flex: 1;
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+.goal-footer-minimal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.goal-meta-minimal {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.btn-complete-minimal {
+    background: var(--success-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-complete-minimal:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.deadline-passed {
+    font-size: 0.8rem;
+    color: var(--danger-color);
+    font-weight: 500;
+}
+
+.scores-minimal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.score-mini {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+}
+
+.score-mini.pass {
+    background: var(--success-color);
+}
+
+.score-mini.fail {
+    background: var(--danger-color);
+}
+
 /* Goals List */
 .goals-section {
     animation: fadeInUp 0.6s ease 0.2s both;
@@ -1038,6 +1167,17 @@ body {
     
     .goal-validation-summary {
         padding: 1rem;
+    }
+    
+    .goal-footer-minimal {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .scores-minimal {
+        position: static;
+        margin-top: 0.5rem;
     }
     
     .toast {

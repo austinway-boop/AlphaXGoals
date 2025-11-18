@@ -675,62 +675,36 @@ function displayGoals(goals) {
         const isToday = new Date(goal.createdAt).toDateString() === today;
         
         return `
-            <div class="goal-card${isToday ? ' today-goal' : ''}${goal.status === 'completed' ? ' completed' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
-                <div class="goal-header">
-                    <div class="goal-status ${goal.status}">
-                        <span>${goal.status === 'completed' ? '✅' : '🎯'}</span>
-                        ${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}
+            <div class="goal-card-minimal${isToday ? ' today-goal' : ''}${goal.status === 'completed' ? ' completed' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
+                <div class="goal-header-minimal">
+                    <div class="goal-status-minimal ${goal.status}">
+                        ${goal.status === 'completed' ? '✅' : goal.status === 'active' ? '🎯' : '❌'}
+                    </div>
+                    <div class="goal-title">
+                        ${escapeHtml(goal.goal)}
                     </div>
                 </div>
                 
-                <div class="goal-content">
-                    <h3>${escapeHtml(goal.goal)}</h3>
-                    
-                    <div class="goal-meta">
-                        <span><span>📅</span> Created: ${createdDate}</span>
-                        ${goal.alphaXProject ? `<span><span>🚀</span> Project: ${escapeHtml(goal.alphaXProject)}</span>` : ''}
-                        ${completedDate ? `<span><span>🎉</span> Completed: ${completedDate}</span>` : ''}
+                <div class="goal-footer-minimal">
+                    <div class="goal-meta-minimal">
+                        <span class="date-created">📅 ${createdDate}</span>
+                        ${completedDate ? `<span class="date-completed">🎉 ${completedDate}</span>` : ''}
                     </div>
                     
-                    ${goal.validationData ? `
-                        <div class="goal-validation-summary">
-                            <h4>🤖 AI Validation Scores</h4>
-                            <div class="validation-scores">
-                                <div class="score-item">
-                                    <span class="score-label">Ambition:</span>
-                                    <span class="score-value ${goal.validationData.ambitionScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/10</span>
-                                </div>
-                                <div class="score-item">
-                                    <span class="score-label">Measurable:</span>
-                                    <span class="score-value ${goal.validationData.measurableScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</span>
-                                </div>
-                                <div class="score-item">
-                                    <span class="score-label">Relevance:</span>
-                                    <span class="score-value ${goal.validationData.relevanceScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</span>
-                                </div>
-                                <div class="score-item overall">
-                                    <span class="score-label">Overall:</span>
-                                    <span class="score-value ${goal.validationData.overallScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</span>
-                                </div>
-                            </div>
-                            ${goal.validationData.feedback ? `<p class="validation-feedback">"${escapeHtml(goal.validationData.feedback)}"</p>` : ''}
-                        </div>
+                    ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
+                        <button class="btn-complete-minimal" onclick="completeGoal('${goal.id}')">
+                            Complete
+                        </button>
+                    ` : goal.status === 'active' ? `
+                        <div class="deadline-passed">Deadline passed</div>
                     ` : ''}
                 </div>
                 
-                ${goal.status === 'active' ? `
-                    <div class="goal-actions">
-                        ${canCompleteGoal(goal.createdAt) ? `
-                            <button class="btn btn-success" onclick="completeGoal('${goal.id}')">
-                                <span class="btn-icon">✅</span>
-                                Mark Complete
-                            </button>
-                        ` : `
-                            <div class="completion-disabled">
-                                <p><span>🕛</span> Goal completion deadline passed (midnight CST)</p>
-                                <small>Goals must be completed on the same day they were created</small>
-                            </div>
-                        `}
+                ${goal.validationData ? `
+                    <div class="scores-minimal">
+                        <span class="score-mini ${goal.validationData.ambitionScore >= 9 ? 'pass' : 'fail'}">${goal.validationData.ambitionScore || 0}</span>
+                        <span class="score-mini ${goal.validationData.measurableScore >= 9 ? 'pass' : 'fail'}">${goal.validationData.measurableScore || 0}</span>
+                        <span class="score-mini ${goal.validationData.relevanceScore >= 9 ? 'pass' : 'fail'}">${goal.validationData.relevanceScore || 0}</span>
                     </div>
                 ` : ''}
             </div>
