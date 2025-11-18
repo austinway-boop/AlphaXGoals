@@ -308,33 +308,56 @@ export async function getAllUsers() {
 }
 
 export async function getAllGoals() {
-  const client = await getRedisClient();
-  const allKeys = await client.keys('goal:*');
-  
-  const goals = [];
-  for (const goalId of allKeys) {
-    const goal = await client.hGetAll(goalId);
-    if (Object.keys(goal).length > 0) {
-      // Convert stored string values back to appropriate types
-      const parsedGoal = { id: goalId };
-      for (const [key, value] of Object.entries(goal)) {
-        if (key === 'xpAmount') {
-          parsedGoal[key] = value ? parseInt(value) : null;
-        } else if (key === 'hasScreenshot') {
-          parsedGoal[key] = value === 'true';
-        } else if (key === 'aiQuestions' || key === 'aiAnswers') {
-          // Parse JSON arrays for AI questions and answers
-          parsedGoal[key] = value ? JSON.parse(value) : null;
-        } else {
-          parsedGoal[key] = value;
-        }
-      }
-      goals.push(parsedGoal);
+  try {
+    console.log('getAllGoals called');
+    const client = await getRedisClient();
+    const allKeys = await client.keys('goal:*');
+    console.log('Found goal keys:', allKeys.length);
+    
+    if (!allKeys || allKeys.length === 0) {
+      console.log('No goals found in database');
+      return [];
     }
+    
+    const goals = [];
+    for (const goalId of allKeys) {
+      try {
+        const goal = await client.hGetAll(goalId);
+        if (Object.keys(goal).length > 0) {
+          // Convert stored string values back to appropriate types
+          const parsedGoal = { id: goalId };
+          for (const [key, value] of Object.entries(goal)) {
+            if (key === 'xpAmount') {
+              parsedGoal[key] = value ? parseInt(value) : null;
+            } else if (key === 'hasScreenshot') {
+              parsedGoal[key] = value === 'true';
+            } else if (key === 'aiQuestions' || key === 'aiAnswers' || key === 'validationData') {
+              // Parse JSON arrays for AI questions, answers, and validation data
+              try {
+                parsedGoal[key] = value ? JSON.parse(value) : null;
+              } catch (e) {
+                console.warn(`Failed to parse ${key} in getAllGoals for goal ${goalId}:`, value);
+                parsedGoal[key] = null;
+              }
+            } else {
+              parsedGoal[key] = value;
+            }
+          }
+          goals.push(parsedGoal);
+        }
+      } catch (goalError) {
+        console.error(`Error processing goal ${goalId} in getAllGoals:`, goalError);
+        // Continue with other goals
+      }
+    }
+    
+    console.log('getAllGoals returning:', goals.length, 'goals');
+    // Sort by creation date (newest first)
+    return goals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } catch (error) {
+    console.error('Error in getAllGoals:', error);
+    return [];
   }
-  
-  // Sort by creation date (newest first)
-  return goals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
 // System prompt management functions

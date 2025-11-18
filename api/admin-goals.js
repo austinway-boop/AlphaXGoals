@@ -35,15 +35,17 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     // Get all goals with user information
     try {
+      console.log('Admin goals API called');
       const [allGoals, allUsers] = await Promise.all([getAllGoals(), getAllUsers()]);
+      console.log('Retrieved:', allGoals.length, 'goals and', allUsers.length, 'users');
       
       // Create a map of userId to user info for faster lookup
       const userMap = {};
       allUsers.forEach(user => {
         userMap[user.id] = {
-          username: user.username,
-          email: user.email,
-          house: user.house
+          username: user.username || 'Unknown',
+          email: user.email || 'Unknown',
+          house: user.house || null
         };
       });
       
@@ -118,10 +120,14 @@ export default async function handler(req, res) {
         );
       }
       
+      console.log('Returning filtered goals:', filteredGoals.length);
       res.json({ success: true, goals: filteredGoals, totalUsers: allUsers.length });
     } catch (error) {
       console.error('Error fetching admin goals:', error);
-      res.status(500).json({ success: false, error: 'Failed to fetch goals' });
+      res.status(500).json({ 
+        success: false, 
+        error: `Failed to fetch goals: ${error.message}` 
+      });
     }
   } else if (req.method === 'POST') {
     // Invalidate a goal

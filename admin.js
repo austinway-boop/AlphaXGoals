@@ -295,12 +295,7 @@ function displayGoals(goals) {
                         ${goal.aiQuestions && goal.aiAnswers ? `
                             <div class="ai-qa-section">
                                 <h5>🤖 AI Questions & Student Answers</h5>
-                                ${JSON.parse(goal.aiQuestions).map((question, index) => `
-                                    <div class="qa-item">
-                                        <p class="question"><strong>Q${index + 1}:</strong> ${escapeHtml(question)}</p>
-                                        <p class="answer"><strong>A:</strong> ${escapeHtml(JSON.parse(goal.aiAnswers)[index] || 'No answer')}</p>
-                                    </div>
-                                `).join('')}
+                                ${safeParseAndDisplayQA(goal.aiQuestions, goal.aiAnswers)}
                             </div>
                         ` : ''}
                         
@@ -444,6 +439,55 @@ async function quickInvalidate(goalId, reason) {
         }
     } catch (error) {
         showToast('Failed to invalidate goal', 'error');
+    }
+}
+
+// Safe JSON parsing helper
+function safeParseAndDisplayQA(questionsData, answersData) {
+    try {
+        let questions, answers;
+        
+        // Handle both string and array formats
+        if (typeof questionsData === 'string') {
+            questions = JSON.parse(questionsData);
+        } else if (Array.isArray(questionsData)) {
+            questions = questionsData;
+        } else {
+            return '<p class="error-message">Invalid questions data format</p>';
+        }
+        
+        if (typeof answersData === 'string') {
+            answers = JSON.parse(answersData);
+        } else if (Array.isArray(answersData)) {
+            answers = answersData;
+        } else {
+            return '<p class="error-message">Invalid answers data format</p>';
+        }
+        
+        if (!Array.isArray(questions) || !Array.isArray(answers)) {
+            return '<p class="error-message">Questions and answers must be arrays</p>';
+        }
+        
+        return questions.map((question, index) => `
+            <div class="qa-item">
+                <p class="question"><strong>Q${index + 1}:</strong> ${escapeHtml(question || 'Invalid question')}</p>
+                <p class="answer"><strong>A:</strong> ${escapeHtml(answers[index] || 'No answer provided')}</p>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error parsing Q&A data:', error);
+        return `
+            <div class="error-message">
+                <p><strong>⚠️ Data Format Error</strong></p>
+                <p>Unable to display questions and answers due to data format issues.</p>
+                <details style="margin-top: 0.5rem; font-size: 0.8rem; color: #666;">
+                    <summary>Debug Info</summary>
+                    <pre>Questions: ${typeof questionsData} - ${String(questionsData).substring(0, 100)}...</pre>
+                    <pre>Answers: ${typeof answersData} - ${String(answersData).substring(0, 100)}...</pre>
+                </details>
+            </div>
+        `;
     }
 }
 
