@@ -272,6 +272,19 @@ function displayGoals(goals) {
                 </div>
                 
                 ${validationScores}
+                
+                ${goal.aiQuestions && goal.aiAnswers ? `
+                    <div class="ai-qa-toggle">
+                        <button class="qa-toggle-btn" onclick="toggleQASection('${goal.id}')">
+                            <span class="qa-arrow" id="arrow-${goal.id}">▼</span>
+                            🤖 View AI Questions & Student Answers
+                        </button>
+                        <div class="ai-qa-content" id="qa-${goal.id}" style="display: none;">
+                            ${safeParseAndDisplayQA(goal.aiQuestions, goal.aiAnswers)}
+                        </div>
+                    </div>
+                ` : ''}
+                
                 ${invalidationSection}
             </div>
         `;
@@ -327,16 +340,16 @@ function getHouseDisplay(house) {
     return houses[house] || '🏛️ No House';
 }
 
-// Goal expansion functionality
-function toggleGoalExpansion(goalId) {
-    const detailsDiv = document.getElementById(`details-${goalId}`);
-    const arrow = document.querySelector(`[onclick="toggleGoalExpansion('${goalId}')"] .expand-arrow`);
+// Q&A section toggle functionality
+function toggleQASection(goalId) {
+    const qaContent = document.getElementById(`qa-${goalId}`);
+    const arrow = document.getElementById(`arrow-${goalId}`);
     
-    if (detailsDiv.style.display === 'none') {
-        detailsDiv.style.display = 'block';
+    if (qaContent.style.display === 'none') {
+        qaContent.style.display = 'block';
         arrow.textContent = '▲';
     } else {
-        detailsDiv.style.display = 'none';
+        qaContent.style.display = 'none';
         arrow.textContent = '▼';
     }
 }
