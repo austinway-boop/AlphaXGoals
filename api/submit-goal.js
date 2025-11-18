@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goal, alphaXProject, aiQuestions, aiAnswers } = req.body;
+  const { goal, alphaXProject, aiQuestions, aiAnswers, validationData } = req.body;
   
   if (!goal) {
     return res.status(400).json({ success: false, error: 'Goal is required' });
@@ -58,7 +58,9 @@ export default async function handler(req, res) {
       completedAt: null,
       // Store AI questions and answers if they exist
       aiQuestions: aiQuestions || null,
-      aiAnswers: aiAnswers || null
+      aiAnswers: aiAnswers || null,
+      // Store validation data from AI
+      validationData: validationData || null
     };
     
     const newGoal = await createGoal(goalData);

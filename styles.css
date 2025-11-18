@@ -467,6 +467,80 @@ body {
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+/* Goal Validation Summary */
+.goal-validation-summary {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--surface-light);
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.goal-validation-summary h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.validation-scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--background);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.score-item.overall {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 2px solid var(--primary-color);
+    font-weight: 600;
+}
+
+.score-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.score-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.score-value.score-pass {
+    color: var(--success-color);
+}
+
+.score-value.score-fail {
+    color: var(--danger-color);
+}
+
+.validation-feedback {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.5;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--background);
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--primary-color);
+}
+
 /* Goals List */
 .goals-section {
     animation: fadeInUp 0.6s ease 0.2s both;
@@ -924,6 +998,15 @@ body {
     .btn {
         width: 100%;
         justify-content: center;
+    }
+    
+    .validation-scores {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .goal-validation-summary {
+        padding: 1rem;
     }
     
     .toast {

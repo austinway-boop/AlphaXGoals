@@ -138,14 +138,26 @@ Goals must achieve 9/10 in ALL categories to be valid. Goals should require at l
         isValid: false,
         hasQuestions: false,
         questions: [],
-        ambitionScore: 7,
-        measurableScore: 7,
-        relevanceScore: 7,
-        overallScore: 7,
+        ambitionScore: 5,
+        measurableScore: 5,
+        relevanceScore: 5,
+        overallScore: 5,
         feedback: "Goal needs review. Claude couldn't parse the response properly. Please try submitting again.",
         estimatedHours: 3,
         suggestions: ["Please resubmit your goal for proper validation"]
       };
+    }
+
+    // Ensure isValid is correctly set based on scoring requirements
+    if (validation.ambitionScore && validation.measurableScore && validation.relevanceScore) {
+      const meetsRequirements = validation.ambitionScore >= 9 && 
+                               validation.measurableScore >= 9 && 
+                               validation.relevanceScore >= 9;
+      validation.isValid = meetsRequirements && !validation.hasQuestions;
+      
+      if (!meetsRequirements && validation.isValid !== false) {
+        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/10, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10. All categories must score 9/10 or higher.`;
+      }
     }
 
     console.log('Sending validation response');

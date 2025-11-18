@@ -73,14 +73,42 @@ export default async function handler(req, res) {
     const userContext = await getUserContext(userId);
     const contextInfo = userContext.map(ctx => `- ${ctx.term}: ${ctx.explanation}`).join('\n');
     
-    // Get system prompt (customizable by admin)
-    const promptTemplate = await getSystemPrompt('answerQuestions');
-    
-    const prompt = promptTemplate
-      .replace('{contextInfo}', contextInfo || '(No previous context learned yet)')
-      .replace('{goal}', goal)
-      .replace('{alphaXProject}', alphaXProject)
-      .replace('{questionsAndAnswers}', questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || 'No answer provided'}`).join('\n\n'));
+    // Use the same scoring prompt as validate-goal for consistency
+    const prompt = `You are a goal validation assistant for Alpha X students. Based on the clarifying answers provided, analyze the goal and respond with JSON only.
+
+Goal: "${goal}"
+Alpha X Project: "${alphaXProject}"
+
+Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts. For brainlift goals, adding 500 words minimum is required as it should take at least 3 solid hours of work.
+
+USER'S LEARNED CONTEXT:
+${contextInfo || '(No previous context learned yet)'}
+
+QUESTIONS AND ANSWERS:
+${questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || 'No answer provided'}`).join('\n\n')}
+
+Now that you have clarifying information, provide a final validation with the same scoring system:
+
+Respond with a JSON object containing:
+{
+  "isValid": boolean,
+  "hasQuestions": false,
+  "questions": [],
+  "ambitionScore": number (1-10),
+  "measurableScore": number (1-10),
+  "relevanceScore": number (1-10),
+  "overallScore": number (1-10),
+  "feedback": "positive and encouraging explanation incorporating the user's answers",
+  "estimatedHours": number,
+  "suggestions": ["helpful suggestions if needed"]
+}
+
+Score on these categories:
+- Ambition: How challenging and growth-oriented is this goal? (9/10 required to pass)
+- Measurable: How clearly defined and measurable are the success criteria? (9/10 required to pass)
+- Relevance: How relevant is this goal to their Alpha X project? (9/10 required to pass)
+
+Goals must achieve 9/10 in ALL categories to be valid. Goals should require at least 3 solid hours of work. Be encouraging but maintain high standards.`;
 
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model: 'claude-sonnet-4-5',
@@ -124,6 +152,18 @@ export default async function handler(req, res) {
         estimatedHours: 0,
         suggestions: ["Please rephrase your goal with more specific details and measurable outcomes."]
       };
+    }
+
+    // Ensure isValid is correctly set based on scoring requirements
+    if (validation.ambitionScore && validation.measurableScore && validation.relevanceScore) {
+      const meetsRequirements = validation.ambitionScore >= 9 && 
+                               validation.measurableScore >= 9 && 
+                               validation.relevanceScore >= 9;
+      validation.isValid = meetsRequirements && !validation.hasQuestions;
+      
+      if (!meetsRequirements && validation.isValid !== false) {
+        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/10, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10. All categories must score 9/10 or higher.`;
+      }
     }
 
     res.json({ success: true, validation });

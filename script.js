@@ -578,7 +578,9 @@ async function handleGoalSubmit(e) {
         alphaXProject,
         // Include AI questions and answers if they exist
         aiQuestions: appState.aiQuestions || null,
-        aiAnswers: appState.aiAnswers || null
+        aiAnswers: appState.aiAnswers || null,
+        // Include validation data from AI
+        validationData: appState.validationResult || null
     };
     
     showLoading('Submitting your goal...');
@@ -688,6 +690,31 @@ function displayGoals(goals) {
                         ${goal.alphaXProject ? `<span><span>🚀</span> Project: ${escapeHtml(goal.alphaXProject)}</span>` : ''}
                         ${completedDate ? `<span><span>🎉</span> Completed: ${completedDate}</span>` : ''}
                     </div>
+                    
+                    ${goal.validationData ? `
+                        <div class="goal-validation-summary">
+                            <h4>🤖 AI Validation Scores</h4>
+                            <div class="validation-scores">
+                                <div class="score-item">
+                                    <span class="score-label">Ambition:</span>
+                                    <span class="score-value ${goal.validationData.ambitionScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/10</span>
+                                </div>
+                                <div class="score-item">
+                                    <span class="score-label">Measurable:</span>
+                                    <span class="score-value ${goal.validationData.measurableScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</span>
+                                </div>
+                                <div class="score-item">
+                                    <span class="score-label">Relevance:</span>
+                                    <span class="score-value ${goal.validationData.relevanceScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</span>
+                                </div>
+                                <div class="score-item overall">
+                                    <span class="score-label">Overall:</span>
+                                    <span class="score-value ${goal.validationData.overallScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</span>
+                                </div>
+                            </div>
+                            ${goal.validationData.feedback ? `<p class="validation-feedback">"${escapeHtml(goal.validationData.feedback)}"</p>` : ''}
+                        </div>
+                    ` : ''}
                 </div>
                 
                 ${goal.status === 'active' ? `
