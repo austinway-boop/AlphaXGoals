@@ -85,9 +85,13 @@ function handleDynamicButtonClicks(e) {
         }
     } else if (e.target.matches('.edit-name-btn')) {
         e.preventDefault();
+        e.stopPropagation();
         const userId = e.target.dataset.userId;
+        console.log('Edit name button clicked for userId:', userId);
         if (userId) {
             showNameEditor(userId);
+        } else {
+            console.error('No userId found on edit button:', e.target);
         }
     } else if (e.target.matches('.save-name-btn')) {
         e.preventDefault();
@@ -403,7 +407,7 @@ function displayGoals(goals) {
                             <label>✏️ Display Name:</label>
                             <div class="name-display-content">
                                 <span class="current-name">${escapeHtml(goal.user.username)}</span>
-                                <button class="edit-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="showNameEditor('${escapeHtml(goal.userId)}')" title="Edit display name">✏️</button>
+                                <button class="edit-name-btn" data-user-id="${escapeHtml(goal.userId)}" title="Edit display name">✏️</button>
                             </div>
                         </div>
                         <div class="name-editor hidden" id="nameEditor_${escapeHtml(goal.userId)}">
@@ -615,65 +619,90 @@ async function updateUserDisplayName(userId, newDisplayName) {
 function showNameEditor(userId) {
     console.log('showNameEditor called for userId:', userId);
     
-    // Try to find in user card first (users section)
-    let userCard = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card');
+    // Prevent multiple calls
+    if (window.editingUser === userId) {
+        console.log('Already editing this user, ignoring duplicate call');
+        return;
+    }
+    window.editingUser = userId;
+    
+    // Find the edit button first to get the correct context
+    const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+    if (!editButton) {
+        console.error('Edit button not found for userId:', userId);
+        window.editingUser = null;
+        return;
+    }
+    
     let nameDisplay, nameEditor;
+    
+    // Try to find in user card first (users section)
+    let userCard = editButton.closest('.user-card');
     
     if (userCard) {
         // Found in users section
         console.log('Found user card in users section');
         nameDisplay = userCard.querySelector('.name-display');
-        nameEditor = document.getElementById(`nameEditor_${userId}`);
     } else {
-        // Try to find in goals section
+        // In goals section
         console.log('Looking in goals section');
-        nameDisplay = document.querySelector(`.name-display[data-user-id="${userId}"], .name-display:has([data-user-id="${userId}"])`);
-        nameEditor = document.getElementById(`nameEditor_${userId}`);
-        
-        // If still not found, try a broader search
-        if (!nameDisplay) {
-            const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
-            if (editButton) {
-                nameDisplay = editButton.closest('.name-display');
-                console.log('Found via edit button');
-            }
-        }
+        nameDisplay = editButton.closest('.name-display');
     }
+    
+    nameEditor = document.getElementById(`nameEditor_${userId}`);
     
     if (!nameDisplay || !nameEditor) {
         console.error('Name display or editor elements not found for userId:', userId);
         console.log('nameDisplay:', nameDisplay);
         console.log('nameEditor:', nameEditor);
+        console.log('Available nameEditor elements:', document.querySelectorAll('[id^="nameEditor_"]'));
+        window.editingUser = null;
         return;
     }
     
     const input = nameEditor.querySelector('.inline-name-input');
     if (!input) {
         console.error('Input element not found for userId:', userId);
+        window.editingUser = null;
         return;
     }
     
     console.log('Showing name editor for userId:', userId);
-    nameDisplay.classList.add('hidden');
+    console.log('nameDisplay element:', nameDisplay);
+    console.log('nameEditor element:', nameEditor);
+    
+    // Force show/hide with direct style manipulation as backup
+    nameDisplay.style.display = 'none';
+    nameEditor.style.display = 'flex';
     nameEditor.classList.remove('hidden');
-    input.focus();
-    input.select();
+    nameDisplay.classList.add('hidden');
+    
+    console.log('nameEditor final display style:', window.getComputedStyle(nameEditor).display);
+    
+    // Small delay to ensure DOM is updated
+    setTimeout(() => {
+        input.focus();
+        input.select();
+    }, 10);
 }
 
 function cancelNameEdit(userId) {
     console.log('cancelNameEdit called for userId:', userId);
     
+    // Reset editing state
+    window.editingUser = null;
+    
     // Find the name display and editor elements
     let nameDisplay, nameEditor;
-    const userCard = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card');
+    const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
     
-    if (userCard) {
-        // Found in users section
-        nameDisplay = userCard.querySelector('.name-display');
-    } else {
-        // Look in goals section
-        const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
-        if (editButton) {
+    if (editButton) {
+        const userCard = editButton.closest('.user-card');
+        if (userCard) {
+            // Found in users section
+            nameDisplay = userCard.querySelector('.name-display');
+        } else {
+            // Goals section
             nameDisplay = editButton.closest('.name-display');
         }
     }
@@ -703,6 +732,9 @@ function cancelNameEdit(userId) {
         input.value = currentNameElement.textContent;
     }
     
+    // Force hide/show with direct style manipulation
+    nameEditor.style.display = 'none';
+    nameDisplay.style.display = '';
     nameEditor.classList.add('hidden');
     nameDisplay.classList.remove('hidden');
 }
@@ -784,9 +816,14 @@ async function saveNameEdit(userId) {
             
             if (nameDisplay) {
                 // Hide editor and show display
+                nameEditor.style.display = 'none';
+                nameDisplay.style.display = '';
                 nameEditor.classList.add('hidden');
                 nameDisplay.classList.remove('hidden');
             }
+            
+            // Reset editing state
+            window.editingUser = null;
             
             // Refresh data in background
             if (adminState.users.length > 0) {
