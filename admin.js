@@ -35,6 +35,57 @@ async function checkAdminSession() {
 // Setup event listeners
 function setupEventListeners() {
     document.getElementById('adminLoginForm').addEventListener('submit', handleAdminLogin);
+    
+    // Add event delegation for dynamic buttons
+    document.addEventListener('click', handleDynamicButtonClicks);
+    document.addEventListener('change', handleDynamicChangeEvents);
+}
+
+// Handle clicks on dynamically generated buttons using event delegation
+function handleDynamicButtonClicks(e) {
+    if (e.target.matches('.reason-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        const reason = e.target.dataset.reason;
+        if (goalId && reason) {
+            quickInvalidate(goalId, reason);
+        }
+    } else if (e.target.matches('.custom-invalidate-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            showInvalidationForm(goalId);
+        }
+    } else if (e.target.matches('.confirm-invalidate-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            invalidateGoal(goalId);
+        }
+    } else if (e.target.matches('.cancel-invalidate-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            hideInvalidationForm(goalId);
+        }
+    } else if (e.target.matches('.qa-toggle-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            toggleQASection(goalId);
+        }
+    }
+}
+
+// Handle change events on dynamically generated elements
+function handleDynamicChangeEvents(e) {
+    if (e.target.matches('.house-selector')) {
+        const userId = e.target.dataset.userId;
+        const house = e.target.value;
+        if (userId) {
+            updateUserHouse(userId, house);
+        }
+    }
 }
 
 // Admin Authentication Functions
@@ -231,20 +282,20 @@ function displayGoals(goals) {
             <div class="quick-invalidate">
                 <h6>⚡ Quick Invalidate</h6>
                 <div class="invalidation-reasons">
-                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not ambitious enough')">Not Ambitious</button>
-                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not measurable')">Not Measurable</button>
-                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not relevant')">Not Relevant</button>
-                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'BrainLift goal missing additional tasks')">BrainLift Only</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not ambitious enough">Not Ambitious</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not measurable">Not Measurable</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="Not relevant">Not Relevant</button>
+                    <button class="reason-btn" data-goal-id="${escapeHtml(goal.id)}" data-reason="BrainLift goal missing additional tasks">BrainLift Only</button>
                 </div>
-                <button class="btn btn-danger btn-sm" onclick="showInvalidationForm('${goal.id}')" style="margin-top: 0.5rem;">
+                <button class="btn btn-danger btn-sm custom-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}" style="margin-top: 0.5rem;">
                     ✏️ Custom Reason
                 </button>
-                <div id="invalidationForm_${goal.id}" class="invalidation-form hidden">
-                    <label for="reason_${goal.id}">Custom invalidation reason:</label>
-                    <textarea id="reason_${goal.id}" rows="3" placeholder="Enter detailed reason..."></textarea>
+                <div id="invalidationForm_${escapeHtml(goal.id)}" class="invalidation-form hidden">
+                    <label for="reason_${escapeHtml(goal.id)}">Custom invalidation reason:</label>
+                    <textarea id="reason_${escapeHtml(goal.id)}" rows="3" placeholder="Enter detailed reason..."></textarea>
                     <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                        <button class="btn btn-danger btn-sm" onclick="invalidateGoal('${goal.id}')">Confirm</button>
-                        <button class="btn btn-secondary btn-sm" onclick="hideInvalidationForm('${goal.id}')">Cancel</button>
+                        <button class="btn btn-danger btn-sm confirm-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}">Confirm</button>
+                        <button class="btn btn-secondary btn-sm cancel-invalidate-btn" data-goal-id="${escapeHtml(goal.id)}">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -272,7 +323,7 @@ function displayGoals(goals) {
                 
                 <div class="house-assignment">
                     <label>🏛️ House:</label>
-                    <select onchange="updateUserHouse('${goal.userId}', this.value)">
+                    <select class="house-selector" data-user-id="${escapeHtml(goal.userId)}">
                         <option value="">No House</option>
                         <option value="sparta" ${goal.user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
                         <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
@@ -286,11 +337,11 @@ function displayGoals(goals) {
                 
                 ${goal.aiQuestions && goal.aiAnswers ? `
                     <div class="ai-qa-toggle">
-                        <button class="qa-toggle-btn" onclick="toggleQASection('${goal.id}')">
-                            <span class="qa-arrow" id="arrow-${goal.id}">▼</span>
+                        <button class="qa-toggle-btn" data-goal-id="${escapeHtml(goal.id)}">
+                            <span class="qa-arrow" id="arrow-${escapeHtml(goal.id)}">▼</span>
                             🤖 View AI Questions & Student Answers
                         </button>
-                        <div class="ai-qa-content" id="qa-${goal.id}" style="display: none;">
+                        <div class="ai-qa-content" id="qa-${escapeHtml(goal.id)}" style="display: none;">
                             ${safeParseAndDisplayQA(goal.aiQuestions, goal.aiAnswers)}
                         </div>
                     </div>
