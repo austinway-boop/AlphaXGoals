@@ -105,17 +105,22 @@ function showCompletionModal(goalId) {
                     
                     <!-- Screenshot Tab -->
                     <div id="screenshotTab" class="proof-tab active">
-                        <h5>📷 Upload Screenshot Proof</h5>
-                        <p>Upload a screenshot showing you completed this goal:</p>
+                        <h5>📷 Screenshot</h5>
+                        <p>Upload an image showing your completion:</p>
                         
                         <div class="file-upload-wrapper">
                             <input type="file" id="completionScreenshot" accept="image/*">
                             <div class="file-upload-display">
                                 <div class="file-upload-text">
                                     <span class="upload-icon">📷</span>
-                                    <span>Upload Completion Screenshot</span>
+                                    <span>Choose Image</span>
                                 </div>
-                                <div class="file-upload-hint">Show proof of goal completion</div>
+                            </div>
+                        </div>
+                        
+                        <div id="screenshotPreview" class="content-preview hidden">
+                            <div class="image-preview-container">
+                                <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openImageModal(this.src)">
                             </div>
                         </div>
                     </div>
@@ -123,34 +128,46 @@ function showCompletionModal(goalId) {
                     <!-- Text Proof Tab -->
                     <div id="textTab" class="proof-tab hidden">
                         <h5>📝 Describe Your Completion</h5>
-                        <p>Describe how you completed this goal and what you accomplished:</p>
-                        <textarea id="completionText" rows="6" placeholder="Describe in detail how you completed this goal, what you accomplished, what challenges you faced, and what you learned..." class="completion-textarea"></textarea>
+                        <p>Tell us how you completed this goal:</p>
+                        <textarea id="completionText" rows="4" placeholder="Describe what you accomplished and how you completed this goal..." class="completion-textarea"></textarea>
                         <div class="character-count">
-                            <span id="textCount">0</span> / 200 characters minimum
+                            <span id="textCount">0</span> characters
+                        </div>
+                        
+                        <div id="textPreview" class="content-preview">
+                            <h6>Preview</h6>
+                            <div class="text-preview-container">
+                                <p id="textPreviewContent" class="preview-text">Start typing...</p>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Video Tab -->
                     <div id="videoTab" class="proof-tab hidden">
-                        <h5>🎥 Upload Video Proof</h5>
-                        <p>Upload a video showing your goal completion (max 50MB):</p>
+                        <h5>🎥 Video</h5>
+                        <p>Upload a video showing your completion:</p>
                         
                         <div class="file-upload-wrapper">
                             <input type="file" id="completionVideo" accept="video/*">
                             <div class="file-upload-display">
                                 <div class="file-upload-text">
                                     <span class="upload-icon">🎥</span>
-                                    <span>Upload Completion Video</span>
+                                    <span>Choose Video</span>
                                 </div>
-                                <div class="file-upload-hint">Upload video proof of completion</div>
+                            </div>
+                        </div>
+                        
+                        <div id="videoPreview" class="content-preview hidden">
+                            <div class="video-preview-container">
+                                <video id="videoPreviewPlayer" controls></video>
+                                <p class="video-info"><span id="videoFileName"></span> • <span id="videoFileSize"></span></p>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="completion-requirement">
-                    <p><strong>✨ Choose Multiple:</strong> You can use any combination of proof methods (screenshot + text + video).</p>
-                    <p><strong>⚠️ Requirement:</strong> At least one proof method must be provided.</p>
+                    <p>Choose any combination of proof methods. At least one required.</p>
                 </div>
                 
                 <div class="modal-actions">
@@ -233,17 +250,35 @@ function initializeCompletionModal() {
     handleCompletionFileUpload();
     handleCompletionVideoUpload();
     
-    // Initialize character counter
+    // Initialize character counter and text preview
     const textarea = document.getElementById('completionText');
     const counter = document.getElementById('textCount');
+    const textPreview = document.getElementById('textPreviewContent');
+    
     if (textarea && counter) {
         textarea.addEventListener('input', () => {
-            counter.textContent = textarea.value.length;
-            counter.style.color = textarea.value.length >= 200 ? 'var(--success-color)' : 'var(--warning-color)';
+            const text = textarea.value;
+            counter.textContent = text.length;
+            counter.style.color = 'var(--text-secondary)';
+            
+            // Update live preview
+            if (textPreview) {
+                if (text.trim().length > 0) {
+                    textPreview.textContent = text;
+                    textPreview.classList.remove('empty');
+                } else {
+                    textPreview.textContent = 'Start typing...';
+                    textPreview.classList.add('empty');
+                }
+            }
         });
         
-        // Trigger initial count
+        // Trigger initial count and preview
         counter.textContent = textarea.value.length;
+        if (textPreview) {
+            textPreview.textContent = 'Start typing...';
+            textPreview.classList.add('empty');
+        }
     }
 }
 
@@ -251,6 +286,10 @@ function handleCompletionVideoUpload() {
     const fileInput = document.getElementById('completionVideo');
     const display = document.querySelector('#videoTab .file-upload-display');
     const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
+    const preview = document.getElementById('videoPreview');
+    const previewVideo = document.getElementById('videoPreviewPlayer');
+    const fileName = document.getElementById('videoFileName');
+    const fileSize = document.getElementById('videoFileSize');
     
     if (!fileInput) return;
     
@@ -269,17 +308,49 @@ function handleCompletionVideoUpload() {
                 return;
             }
             
+            // Update upload display
             if (display && text) {
                 display.classList.add('file-selected');
-                text.textContent = `✅ ${file.name}`;
+                text.textContent = file.name;
+            }
+            
+            // Show video preview
+            if (preview && previewVideo) {
+                const videoURL = URL.createObjectURL(file);
+                previewVideo.src = videoURL;
+                preview.classList.remove('hidden');
+                
+                if (fileName) fileName.textContent = file.name;
+                if (fileSize) fileSize.textContent = formatFileSize(file.size);
+                
+                // Clean up URL when modal is closed
+                previewVideo.addEventListener('loadeddata', () => {
+                    console.log('Video loaded for preview');
+                });
             }
         } else {
+            // Reset display and preview
             if (display && text) {
                 display.classList.remove('file-selected');
-                text.textContent = 'Upload Completion Video';
+                text.textContent = 'Choose Video';
+            }
+            if (preview) {
+                preview.classList.add('hidden');
+                if (previewVideo.src) {
+                    URL.revokeObjectURL(previewVideo.src);
+                    previewVideo.src = '';
+                }
             }
         }
     });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 async function confirmCompletion() {
@@ -302,12 +373,7 @@ async function confirmCompletion() {
         return;
     }
     
-    // Validate text proof length if provided
-    if (textProof && textProof.length < 200) {
-        showToast('Text proof must be at least 200 characters', 'error');
-        switchProofTab('text');
-        return;
-    }
+    // No minimum character requirement - any text is acceptable
     
     showLoading('Processing proof and completing goal...');
     

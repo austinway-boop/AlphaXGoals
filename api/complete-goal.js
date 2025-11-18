@@ -45,10 +45,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'At least one form of proof (screenshot, text, or video) is required to complete a goal' });
   }
   
-  // Validate text proof length if provided
-  if (textProof && textProof.length < 200) {
-    return res.status(400).json({ success: false, error: 'Text proof must be at least 200 characters' });
-  }
+  // Text proof can be any length (no minimum requirement)
 
   try {
     // Check if it's after midnight CST - prevent goal completion
