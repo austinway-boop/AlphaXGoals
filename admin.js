@@ -3,6 +3,7 @@ let adminState = {
     currentAdmin: null,
     adminName: localStorage.getItem('adminName') || '',
     goals: [],
+    users: [],
     prompts: {},
     stats: {}
 };
@@ -75,6 +76,13 @@ function handleDynamicButtonClicks(e) {
         if (goalId) {
             toggleQASection(goalId);
         }
+    } else if (e.target.matches('.remove-user-btn')) {
+        e.preventDefault();
+        const userId = e.target.dataset.userId;
+        const username = e.target.dataset.username;
+        if (userId && username) {
+            removeUser(userId, username);
+        }
     }
 }
 
@@ -83,7 +91,7 @@ let displayNameUpdateTimer = null;
 
 // Handle change events on dynamically generated elements
 function handleDynamicChangeEvents(e) {
-    if (e.target.matches('.house-selector')) {
+    if (e.target.matches('.house-selector') || e.target.matches('.user-house-selector')) {
         const userId = e.target.dataset.userId;
         const house = e.target.value;
         if (userId) {
@@ -92,7 +100,7 @@ function handleDynamicChangeEvents(e) {
     } else if (e.target.matches('#adminNameInput')) {
         adminState.adminName = e.target.value.trim();
         localStorage.setItem('adminName', adminState.adminName);
-    } else if (e.target.matches('.display-name-input')) {
+    } else if (e.target.matches('.display-name-input') || e.target.matches('.user-display-name-input')) {
         const userId = e.target.dataset.userId;
         const newDisplayName = e.target.value.trim();
         
@@ -106,6 +114,12 @@ function handleDynamicChangeEvents(e) {
                 updateUserDisplayName(userId, newDisplayName);
             }
         }, 1000); // Wait 1 second after user stops typing
+    } else if (e.target.matches('#userSearchFilter')) {
+        // Re-filter users when search changes
+        const currentUsers = adminState.users || [];
+        if (currentUsers.length > 0) {
+            displayUsers(currentUsers);
+        }
     }
 }
 
@@ -198,6 +212,10 @@ function showAdminSection(sectionName) {
     // Load section-specific data
     if (sectionName === 'goals') {
         loadGoals();
+    } else if (sectionName === 'users') {
+        loadUsers();
+    } else if (sectionName === 'logs') {
+        loadLogs();
     } else if (sectionName === 'prompts') {
         loadPrompts();
     } else if (sectionName === 'stats') {
@@ -473,8 +491,14 @@ async function updateUserHouse(userId, house) {
         
         const data = await response.json();
         if (data.success) {
-            showToast(`User house updated to ${getHouseDisplay(house)}`, 'success');
+            const houseDisplay = getHouseDisplay(house);
+            showToast(`User house updated to ${houseDisplay}`, 'success');
+            await logAdminAction('house_change', `Updated user house to ${houseDisplay}`, { userId, house });
             loadGoals(); // Refresh to show updated house
+            // Also refresh users if they're loaded
+            if (adminState.users.length > 0) {
+                loadUsers();
+            }
         } else {
             showToast(data.error, 'error');
         }
@@ -502,7 +526,12 @@ async function updateUserDisplayName(userId, newDisplayName) {
         const data = await response.json();
         if (data.success) {
             showToast(`Display name updated to "${newDisplayName}"`, 'success');
+            await logAdminAction('user_update', `Updated user display name to "${newDisplayName}"`, { userId, newDisplayName });
             loadGoals(); // Refresh to show updated display name
+            // Also refresh users if they're loaded
+            if (adminState.users.length > 0) {
+                loadUsers();
+            }
         } else {
             showToast(data.error, 'error');
         }
@@ -539,6 +568,7 @@ async function quickInvalidate(goalId, reason) {
         const data = await response.json();
         if (data.success) {
             showToast(`Goal invalidated successfully by ${adminState.adminName}`, 'success');
+            await logAdminAction('goal_invalidation', `Invalidated goal with reason: ${reason}`, { goalId, reason });
             loadGoals();
         } else {
             showToast(data.error, 'error');
@@ -667,6 +697,7 @@ async function invalidateGoal(goalId) {
         
         if (data.success) {
             showToast(`Goal invalidated successfully by ${adminState.adminName}`, 'success');
+            await logAdminAction('goal_invalidation', `Invalidated goal with custom reason: ${reason}`, { goalId, reason });
             loadGoals(); // Reload goals
         } else {
             console.error('Invalidation failed:', data.error);
@@ -780,6 +811,299 @@ function updateStats(stats) {
     }
     if (stats.totalUsers !== undefined) {
         document.getElementById('totalUsers').textContent = stats.totalUsers;
+    }
+}
+
+// User Management Functions
+async function loadUsers() {
+    const container = document.getElementById('usersContainer');
+    container.innerHTML = '<div class="loading">Loading users...</div>';
+    
+    try {
+        const response = await fetch('/api/admin-users');
+        const data = await response.json();
+        
+        if (data.success) {
+            adminState.users = data.users || [];
+            displayUsers(data.users || []);
+        } else {
+            container.innerHTML = `
+                <div class="no-data-message">
+                    <h3>Unable to load users</h3>
+                    <p>${data.error || 'Unknown error occurred'}</p>
+                    <button class="btn btn-primary" onclick="loadUsers()">Try Again</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+        container.innerHTML = `
+            <div class="no-data-message">
+                <h3>Connection Error</h3>
+                <p>Unable to connect to the server. Please check your configuration.</p>
+                <button class="btn btn-primary" onclick="loadUsers()">Retry</button>
+            </div>
+        `;
+    }
+}
+
+function displayUsers(users) {
+    const container = document.getElementById('usersContainer');
+    
+    if (!users || users.length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <div class="no-data-icon">👥</div>
+                <h3>No Users Found</h3>
+                <p>No users are currently in the system.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Apply search filter if exists
+    const searchTerm = document.getElementById('userSearchFilter')?.value.toLowerCase() || '';
+    const filteredUsers = users.filter(user => 
+        user.username.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+    );
+    
+    const userCards = filteredUsers.map(user => {
+        const goalCount = user.goalCount || 0;
+        const activeGoals = user.activeGoals || 0;
+        const completedGoals = user.completedGoals || 0;
+        const isDeleted = user.deleted || false;
+        
+        return `
+            <div class="user-card ${isDeleted ? 'deleted' : ''}">
+                <div class="user-header">
+                    <div class="user-info">
+                        <h4>${escapeHtml(user.username)}</h4>
+                        <p>📧 ${escapeHtml(user.email)}</p>
+                        <p>🏛️ House: ${getHouseDisplay(user.house)}</p>
+                        ${user.createdAt ? `<p>📅 Joined: ${new Date(user.createdAt).toLocaleDateString()}</p>` : ''}
+                        ${isDeleted ? `<p style="color: #f44336;">❌ Account Deleted</p>` : ''}
+                    </div>
+                </div>
+                
+                <div class="user-management-controls">
+                    <label>✏️ Display Name:</label>
+                    <input type="text" class="user-display-name-input" data-user-id="${escapeHtml(user.id)}" 
+                           value="${escapeHtml(user.username)}" placeholder="Enter display name..." 
+                           ${isDeleted ? 'disabled' : ''}>
+                    
+                    <label>🏛️ House Assignment:</label>
+                    <select class="user-house-selector" data-user-id="${escapeHtml(user.id)}" ${isDeleted ? 'disabled' : ''}>
+                        <option value="">No House</option>
+                        <option value="sparta" ${user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
+                        <option value="athens" ${user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
+                        <option value="corinth" ${user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
+                        <option value="olympia" ${user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
+                        <option value="delfi" ${user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
+                    </select>
+                </div>
+                
+                <div class="user-stats">
+                    <span>📊 Total Goals: ${goalCount}</span>
+                    <span>🔄 Active: ${activeGoals}</span>
+                    <span>✅ Completed: ${completedGoals}</span>
+                </div>
+                
+                <div class="user-actions">
+                    ${!isDeleted ? `
+                        <button class="btn btn-danger-confirm remove-user-btn" data-user-id="${escapeHtml(user.id)}" 
+                                data-username="${escapeHtml(user.username)}">
+                            🗑️ Remove User
+                        </button>
+                    ` : `
+                        <button class="btn btn-secondary" disabled>
+                            ❌ User Deleted
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = `<div class="users-grid">${userCards.join('')}</div>`;
+}
+
+// User removal function
+async function removeUser(userId, username) {
+    // Check if admin name is provided
+    if (!adminState.adminName) {
+        showToast('Please enter your admin name in the header before removing users', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+        }
+        return;
+    }
+    
+    const confirmed = confirm(`⚠️ DANGER: Remove user "${username}"?\n\nThis will:\n- Mark their account as deleted\n- Keep their goals for historical purposes\n- This action CANNOT be undone\n\nAdmin: ${adminState.adminName}\n\nType the username to confirm deletion.`);
+    
+    if (!confirmed) return;
+    
+    // Ask for confirmation by typing username
+    const confirmUsername = prompt(`To confirm deletion, type the username exactly: "${username}"`);
+    if (confirmUsername !== username) {
+        showToast('Username confirmation failed. Deletion cancelled.', 'warning');
+        return;
+    }
+    
+    showLoading('Removing user...');
+    
+    try {
+        const response = await fetch('/api/remove-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId, adminName: adminState.adminName })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast(`User "${username}" removed successfully by ${adminState.adminName}`, 'success');
+            await logAdminAction('user_removal', `Removed user "${username}" (${userId})`, { userId, username });
+            loadUsers(); // Refresh users list
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to remove user - network error', 'error');
+    }
+}
+
+// Admin Logs Functions
+async function loadLogs() {
+    const container = document.getElementById('logsContainer');
+    container.innerHTML = '<div class="loading">Loading admin logs...</div>';
+    
+    try {
+        const typeFilter = document.getElementById('logTypeFilter')?.value || 'all';
+        const dateFilter = document.getElementById('logDateFilter')?.value || 'all';
+        
+        const params = new URLSearchParams();
+        if (typeFilter !== 'all') params.append('type', typeFilter);
+        if (dateFilter !== 'all') params.append('date', dateFilter);
+        
+        const response = await fetch(`/api/admin-logs?${params}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayLogs(data.logs || []);
+        } else {
+            container.innerHTML = `
+                <div class="no-data-message">
+                    <h3>Unable to load logs</h3>
+                    <p>${data.error || 'Unknown error occurred'}</p>
+                    <button class="btn btn-primary" onclick="loadLogs()">Try Again</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading logs:', error);
+        container.innerHTML = `
+            <div class="no-data-message">
+                <h3>Connection Error</h3>
+                <p>Unable to connect to the server. Please check your configuration.</p>
+                <button class="btn btn-primary" onclick="loadLogs()">Retry</button>
+            </div>
+        `;
+    }
+}
+
+function displayLogs(logs) {
+    const container = document.getElementById('logsContainer');
+    
+    if (!logs || logs.length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <div class="no-data-icon">📜</div>
+                <h3>No Logs Found</h3>
+                <p>No admin actions match the current filters.</p>
+                <button class="btn btn-secondary" onclick="loadLogs()">Refresh</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const logEntries = logs.map(log => `
+        <div class="log-entry">
+            <div class="log-header">
+                <div class="log-type ${log.type}">${getLogTypeDisplay(log.type)}</div>
+                <div class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</div>
+            </div>
+            <div class="log-details">${escapeHtml(log.description)}</div>
+            <div class="log-admin">👤 Admin: ${escapeHtml(log.adminName || log.adminEmail || 'Unknown')}</div>
+            ${log.details ? `<div class="log-admin">📋 Details: ${escapeHtml(JSON.stringify(log.details))}</div>` : ''}
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="logs-container">${logEntries}</div>`;
+}
+
+function getLogTypeDisplay(type) {
+    const types = {
+        'goal_invalidation': '🎯 Goal Invalidation',
+        'user_update': '👤 User Update',
+        'user_removal': '🗑️ User Removal',
+        'house_change': '🏛️ House Change'
+    };
+    return types[type] || '📝 Admin Action';
+}
+
+async function logAdminAction(type, description, details = {}) {
+    try {
+        await fetch('/api/log-admin-action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type,
+                description,
+                adminName: adminState.adminName,
+                details
+            })
+        });
+    } catch (error) {
+        console.warn('Failed to log admin action:', error);
+    }
+}
+
+async function exportLogs() {
+    try {
+        const typeFilter = document.getElementById('logTypeFilter')?.value || 'all';
+        const dateFilter = document.getElementById('logDateFilter')?.value || 'all';
+        
+        const params = new URLSearchParams();
+        if (typeFilter !== 'all') params.append('type', typeFilter);
+        if (dateFilter !== 'all') params.append('date', dateFilter);
+        params.append('export', 'csv');
+        
+        const response = await fetch(`/api/admin-logs?${params}`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `admin-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast('Logs exported successfully', 'success');
+        } else {
+            showToast('Failed to export logs', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to export logs', 'error');
     }
 }
 
