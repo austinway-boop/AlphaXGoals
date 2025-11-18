@@ -879,10 +879,10 @@ function displayUsers(users) {
                 <div class="user-header">
                     <div class="user-info">
                         <h4>${escapeHtml(user.username)}</h4>
-                        <p>📧 ${escapeHtml(user.email)}</p>
-                        <p>🏛️ House: ${getHouseDisplay(user.house)}</p>
-                        ${user.createdAt ? `<p>📅 Joined: ${new Date(user.createdAt).toLocaleDateString()}</p>` : ''}
-                        ${isDeleted ? `<p style="color: #f44336;">❌ Account Deleted</p>` : ''}
+                        <p><strong>📧 Email:</strong> ${escapeHtml(user.email)}</p>
+                        <p><strong>🏛️ House:</strong> ${getHouseDisplay(user.house)}</p>
+                        ${user.createdAt ? `<p><strong>📅 Joined:</strong> ${new Date(user.createdAt).toLocaleDateString()}</p>` : ''}
+                        ${isDeleted ? `<p style="color: var(--danger-color); font-weight: 600;">❌ Account Deleted</p>` : ''}
                     </div>
                 </div>
                 
@@ -904,9 +904,9 @@ function displayUsers(users) {
                 </div>
                 
                 <div class="user-stats">
-                    <span>📊 Total Goals: ${goalCount}</span>
-                    <span>🔄 Active: ${activeGoals}</span>
-                    <span>✅ Completed: ${completedGoals}</span>
+                    <span>Total Goals: ${goalCount}</span>
+                    <span>Active: ${activeGoals}</span>
+                    <span>Completed: ${completedGoals}</span>
                 </div>
                 
                 <div class="user-actions">
