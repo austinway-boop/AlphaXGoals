@@ -141,16 +141,14 @@
                     <div class="form-hint">Be specific and measurable. Goals should require at least 3 hours of work.</div>
                             </div>
                             
-                            <!-- Alpha X Project Section -->
-                            <div class="form-group" id="alphaXProjectGroup">
-                                <label for="alphaXProject">Alpha X Project</label>
-                                <input 
-                                    type="text" 
-                                    id="alphaXProject" 
-                                    placeholder="e.g., AI-powered study assistant, Climate change research platform..."
-                                    required
-                                >
-                                <div class="form-hint">What is your Alpha X project that this goal relates to?</div>
+                            <!-- Alpha X Project Display (Read-only) -->
+                            <div class="form-group" id="alphaXProjectDisplay">
+                                <label>Alpha X Project</label>
+                                <div class="project-display">
+                                    <span id="currentProject">Loading your project...</span>
+                                    <button type="button" class="btn-edit-project" onclick="editProject()">✏️ Edit</button>
+                                </div>
+                                <div class="form-hint">This goal will be validated against your Alpha X project</div>
                             </div>
 
                             <div class="form-actions">

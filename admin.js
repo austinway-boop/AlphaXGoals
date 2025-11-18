@@ -240,12 +240,12 @@ function displayGoals(goals) {
                                 <h5>🤖 AI Validation Analysis</h5>
                                 <div class="validation-scores-admin">
                                     <div class="score-row">
-                                        <span>Ambition: <strong class="${goal.validationData.ambitionScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/10</strong></span>
-                                        <span>Measurable: <strong class="${goal.validationData.measurableScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</strong></span>
-                                        <span>Relevance: <strong class="${goal.validationData.relevanceScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</strong></span>
+                                        <span>Ambition: <strong class="${goal.validationData.ambitionScore >= 4 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/5</strong></span>
+                                        <span>Measurable: <strong class="${goal.validationData.measurableScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</strong></span>
+                                        <span>Relevance: <strong class="${goal.validationData.relevanceScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</strong></span>
                                     </div>
                                     <div class="overall-score">
-                                        Overall: <strong class="${goal.validationData.overallScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</strong>
+                                        Overall: <strong class="${goal.validationData.overallScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</strong>
                                     </div>
                                 </div>
                                 <div class="time-analysis">

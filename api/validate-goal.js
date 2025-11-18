@@ -88,19 +88,19 @@ TIME ESTIMATION - BE SKEPTICAL:
 - Writing 500 words = 2-3 hours of research + writing
 - Simple tasks are NOT ambitious regardless of claimed time
 
-AMBITION STANDARDS (9/10 required):
-- Must push student significantly beyond comfort zone
-- Should involve substantial learning or skill development
-- Requires deep work, not busy work
-- Examples of INSUFFICIENT ambition: "send 3 emails", "write 200 words", "watch 2 videos"
-- Examples of SUFFICIENT ambition: "research and write 1000+ word analysis", "create comprehensive project plan", "conduct 5+ expert interviews"
+AMBITION STANDARDS (4/5 required):
+- Should challenge the student and promote growth
+- Involves meaningful learning or skill development
+- Requires focused work, not just busy work
+- Examples of INSUFFICIENT ambition: "send 2 emails", "write 100 words", "watch 1 video"
+- Examples of SUFFICIENT ambition: "write 500+ word analysis", "create detailed project plan", "conduct 3+ interviews"
 
-MEASURABILITY (9/10 required):
+MEASURABILITY (8/10 required):
 - Must have specific, quantifiable outcomes
 - Clear success criteria that can be objectively verified
 - No vague terms like "improve" or "better"
 
-RELEVANCE (9/10 required):
+RELEVANCE (8/10 required):
 - Must directly advance their Alpha X project
 - Should build specific skills or knowledge needed for their project
 - Not just tangentially related
@@ -110,7 +110,7 @@ Respond with a JSON object containing:
   "isValid": boolean,
   "hasQuestions": boolean,
   "questions": ["array of clarifying questions if needed"],
-  "ambitionScore": number (1-10),
+  "ambitionScore": number (1-5),
   "measurableScore": number (1-10),
   "relevanceScore": number (1-10),
   "overallScore": number (1-10),
@@ -120,7 +120,12 @@ Respond with a JSON object containing:
   "suggestions": ["specific ways to make goal more ambitious if needed"]
 }
 
-BE STRICT: Goals must achieve 9/10 in ALL categories to be valid. Reject goals that are not genuinely challenging.`;
+Score on these categories:
+- Ambition: How challenging and growth-oriented is this goal? (4/5 required to pass)
+- Measurable: How clearly defined and measurable are the success criteria? (8/10 required to pass)
+- Relevance: How relevant is this goal to their Alpha X project? (8/10 required to pass)
+
+Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevance to be valid. Overall score should be 8/10 minimum.`;
 
     console.log('Calling Claude API...');
 
@@ -173,13 +178,14 @@ BE STRICT: Goals must achieve 9/10 in ALL categories to be valid. Reject goals t
 
     // Ensure isValid is correctly set based on scoring requirements
     if (validation.ambitionScore && validation.measurableScore && validation.relevanceScore) {
-      const meetsRequirements = validation.ambitionScore >= 9 && 
-                               validation.measurableScore >= 9 && 
-                               validation.relevanceScore >= 9;
+      const meetsRequirements = validation.ambitionScore >= 4 && 
+                               validation.measurableScore >= 8 && 
+                               validation.relevanceScore >= 8 &&
+                               validation.overallScore >= 8;
       validation.isValid = meetsRequirements && !validation.hasQuestions;
       
       if (!meetsRequirements && validation.isValid !== false) {
-        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/10, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10. All categories must score 9/10 or higher.`;
+        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/5, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10, Overall ${validation.overallScore}/10. Requirements: Ambition 4/5+, Measurable 8/10+, Relevance 8/10+, Overall 8/10+.`;
       }
     }
 

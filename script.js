@@ -72,8 +72,6 @@ function setupEventListeners() {
     // Goal form
     document.getElementById('goalForm').addEventListener('submit', handleGoalSubmit);
     
-    // Alpha X project handler
-    document.getElementById('alphaXProject').addEventListener('input', handleAlphaXProjectChange);
     
     // Alpha X project setup form
     document.getElementById('alphaXSetupForm').addEventListener('submit', handleAlphaXSetup);
@@ -234,20 +232,61 @@ function showApp() {
     // Update welcome message
     document.getElementById('welcomeUser').textContent = `Welcome, ${appState.currentUser.username}!`;
     
-    // Auto-populate Alpha X project field if available
-    if (appState.userAlphaXProject) {
-        document.getElementById('alphaXProject').value = appState.userAlphaXProject;
-    }
+    // Display Alpha X project
+    updateProjectDisplay();
     
     // Reset goal form
     document.getElementById('goalForm').reset();
-    // Re-populate Alpha X project after reset
-    if (appState.userAlphaXProject) {
-        document.getElementById('alphaXProject').value = appState.userAlphaXProject;
-    }
     document.getElementById('validationResults').classList.add('hidden');
     document.getElementById('submitGoalBtn').disabled = true;
     appState.validationResult = null;
+}
+
+function updateProjectDisplay() {
+    const projectSpan = document.getElementById('currentProject');
+    if (appState.userAlphaXProject) {
+        projectSpan.textContent = appState.userAlphaXProject;
+    } else {
+        projectSpan.textContent = 'No project set - click edit to add one';
+        projectSpan.style.fontStyle = 'italic';
+        projectSpan.style.color = 'var(--text-secondary)';
+    }
+}
+
+function editProject() {
+    const newProject = prompt('Enter your Alpha X project description:', appState.userAlphaXProject || '');
+    if (newProject && newProject.trim() && newProject.trim() !== appState.userAlphaXProject) {
+        updateAlphaXProject(newProject.trim());
+    }
+}
+
+async function updateAlphaXProject(project) {
+    showLoading('Updating your Alpha X project...');
+    
+    try {
+        const response = await fetch('/api/update-alpha-x-project', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ alphaXProject: project })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.userAlphaXProject = project;
+            appState.currentUser.alphaXProject = project;
+            updateProjectDisplay();
+            showToast('Alpha X project updated successfully!', 'success');
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to update Alpha X project', 'error');
+    }
 }
 
 function showAlphaXModal() {
@@ -302,7 +341,7 @@ async function handleAlphaXSetup(e) {
 // Goal Management Functions
 async function validateGoal() {
     const goal = document.getElementById('goalInput').value.trim();
-    const alphaXProject = document.getElementById('alphaXProject').value.trim();
+    const alphaXProject = appState.userAlphaXProject;
     
     if (!goal) {
         showToast('Please enter a goal first', 'warning');
@@ -310,7 +349,8 @@ async function validateGoal() {
     }
     
     if (!alphaXProject) {
-        showToast('Please enter your Alpha X project', 'warning');
+        showToast('Please set your Alpha X project first', 'warning');
+        editProject();
         return;
     }
     
@@ -366,15 +406,19 @@ function displayValidationResults(validation) {
     const statusIcon = validation.isValid ? '✅' : '❌';
     const statusText = validation.isValid ? 'Goal Approved' : 'Needs Improvement';
     
-    const getScoreIcon = (score) => {
-        if (score >= 9) return '🟢';
-        if (score >= 7) return '🟡';
+    const getScoreIcon = (score, isAmbition = false) => {
+        const threshold = isAmbition ? 4 : 8;
+        const maxScore = isAmbition ? 5 : 10;
+        if (score >= threshold) return '🟢';
+        if (score >= (maxScore * 0.6)) return '🟡';
         return '🔴';
     };
     
-    const getScoreColor = (score) => {
-        if (score >= 9) return 'var(--success-color)';
-        if (score >= 7) return 'var(--warning-color)';
+    const getScoreColor = (score, isAmbition = false) => {
+        const threshold = isAmbition ? 4 : 8;
+        const maxScore = isAmbition ? 5 : 10;
+        if (score >= threshold) return 'var(--success-color)';
+        if (score >= (maxScore * 0.6)) return 'var(--warning-color)';
         return 'var(--danger-color)';
     };
     
@@ -385,11 +429,11 @@ function displayValidationResults(validation) {
         </div>
         
         <div class="validation-item">
-            <div class="validation-icon">${getScoreIcon(validation.ambitionScore || 0)}</div>
+            <div class="validation-icon">${getScoreIcon(validation.ambitionScore || 0, true)}</div>
             <div class="validation-content">
                 <h4>Ambition Score</h4>
-                <p><strong style="color: ${getScoreColor(validation.ambitionScore || 0)}">${validation.ambitionScore || 0}/10</strong> - How challenging and growth-oriented is this goal?</p>
-                <p><em>Requirement: 9/10 to pass</em></p>
+                <p><strong style="color: ${getScoreColor(validation.ambitionScore || 0, true)}">${validation.ambitionScore || 0}/5</strong> - How challenging and growth-oriented is this goal?</p>
+                <p><em>Requirement: 4/5 to pass</em></p>
             </div>
         </div>
         
@@ -398,7 +442,7 @@ function displayValidationResults(validation) {
             <div class="validation-content">
                 <h4>Measurable Score</h4>
                 <p><strong style="color: ${getScoreColor(validation.measurableScore || 0)}">${validation.measurableScore || 0}/10</strong> - How clearly defined and measurable are the success criteria?</p>
-                <p><em>Requirement: 9/10 to pass</em></p>
+                <p><em>Requirement: 8/10 to pass</em></p>
             </div>
         </div>
         
@@ -407,7 +451,7 @@ function displayValidationResults(validation) {
             <div class="validation-content">
                 <h4>Relevance Score</h4>
                 <p><strong style="color: ${getScoreColor(validation.relevanceScore || 0)}">${validation.relevanceScore || 0}/10</strong> - How relevant is this goal to your Alpha X project?</p>
-                <p><em>Requirement: 9/10 to pass</em></p>
+                <p><em>Requirement: 8/10 to pass</em></p>
             </div>
         </div>
         
@@ -513,7 +557,7 @@ async function submitAnswers() {
     }
     
     const goal = document.getElementById('goalInput').value.trim();
-    const alphaXProject = document.getElementById('alphaXProject').value.trim();
+    const alphaXProject = appState.userAlphaXProject;
     
     showLoading('Processing your answers...');
     
@@ -572,7 +616,7 @@ async function handleGoalSubmit(e) {
     }
     
     const goal = document.getElementById('goalInput').value;
-    const alphaXProject = document.getElementById('alphaXProject').value;
+    const alphaXProject = appState.userAlphaXProject;
     
     const requestBody = {
         goal,
@@ -609,8 +653,7 @@ async function handleGoalSubmit(e) {
             appState.aiQuestions = null;
             appState.aiAnswers = null;
             
-            // Reset alpha X project field
-            document.getElementById('alphaXProject').value = '';
+            // Alpha X project persists, no need to reset
             
             // Reload goals
             loadGoals();
@@ -702,9 +745,9 @@ function displayGoals(goals) {
                 
                 ${goal.validationData ? `
                     <div class="scores-minimal">
-                        <span class="score-mini ${goal.validationData.ambitionScore >= 9 ? 'pass' : 'fail'}">${goal.validationData.ambitionScore || 0}</span>
-                        <span class="score-mini ${goal.validationData.measurableScore >= 9 ? 'pass' : 'fail'}">${goal.validationData.measurableScore || 0}</span>
-                        <span class="score-mini ${goal.validationData.relevanceScore >= 9 ? 'pass' : 'fail'}">${goal.validationData.relevanceScore || 0}</span>
+                        <span class="score-mini ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}" title="Ambition: ${goal.validationData.ambitionScore || 0}/5">${goal.validationData.ambitionScore || 0}</span>
+                        <span class="score-mini ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}" title="Measurable: ${goal.validationData.measurableScore || 0}/10">${goal.validationData.measurableScore || 0}</span>
+                        <span class="score-mini ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}" title="Relevance: ${goal.validationData.relevanceScore || 0}/10">${goal.validationData.relevanceScore || 0}</span>
                     </div>
                 ` : ''}
             </div>
@@ -735,14 +778,6 @@ async function completeGoal(goalId) {
     }
 }
 
-// Alpha X project change handler
-function handleAlphaXProjectChange(e) {
-    const project = e.target.value.trim();
-    
-    if (project.length > 0 && project.length < 10) {
-        showToast('Please provide more details about your Alpha X project', 'warning');
-    }
-}
 
 // Image modal for screenshots
 function openImageModal(imageSrc) {
