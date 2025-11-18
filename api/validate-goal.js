@@ -70,13 +70,40 @@ export default async function handler(req, res) {
 
     console.log('API key present, sending to Claude...');
 
-    // Simple prompt without Redis dependencies
-    const prompt = `You are a goal validation assistant for Alpha X students. Analyze the following goal and respond with JSON only.
+    // Critical validation prompt
+    const prompt = `You are a STRICT goal validation assistant for Alpha X students. Be highly critical and maintain rigorous standards. Analyze the following goal and respond with JSON only.
 
 Goal: "${goal}"
 Alpha X Project: "${alphaXProject}"
 
 Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts. For brainlift goals, adding 500 words minimum is required as it should take at least 3 solid hours of work.
+
+CRITICAL EVALUATION REQUIREMENTS:
+
+TIME ESTIMATION - BE SKEPTICAL:
+- Don't trust student time estimates - calculate realistic time yourself
+- 3 emails = 30 minutes max (NOT ambitious enough)
+- 5-10 emails = 1-2 hours (borderline)
+- 15+ personalized emails = 3+ hours (acceptable)
+- Writing 500 words = 2-3 hours of research + writing
+- Simple tasks are NOT ambitious regardless of claimed time
+
+AMBITION STANDARDS (9/10 required):
+- Must push student significantly beyond comfort zone
+- Should involve substantial learning or skill development
+- Requires deep work, not busy work
+- Examples of INSUFFICIENT ambition: "send 3 emails", "write 200 words", "watch 2 videos"
+- Examples of SUFFICIENT ambition: "research and write 1000+ word analysis", "create comprehensive project plan", "conduct 5+ expert interviews"
+
+MEASURABILITY (9/10 required):
+- Must have specific, quantifiable outcomes
+- Clear success criteria that can be objectively verified
+- No vague terms like "improve" or "better"
+
+RELEVANCE (9/10 required):
+- Must directly advance their Alpha X project
+- Should build specific skills or knowledge needed for their project
+- Not just tangentially related
 
 Respond with a JSON object containing:
 {
@@ -87,17 +114,13 @@ Respond with a JSON object containing:
   "measurableScore": number (1-10),
   "relevanceScore": number (1-10),
   "overallScore": number (1-10),
-  "feedback": "positive and encouraging explanation",
-  "estimatedHours": number,
-  "suggestions": ["helpful suggestions if needed"]
+  "feedback": "honest, critical assessment explaining why scores were given",
+  "estimatedHours": number (YOUR realistic estimate, not student's claim),
+  "timeReasoning": "explain your time calculation",
+  "suggestions": ["specific ways to make goal more ambitious if needed"]
 }
 
-Score on these categories:
-- Ambition: How challenging and growth-oriented is this goal? (9/10 required to pass)
-- Measurable: How clearly defined and measurable are the success criteria? (9/10 required to pass)
-- Relevance: How relevant is this goal to their Alpha X project? (9/10 required to pass)
-
-Goals must achieve 9/10 in ALL categories to be valid. Goals should require at least 3 solid hours of work.`;
+BE STRICT: Goals must achieve 9/10 in ALL categories to be valid. Reject goals that are not genuinely challenging.`;
 
     console.log('Calling Claude API...');
 

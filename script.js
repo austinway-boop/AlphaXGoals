@@ -416,6 +416,7 @@ function displayValidationResults(validation) {
             <div class="validation-content">
                 <h4>Time Estimate</h4>
                 <p><strong>${validation.estimatedHours || 0} hours</strong> of work required</p>
+                ${validation.timeReasoning ? `<p class="time-reasoning"><em>${validation.timeReasoning}</em></p>` : ''}
                 <p><em>Minimum: 3 hours required</em></p>
             </div>
         </div>

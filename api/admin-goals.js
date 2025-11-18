@@ -42,7 +42,8 @@ export default async function handler(req, res) {
       allUsers.forEach(user => {
         userMap[user.id] = {
           username: user.username,
-          email: user.email
+          email: user.email,
+          house: user.house
         };
       });
       
@@ -52,23 +53,65 @@ export default async function handler(req, res) {
         user: userMap[goal.userId] || { username: 'Unknown', email: 'Unknown' }
       }));
       
-      // Filter by date if requested (today's goals)
-      const { date, username, email } = req.query || {};
+      // Helper function for CST date filtering
+      function getCSTDateString(date = new Date()) {
+        const cstDate = new Date(date.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+        return cstDate.toISOString().split('T')[0];
+      }
+      
+      // Filter goals based on query parameters
+      const { date, house, username, email } = req.query || {};
       let filteredGoals = enrichedGoals;
       
+      // Date filtering with CST timezone
       if (date === 'today') {
-        const today = new Date().toISOString().split('T')[0];
+        const todayCST = getCSTDateString();
+        filteredGoals = filteredGoals.filter(goal => {
+          if (!goal.createdAt) return false;
+          const goalDateCST = getCSTDateString(new Date(goal.createdAt));
+          return goalDateCST === todayCST;
+        });
+      } else if (date === 'yesterday') {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayCST = getCSTDateString(yesterday);
+        filteredGoals = filteredGoals.filter(goal => {
+          if (!goal.createdAt) return false;
+          const goalDateCST = getCSTDateString(new Date(goal.createdAt));
+          return goalDateCST === yesterdayCST;
+        });
+      } else if (date === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
         filteredGoals = filteredGoals.filter(goal => 
-          goal.createdAt && goal.createdAt.startsWith(today)
+          goal.createdAt && new Date(goal.createdAt) >= weekAgo
+        );
+      } else if (date === 'month') {
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        filteredGoals = filteredGoals.filter(goal => 
+          goal.createdAt && new Date(goal.createdAt) >= monthAgo
         );
       }
       
+      // House filtering
+      if (house && house !== 'all') {
+        filteredGoals = filteredGoals.filter(goal => {
+          if (house === 'none') {
+            return !goal.user.house;
+          }
+          return goal.user.house === house;
+        });
+      }
+      
+      // Username filtering
       if (username) {
         filteredGoals = filteredGoals.filter(goal => 
           goal.user.username.toLowerCase().includes(username.toLowerCase())
         );
       }
       
+      // Email filtering
       if (email) {
         filteredGoals = filteredGoals.filter(goal => 
           goal.user.email.toLowerCase().includes(email.toLowerCase())

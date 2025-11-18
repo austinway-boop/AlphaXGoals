@@ -88,6 +88,29 @@ export async function updateUser(userId, updateData) {
   return { id: userId, ...userWithoutPassword };
 }
 
+export async function getGoalById(goalId) {
+  const client = await getRedisClient();
+  const goal = await client.hGetAll(goalId);
+  
+  if (Object.keys(goal).length === 0) {
+    return null;
+  }
+  
+  // Parse JSON fields back to objects
+  const parsedGoal = { ...goal };
+  ['aiQuestions', 'aiAnswers', 'validationData'].forEach(field => {
+    if (parsedGoal[field]) {
+      try {
+        parsedGoal[field] = JSON.parse(parsedGoal[field]);
+      } catch (e) {
+        // Keep as string if parsing fails
+      }
+    }
+  });
+  
+  return { id: goalId, ...parsedGoal };
+}
+
 // Helper functions for goal management
 export async function createGoal(goalData) {
   try {

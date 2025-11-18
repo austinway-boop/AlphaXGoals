@@ -144,11 +144,15 @@ async function loadGoals() {
     try {
         const params = new URLSearchParams();
         const dateFilter = document.getElementById('dateFilter').value;
+        const houseFilter = document.getElementById('houseFilter').value;
         const usernameFilter = document.getElementById('usernameFilter').value;
         const emailFilter = document.getElementById('emailFilter').value;
         
         if (dateFilter !== 'all') {
             params.append('date', dateFilter);
+        }
+        if (houseFilter !== 'all') {
+            params.append('house', houseFilter);
         }
         if (usernameFilter) {
             params.append('username', usernameFilter);
@@ -191,20 +195,62 @@ function displayGoals(goals) {
                 <div class="admin-goal-card">
                     <div class="goal-user-info">
                         <div class="user-details">
-                            <strong>👤 ${escapeHtml(goal.user.username)}</strong><br>
+                            <strong>👤 ${escapeHtml(goal.user.username)}</strong>
+                            <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span><br>
                             <small>📧 ${escapeHtml(goal.user.email)}</small>
+                            <div class="house-selector">
+                                <select onchange="updateUserHouse('${goal.user.id}', this.value)" style="font-size: 0.8rem; padding: 0.25rem;">
+                                    <option value="">No House</option>
+                                    <option value="gryffindor" ${goal.user.house === 'gryffindor' ? 'selected' : ''}>🦁 Gryffindor</option>
+                                    <option value="hufflepuff" ${goal.user.house === 'hufflepuff' ? 'selected' : ''}>🦡 Hufflepuff</option>
+                                    <option value="ravenclaw" ${goal.user.house === 'ravenclaw' ? 'selected' : ''}>🦅 Ravenclaw</option>
+                                    <option value="slytherin" ${goal.user.house === 'slytherin' ? 'selected' : ''}>🐍 Slytherin</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="goal-status ${goal.status}">${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}</div>
                     </div>
                     
                     <div class="goal-content">
                         <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                        ${goal.alphaXProject ? `<p class="alpha-project"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                         
                         <div class="goal-meta">
                             <span>📅 ${new Date(goal.createdAt).toLocaleDateString()}</span>
-                            ${goal.xpAmount ? `<span>⭐ ${goal.xpAmount} XP</span>` : ''}
                             ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
                         </div>
+                        
+                        ${goal.validationData ? `
+                            <div class="admin-validation-summary">
+                                <h5>🤖 AI Validation Analysis</h5>
+                                <div class="validation-scores-admin">
+                                    <div class="score-row">
+                                        <span>Ambition: <strong class="${goal.validationData.ambitionScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/10</strong></span>
+                                        <span>Measurable: <strong class="${goal.validationData.measurableScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</strong></span>
+                                        <span>Relevance: <strong class="${goal.validationData.relevanceScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</strong></span>
+                                    </div>
+                                    <div class="overall-score">
+                                        Overall: <strong class="${goal.validationData.overallScore >= 9 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</strong>
+                                    </div>
+                                </div>
+                                <div class="time-analysis">
+                                    <p><strong>⏱️ Time Estimate:</strong> ${goal.validationData.estimatedHours || 0} hours</p>
+                                    ${goal.validationData.timeReasoning ? `<p class="time-reasoning"><em>${escapeHtml(goal.validationData.timeReasoning)}</em></p>` : ''}
+                                </div>
+                                <div class="ai-feedback">
+                                    <p><strong>💬 AI Feedback:</strong></p>
+                                    <p class="feedback-text">"${escapeHtml(goal.validationData.feedback || 'No feedback available')}"</p>
+                                </div>
+                                ${goal.validationData.suggestions && goal.validationData.suggestions.length > 0 ? `
+                                    <div class="ai-suggestions">
+                                        <p><strong>💡 Suggestions:</strong></p>
+                                        <ul>
+                                            ${goal.validationData.suggestions.map(suggestion => `<li>${escapeHtml(suggestion)}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                         
                         ${goal.invalidatedAt ? `
                             <div style="margin-top: 1rem; padding: 0.75rem; background: #ffebee; border-radius: 0.5rem; border: 1px solid #f44336;">
@@ -240,18 +286,28 @@ function displayGoals(goals) {
                     </div>
                     
                     ${goal.status === 'active' ? `
-                        <div class="goal-actions">
-                            <button class="btn btn-danger" onclick="showInvalidationForm('${goal.id}')">
-                                <span class="btn-icon">❌</span>
-                                Invalidate Goal
-                            </button>
+                        <div class="quick-invalidate">
+                            <h6>⚡ Quick Invalidate</h6>
+                            <div class="invalidation-reasons">
+                                <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not ambitious enough - too easy')">Not Ambitious</button>
+                                <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not measurable - unclear success criteria')">Not Measurable</button>
+                                <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not relevant to Alpha X project')">Not Relevant</button>
+                                <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Insufficient time commitment - less than 3 hours')">Too Short</button>
+                                <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Inappropriate or off-topic content')">Inappropriate</button>
+                            </div>
+                            <div class="goal-actions">
+                                <button class="btn btn-danger btn-sm" onclick="showInvalidationForm('${goal.id}')">
+                                    <span class="btn-icon">✏️</span>
+                                    Custom Reason
+                                </button>
+                            </div>
                         </div>
                         <div id="invalidationForm_${goal.id}" class="invalidation-form hidden">
-                            <label for="reason_${goal.id}">Reason for invalidation:</label>
-                            <textarea id="reason_${goal.id}" style="width: 100%; margin: 0.5rem 0; padding: 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border);" rows="3" placeholder="Enter reason for invalidation..."></textarea>
+                            <label for="reason_${goal.id}">Custom invalidation reason:</label>
+                            <textarea id="reason_${goal.id}" style="width: 100%; margin: 0.5rem 0; padding: 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border-color);" rows="3" placeholder="Enter detailed reason for invalidation..."></textarea>
                             <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-danger" onclick="invalidateGoal('${goal.id}')">Confirm Invalidation</button>
-                                <button class="btn btn-secondary" onclick="hideInvalidationForm('${goal.id}')">Cancel</button>
+                                <button class="btn btn-danger btn-sm" onclick="invalidateGoal('${goal.id}')">Confirm Invalidation</button>
+                                <button class="btn btn-secondary btn-sm" onclick="hideInvalidationForm('${goal.id}')">Cancel</button>
                             </div>
                         </div>
                     ` : ''}
@@ -261,16 +317,120 @@ function displayGoals(goals) {
     `;
 }
 
+// Time view management
+let currentTimeView = 'daily';
+
+function setTimeView(view) {
+    currentTimeView = view;
+    
+    // Update active tab
+    document.querySelectorAll('.view-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update date filter based on view
+    const dateFilter = document.getElementById('dateFilter');
+    if (view === 'daily') {
+        dateFilter.value = 'today';
+    } else if (view === 'weekly') {
+        dateFilter.value = 'week';
+    } else if (view === 'monthly') {
+        dateFilter.value = 'month';
+    }
+    
+    loadGoals();
+}
+
 function applyFilters() {
     loadGoals();
 }
 
 function clearFilters() {
     document.getElementById('dateFilter').value = 'today';
+    document.getElementById('houseFilter').value = 'all';
     document.getElementById('usernameFilter').value = '';
     document.getElementById('emailFilter').value = '';
     loadGoals();
 }
+
+// House management functions
+function getHouseDisplay(house) {
+    const houses = {
+        'gryffindor': '🦁 Gryffindor',
+        'hufflepuff': '🦡 Hufflepuff',
+        'ravenclaw': '🦅 Ravenclaw',
+        'slytherin': '🐍 Slytherin'
+    };
+    return houses[house] || '🏠 No House';
+}
+
+async function updateUserHouse(userId, house) {
+    try {
+        const response = await fetch('/api/update-user-house', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId, house })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showToast(`User house updated to ${getHouseDisplay(house)}`, 'success');
+            loadGoals(); // Refresh to show updated house
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to update user house', 'error');
+    }
+}
+
+// Enhanced invalidation functions
+async function quickInvalidate(goalId, reason) {
+    if (!confirm(`Invalidate this goal?\n\nReason: ${reason}`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/invalidate-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ goalId, reason })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showToast('Goal invalidated successfully', 'success');
+            loadGoals();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to invalidate goal', 'error');
+    }
+}
+
+// CST timezone helper functions
+function getCSTDate(date = new Date()) {
+    return new Date(date.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+}
+
+function getCSTDateString(date = new Date()) {
+    const cstDate = getCSTDate(date);
+    return cstDate.toISOString().split('T')[0];
+}
+
+function isCSTAfterMidnight() {
+    const now = new Date();
+    const cstNow = getCSTDate(now);
+    const cstMidnight = new Date(cstNow);
+    cstMidnight.setHours(0, 0, 0, 0);
+    
+    return cstNow.getTime() !== cstMidnight.getTime() && cstNow.getHours() >= 0;
+}
+
 
 // Goal Invalidation Functions
 function showInvalidationForm(goalId) {

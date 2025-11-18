@@ -1,5 +1,5 @@
 // Vercel serverless function for completing goals
-import { updateGoal } from './redis.js';
+import { updateGoal, getGoalById } from './redis.js';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -43,6 +43,49 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check if it's after midnight CST - prevent goal completion
+    const now = new Date();
+    const cstNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    
+    // Get the goal to check its creation date
+    const goal = await getGoalById(goalId);
+    if (!goal) {
+      return res.status(404).json({ success: false, error: 'Goal not found' });
+    }
+    
+    // Check if the goal belongs to the user
+    if (goal.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    
+    // Check if goal was created today (CST)
+    const goalCreatedDate = new Date(goal.createdAt);
+    const goalCreatedCST = new Date(goalCreatedDate.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    
+    // Get CST midnight for today
+    const cstMidnight = new Date(cstNow);
+    cstMidnight.setHours(0, 0, 0, 0);
+    
+    // Check if the goal was created today and if it's still the same day in CST
+    const goalCreatedTodayCST = goalCreatedCST.toDateString() === cstNow.toDateString();
+    
+    if (!goalCreatedTodayCST) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Goals can only be completed on the same day they were created (CST timezone)' 
+      });
+    }
+    
+    // Check if it's after midnight CST for goals created today
+    if (cstNow.getHours() >= 0 && cstNow < cstMidnight.setDate(cstMidnight.getDate() + 1)) {
+      // It's still the same day, allow completion
+    } else if (goalCreatedTodayCST && cstNow.getHours() >= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Goals cannot be completed after midnight CST. You can complete goals until 11:59 PM CST on the day they were created.' 
+      });
+    }
+
     // Update goal status to completed
     const updatedGoal = await updateGoal(goalId, {
       status: 'completed',
