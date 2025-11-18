@@ -513,15 +513,36 @@ function displayGoals(goals) {
                     
                     ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                     
-                    ${goal.screenshotData ? `
-                        <div class="goal-screenshot">
-                            <h6>📷 Screenshot Proof</h6>
-                            <div class="screenshot-container">
-                                <img src="${goal.screenshotData}" alt="Goal completion screenshot" 
-                                     onclick="openImageModal('${goal.screenshotData}')" 
-                                     style="max-width: 200px; max-height: 150px; cursor: pointer; border-radius: 0.5rem; border: 2px solid var(--border-color);">
-                                <p class="screenshot-hint">Click to view full size</p>
-                            </div>
+                    ${(goal.screenshotDataArray || goal.textProof) ? `
+                        <div class="goal-proof-section">
+                            <h6>📋 Completion Proof</h6>
+                            
+                            ${goal.textProof ? `
+                                <div class="proof-item">
+                                    <h7>📝 Description (${goal.textProof.length} characters)</h7>
+                                    <div class="text-proof-display">
+                                        <p class="text-proof-content">${escapeHtml(goal.textProof)}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${goal.screenshotDataArray ? `
+                                <div class="proof-item">
+                                    <h7>📷 Screenshots (${getScreenshotCount(goal.screenshotDataArray)} images)</h7>
+                                    <div class="admin-screenshots-grid">
+                                        ${renderScreenshots(goal.screenshotDataArray)}
+                                    </div>
+                                </div>
+                            ` : goal.screenshotData ? `
+                                <div class="proof-item">
+                                    <h7>📷 Screenshot</h7>
+                                    <div class="admin-screenshots-grid">
+                                        <img src="${goal.screenshotData}" alt="Completion proof" 
+                                             onclick="openImageModal('${goal.screenshotData}')" 
+                                             class="admin-screenshot">
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
                     
@@ -1860,9 +1881,57 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// Utility function
+// Utility functions
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function getScreenshotCount(screenshotDataArray) {
+    try {
+        if (typeof screenshotDataArray === 'string') {
+            const parsed = JSON.parse(screenshotDataArray);
+            return Array.isArray(parsed) ? parsed.length : 1;
+        }
+        return Array.isArray(screenshotDataArray) ? screenshotDataArray.length : 1;
+    } catch (e) {
+        return 1;
+    }
+}
+
+function renderScreenshots(screenshotDataArray) {
+    try {
+        let screenshots;
+        if (typeof screenshotDataArray === 'string') {
+            screenshots = JSON.parse(screenshotDataArray);
+        } else if (Array.isArray(screenshotDataArray)) {
+            screenshots = screenshotDataArray;
+        } else {
+            return '<p class="error-message">Invalid screenshot data</p>';
+        }
+        
+        if (!Array.isArray(screenshots)) {
+            return '<p class="error-message">Screenshot data is not an array</p>';
+        }
+        
+        return screenshots.map((screenshot, index) => {
+            const imageData = screenshot.data || screenshot;
+            const filename = screenshot.filename || `Image ${index + 1}`;
+            
+            return `
+                <div class="screenshot-item">
+                    <img src="${imageData}" alt="Completion proof ${index + 1}" 
+                         onclick="openImageModal('${imageData}')" 
+                         class="admin-screenshot"
+                         title="${escapeHtml(filename)}">
+                    <p class="screenshot-label">${escapeHtml(filename)}</p>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error parsing screenshots:', error);
+        return '<p class="error-message">Error loading screenshots</p>';
+    }
 }

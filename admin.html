@@ -766,8 +766,8 @@
             margin-top: 0.5rem;
         }
         
-        /* Goal screenshot display */
-        .goal-screenshot {
+        /* Goal proof display in admin panel */
+        .goal-proof-section {
             margin: 1rem 0;
             padding: 1rem;
             background: var(--surface-light);
@@ -775,29 +775,78 @@
             border: 1px solid var(--border-color);
         }
         
-        .goal-screenshot h6 {
-            margin-bottom: 0.5rem;
+        .goal-proof-section h6 {
+            margin-bottom: 1rem;
             color: var(--text-primary);
             font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
         }
         
-        .screenshot-container {
+        .proof-item {
+            margin-bottom: 1.5rem;
+        }
+        
+        .proof-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .proof-item h7 {
+            display: block;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .text-proof-display {
+            background: var(--background);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        
+        .text-proof-content {
+            margin: 0;
+            color: var(--text-primary);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+        
+        .admin-screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+        
+        .screenshot-item {
             text-align: center;
         }
         
-        .screenshot-container img {
+        .admin-screenshot {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
             transition: all 0.3s ease;
         }
         
-        .screenshot-container img:hover {
+        .admin-screenshot:hover {
             transform: scale(1.05);
-            border-color: var(--primary-color) !important;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
-        .screenshot-hint {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
+        .screenshot-label {
             margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            word-break: break-word;
         }
         
         /* Goal editing functionality */
