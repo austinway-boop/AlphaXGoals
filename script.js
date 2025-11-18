@@ -30,12 +30,12 @@ function resetFileUploadDisplay() {
 }
 
 // File upload functions for goal completion
-function handleCompletionFileUpload(goalId) {
-    const fileInput = document.getElementById(`completionScreenshot_${goalId}`);
-    // Escape the goalId for CSS selector (replace colon with escaped version)
-    const escapedGoalId = goalId.replace(/:/g, '\\:');
-    const display = document.querySelector(`#completionModal_${escapedGoalId} .file-upload-display`);
+function handleCompletionFileUpload() {
+    const fileInput = document.getElementById('completionScreenshot');
+    const display = document.querySelector('#screenshotTab .file-upload-display');
     const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
+    const preview = document.getElementById('screenshotPreview');
+    const previewImg = document.getElementById('screenshotPreviewImg');
     
     if (!fileInput) return;
     
