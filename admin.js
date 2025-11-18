@@ -462,139 +462,145 @@ function displayGoals(goals) {
         ` : '';
         
         return `
-            <div class="admin-goal-card">
+            <div class="admin-goal-card" onclick="toggleGoalDetails('${escapeHtml(goal.id)}')">
                 <div class="goal-header-simple">
                     <div class="user-info-simple">
                         <strong>👤 ${escapeHtml(goal.user.username)}</strong>
                         <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span>
                         <div class="goal-status ${goal.status}">${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}</div>
                     </div>
-                </div>
-                
-                <div class="user-management">
-                    <div class="user-name-section">
-                        <div class="name-display">
-                            <label>✏️ Display Name:</label>
-                            <div class="name-display-content">
-                                <span class="current-name">${escapeHtml(goal.user.username)}</span>
-                                <button class="edit-name-btn" data-user-id="${escapeHtml(goal.userId)}" title="Edit display name">✏️</button>
-                            </div>
-                        </div>
-                        <div class="name-editor hidden" id="nameEditor_${escapeHtml(goal.userId)}">
-                            <input type="text" class="inline-name-input" data-user-id="${escapeHtml(goal.userId)}" 
-                                   value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
-                            <div class="name-editor-actions">
-                                <button class="save-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="saveNameEdit('${escapeHtml(goal.userId)}')" title="Save">✅</button>
-                                <button class="cancel-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="cancelNameEdit('${escapeHtml(goal.userId)}')" title="Cancel">❌</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Fallback: Keep the old input for debounced updates -->
-                    <div class="fallback-input hidden">
-                        <input type="text" class="display-name-input" data-user-id="${escapeHtml(goal.userId)}" value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
+                    <div class="expand-indicator">
+                        <span class="expand-arrow" id="arrow-${escapeHtml(goal.id)}">▼</span>
+                        <span>Click to ${goal.status === 'completed' ? 'view proof' : 'manage'}</span>
                     </div>
                 </div>
                 
-                <div class="goal-content-simple">
-                    <div class="goal-text-section">
-                        <div class="goal-display" id="goalDisplay_${escapeHtml(goal.id)}">
-                            <h4>🎯 ${escapeHtml(goal.goal)}</h4>
-                            <button class="edit-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Edit goal">✏️</button>
-                        </div>
-                        <div class="goal-editor hidden" id="goalEditor_${escapeHtml(goal.id)}">
-                            <textarea class="goal-edit-input" data-goal-id="${escapeHtml(goal.id)}" rows="3">${escapeHtml(goal.goal)}</textarea>
-                            <div class="goal-editor-actions">
-                                <button class="save-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Save">✅</button>
-                                <button class="cancel-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Cancel">❌</button>
+                <div class="goal-title-preview">
+                    <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                    ${goal.alphaXProject ? `<p class="alpha-project-preview">🚀 ${escapeHtml(goal.alphaXProject)}</p>` : ''}
+                </div>
+                
+                <div class="goal-details-section hidden" id="details-${escapeHtml(goal.id)}" onclick="event.stopPropagation()">
+                    <div class="user-management">
+                        <div class="user-name-section">
+                            <div class="name-display">
+                                <label>✏️ Display Name:</label>
+                                <div class="name-display-content">
+                                    <span class="current-name">${escapeHtml(goal.user.username)}</span>
+                                    <button class="edit-name-btn" data-user-id="${escapeHtml(goal.userId)}" title="Edit display name">✏️</button>
+                                </div>
+                            </div>
+                            <div class="name-editor hidden" id="nameEditor_${escapeHtml(goal.userId)}">
+                                <input type="text" class="inline-name-input" data-user-id="${escapeHtml(goal.userId)}" 
+                                       value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
+                                <div class="name-editor-actions">
+                                    <button class="save-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="saveNameEdit('${escapeHtml(goal.userId)}')" title="Save">✅</button>
+                                    <button class="cancel-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="cancelNameEdit('${escapeHtml(goal.userId)}')" title="Cancel">❌</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
+                    <div class="goal-content-simple">
+                        <div class="goal-text-section">
+                            <div class="goal-display" id="goalDisplay_${escapeHtml(goal.id)}">
+                                <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                                <button class="edit-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Edit goal">✏️</button>
+                            </div>
+                            <div class="goal-editor hidden" id="goalEditor_${escapeHtml(goal.id)}">
+                                <textarea class="goal-edit-input" data-goal-id="${escapeHtml(goal.id)}" rows="3">${escapeHtml(goal.goal)}</textarea>
+                                <div class="goal-editor-actions">
+                                    <button class="save-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Save">✅</button>
+                                    <button class="cancel-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Cancel">❌</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
+                        
+                        ${(goal.screenshotDataArray || goal.textProof) ? `
+                            <div class="goal-proof-section">
+                                <h6>📋 Completion Proof</h6>
+                                
+                                ${goal.textProof ? `
+                                    <div class="proof-item">
+                                        <h7>📝 Description (${goal.textProof.length} characters)</h7>
+                                        <div class="text-proof-display">
+                                            <p class="text-proof-content">${escapeHtml(goal.textProof)}</p>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                ${goal.screenshotDataArray ? `
+                                    <div class="proof-item">
+                                        <h7>📷 Screenshots (${getScreenshotCount(goal.screenshotDataArray)} images)</h7>
+                                        <div class="admin-screenshots-grid">
+                                            ${renderScreenshots(goal.screenshotDataArray)}
+                                        </div>
+                                    </div>
+                                ` : goal.screenshotData ? `
+                                    <div class="proof-item">
+                                        <h7>📷 Screenshot</h7>
+                                        <div class="admin-screenshots-grid">
+                                            <img src="${goal.screenshotData}" alt="Completion proof" 
+                                                 onclick="openImageModal('${goal.screenshotData}')" 
+                                                 class="admin-screenshot">
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="goal-dates">
+                            <span>📅 Created: ${new Date(goal.createdAt).toLocaleDateString()}</span>
+                            ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
+                            ${goal.invalidatedAt ? `<span class="invalidation-date">❌ Invalidated: ${new Date(goal.invalidatedAt).toLocaleDateString()}</span>` : ''}
+                            ${goal.lastEditedBy ? `<span class="last-edited">✏️ Edited by ${escapeHtml(goal.lastEditedBy)}</span>` : ''}
+                        </div>
+                    </div>
                     
-                    ${(goal.screenshotDataArray || goal.textProof) ? `
-                        <div class="goal-proof-section">
-                            <h6>📋 Completion Proof</h6>
-                            
-                            ${goal.textProof ? `
-                                <div class="proof-item">
-                                    <h7>📝 Description (${goal.textProof.length} characters)</h7>
-                                    <div class="text-proof-display">
-                                        <p class="text-proof-content">${escapeHtml(goal.textProof)}</p>
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            ${goal.screenshotDataArray ? `
-                                <div class="proof-item">
-                                    <h7>📷 Screenshots (${getScreenshotCount(goal.screenshotDataArray)} images)</h7>
-                                    <div class="admin-screenshots-grid">
-                                        ${renderScreenshots(goal.screenshotDataArray)}
-                                    </div>
-                                </div>
-                            ` : goal.screenshotData ? `
-                                <div class="proof-item">
-                                    <h7>📷 Screenshot</h7>
-                                    <div class="admin-screenshots-grid">
-                                        <img src="${goal.screenshotData}" alt="Completion proof" 
-                                             onclick="openImageModal('${goal.screenshotData}')" 
-                                             class="admin-screenshot">
-                                    </div>
-                                </div>
-                            ` : ''}
+                    ${goal.status === 'invalidated' && goal.invalidationReason ? `
+                        <div class="invalidation-history">
+                            <h6>📋 Invalidation Details</h6>
+                            <div class="invalidation-info">
+                                <p><strong>Reason:</strong> ${escapeHtml(goal.invalidationReason)}</p>
+                                ${goal.invalidatedBy ? `<p><strong>Admin:</strong> ${escapeHtml(goal.invalidatedBy)}</p>` : ''}
+                                ${goal.adminName ? `<p><strong>Admin Name:</strong> ${escapeHtml(goal.adminName)}</p>` : ''}
+                                ${goal.invalidatedAt ? `<p><strong>Date:</strong> ${new Date(goal.invalidatedAt).toLocaleString()}</p>` : ''}
+                            </div>
                         </div>
                     ` : ''}
                     
-                    <div class="goal-dates">
-                        <span>📅 Created: ${new Date(goal.createdAt).toLocaleDateString()}</span>
-                        ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
-                        ${goal.invalidatedAt ? `<span class="invalidation-date">❌ Invalidated: ${new Date(goal.invalidatedAt).toLocaleDateString()}</span>` : ''}
-                        ${goal.lastEditedBy ? `<span class="last-edited">✏️ Edited by ${escapeHtml(goal.lastEditedBy)}</span>` : ''}
+                    <div class="house-assignment">
+                        <label>🏛️ House:</label>
+                        <select class="house-selector" data-user-id="${escapeHtml(goal.userId)}" onchange="updateUserHouse('${escapeHtml(goal.userId)}', this.value)">
+                            <option value="">No House</option>
+                            <option value="sparta" ${goal.user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
+                            <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
+                            <option value="corinth" ${goal.user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
+                            <option value="olympia" ${goal.user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
+                            <option value="delphi" ${goal.user.house === 'delphi' ? 'selected' : ''}>🔮 Delphi</option>
+                        </select>
                     </div>
-                </div>
-                
-                ${goal.status === 'invalidated' && goal.invalidationReason ? `
-                    <div class="invalidation-history">
-                        <h6>📋 Invalidation Details</h6>
-                        <div class="invalidation-info">
-                            <p><strong>Reason:</strong> ${escapeHtml(goal.invalidationReason)}</p>
-                            ${goal.invalidatedBy ? `<p><strong>Admin:</strong> ${escapeHtml(goal.invalidatedBy)}</p>` : ''}
-                            ${goal.adminName ? `<p><strong>Admin Name:</strong> ${escapeHtml(goal.adminName)}</p>` : ''}
-                            ${goal.invalidatedAt ? `<p><strong>Date:</strong> ${new Date(goal.invalidatedAt).toLocaleString()}</p>` : ''}
+                    
+                    ${validationScores}
+                    
+                    ${goal.aiQuestions && goal.aiAnswers ? `
+                        <div class="ai-qa-toggle">
+                            <button class="qa-toggle-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="toggleQASection('${escapeHtml(goal.id)}')">
+                                <span class="qa-arrow" id="arrow-${escapeHtml(goal.id)}">▼</span>
+                                🤖 View AI Questions & Student Answers
+                            </button>
+                            <div class="ai-qa-content" id="qa-${escapeHtml(goal.id)}" style="display: none;">
+                                ${safeParseAndDisplayQA(goal.aiQuestions, goal.aiAnswers)}
+                            </div>
                         </div>
-                    </div>
-                ` : ''}
-                
-                <div class="house-assignment">
-                    <label>🏛️ House:</label>
-                    <select class="house-selector" data-user-id="${escapeHtml(goal.userId)}" onchange="updateUserHouse('${escapeHtml(goal.userId)}', this.value)">
-                        <option value="">No House</option>
-                        <option value="sparta" ${goal.user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
-                        <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
-                        <option value="corinth" ${goal.user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
-                        <option value="olympia" ${goal.user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
-                        <option value="delphi" ${goal.user.house === 'delphi' ? 'selected' : ''}>🔮 Delphi</option>
-                    </select>
+                    ` : ''}
+                    
+                    ${invalidationSection}
+                    
+                    ${revocationSection}
                 </div>
-                
-                ${validationScores}
-                
-                ${goal.aiQuestions && goal.aiAnswers ? `
-                    <div class="ai-qa-toggle">
-                        <button class="qa-toggle-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="toggleQASection('${escapeHtml(goal.id)}')">
-                            <span class="qa-arrow" id="arrow-${escapeHtml(goal.id)}">▼</span>
-                            🤖 View AI Questions & Student Answers
-                        </button>
-                        <div class="ai-qa-content" id="qa-${escapeHtml(goal.id)}" style="display: none;">
-                            ${safeParseAndDisplayQA(goal.aiQuestions, goal.aiAnswers)}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${invalidationSection}
-                
-                ${revocationSection}
             </div>
         `;
     });
@@ -1933,5 +1939,23 @@ function renderScreenshots(screenshotDataArray) {
     } catch (error) {
         console.error('Error parsing screenshots:', error);
         return '<p class="error-message">Error loading screenshots</p>';
+    }
+}
+
+// Goal expand/collapse functionality
+function toggleGoalDetails(goalId) {
+    const detailsSection = document.getElementById(`details-${goalId}`);
+    const arrow = document.getElementById(`arrow-${goalId}`);
+    
+    if (detailsSection && arrow) {
+        if (detailsSection.classList.contains('hidden')) {
+            detailsSection.classList.remove('hidden');
+            arrow.textContent = '▲';
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            detailsSection.classList.add('hidden');
+            arrow.textContent = '▼';
+            arrow.style.transform = 'rotate(0deg)';
+        }
     }
 }

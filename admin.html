@@ -849,6 +849,61 @@
             word-break: break-word;
         }
         
+        /* Goal card expand/collapse */
+        .goal-title-preview {
+            margin-bottom: 1rem;
+        }
+        
+        .goal-title-preview h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        
+        .alpha-project-preview {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .expand-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .expand-arrow {
+            font-size: 0.9rem;
+            transition: transform 0.3s ease;
+            color: var(--primary-color);
+        }
+        
+        .goal-details-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            animation: slideDown 0.3s ease;
+        }
+        
+        .goal-details-section.hidden {
+            display: none;
+        }
+        
+        @keyframes slideDown {
+            from { 
+                opacity: 0; 
+                transform: translateY(-10px); 
+                max-height: 0;
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+                max-height: none;
+            }
+        }
+        
         /* Goal editing functionality */
         .goal-text-section {
             margin-bottom: 1rem;
