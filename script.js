@@ -845,31 +845,6 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// Test Claude API connectivity
-async function testClaude() {
-    showLoading('Testing Claude API connection...');
-    
-    try {
-        const response = await fetch('/api/test-claude', {
-            method: 'GET'
-        });
-        
-        const data = await response.json();
-        hideLoading();
-        
-        if (data.success) {
-            showToast(`✅ Claude API is working! Response: ${data.claudeResponse}`, 'success');
-            console.log('Claude API Test Success:', data);
-        } else {
-            showToast(`❌ Claude API test failed: ${data.error}`, 'error');
-            console.error('Claude API Test Failed:', data);
-        }
-    } catch (error) {
-        hideLoading();
-        showToast('❌ Failed to test Claude API connection', 'error');
-        console.error('Claude API Test Error:', error);
-    }
-}
 
 // Utility function
 function escapeHtml(text) {

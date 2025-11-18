@@ -5,8 +5,14 @@ let redis = null;
 
 export async function getRedisClient() {
   if (!redis) {
+    const redisUrl = process.env.REDIS_URL || process.env.Afterschool_REDIS_URL;
+    
+    if (!redisUrl) {
+      throw new Error('Redis URL not configured. Please set REDIS_URL or Afterschool_REDIS_URL environment variable.');
+    }
+    
     redis = createClient({ 
-      url: process.env.REDIS_URL || process.env.Afterschool_REDIS_URL || "rediss://default:ATn7AAIncDJlMWEwM2ZiOTVkMDI0MWIzOGQyYTZhNTdiYzkxNjk0M3AyMTQ4NDM@new-starling-14843.upstash.io:6379"
+      url: redisUrl
     });
     
     redis.on('error', (err) => console.log('Redis Client Error', err));
