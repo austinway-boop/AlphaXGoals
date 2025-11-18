@@ -32,7 +32,9 @@ function resetFileUploadDisplay() {
 // File upload functions for goal completion
 function handleCompletionFileUpload(goalId) {
     const fileInput = document.getElementById(`completionScreenshot_${goalId}`);
-    const display = document.querySelector(`#completionModal_${goalId} .file-upload-display`);
+    // Escape the goalId for CSS selector (replace colon with escaped version)
+    const escapedGoalId = goalId.replace(/:/g, '\\:');
+    const display = document.querySelector(`#completionModal_${escapedGoalId} .file-upload-display`);
     const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
     
     if (!fileInput) return;
