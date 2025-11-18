@@ -207,7 +207,8 @@ function displayGoals(goals) {
     
     container.innerHTML = `
         <div class="goals-grid">
-            ${goals.map(goal => `
+            ${goals.map(goal => {
+                return `
                 <div class="admin-goal-card">
                     <div class="goal-header-admin" onclick="toggleGoalExpansion('${goal.id}')">
                         <div class="goal-user-info">
@@ -325,9 +326,10 @@ function displayGoals(goals) {
                                 </div>
                             </div>
                         ` : ''}
-                    </div>
-                </div>
-            `).join('')}
+            </div>
+        </div>
+                `;
+            }).join('')}
         </div>
     `;
 }

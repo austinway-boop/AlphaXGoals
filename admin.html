@@ -76,8 +76,9 @@
         
         .goals-grid {
             display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            align-items: start;
         }
         
         .admin-goal-card {
@@ -85,11 +86,14 @@
             padding: 1.5rem;
             border-radius: 1rem;
             border: 2px solid var(--border-color);
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
         }
         
         .goal-user-info {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
             padding-bottom: 1rem;
