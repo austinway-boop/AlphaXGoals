@@ -1,4 +1,4 @@
-// Vercel serverless function for invalidating goals
+// Vercel serverless function for updating user display names
 import { getRedisClient } from './redis.js';
 
 export default async function handler(req, res) {
@@ -26,66 +26,54 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Admin authentication required' });
   }
 
-  let adminEmail;
+  let adminSession;
   try {
-    const adminSession = JSON.parse(adminCookie.split('=')[1]);
+    adminSession = JSON.parse(adminCookie.split('=')[1]);
     if (!adminSession.isAdmin) {
       return res.status(401).json({ success: false, error: 'Admin privileges required' });
     }
-    adminEmail = adminSession.email;
   } catch (e) {
     return res.status(401).json({ success: false, error: 'Invalid admin session' });
   }
 
-  const { goalId, reason, adminName } = req.body;
+  const { userId, displayName } = req.body;
   
-  if (!goalId || !reason) {
+  if (!userId || !displayName) {
     return res.status(400).json({ 
       success: false, 
-      error: 'Goal ID and invalidation reason are required' 
+      error: 'User ID and display name are required' 
     });
   }
-  
-  if (!adminName) {
+
+  if (displayName.length > 50) {
     return res.status(400).json({ 
       success: false, 
-      error: 'Admin name is required for goal invalidation' 
+      error: 'Display name must be 50 characters or less' 
     });
   }
 
   try {
     const client = await getRedisClient();
     
-    // Check if goal exists
-    const goal = await client.hGetAll(goalId);
-    if (!goal || !goal.userId) {
-      return res.status(404).json({ success: false, error: 'Goal not found' });
+    // Check if user exists
+    const user = await client.hGetAll(userId);
+    if (!user || !user.email) {
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    // Update goal with invalidation details
-    const invalidationData = {
-      status: 'invalidated',
-      invalidatedAt: new Date().toISOString(),
-      invalidatedBy: adminEmail,
-      adminName: adminName,
-      invalidationReason: reason
-    };
-
-    // Update all fields
-    for (const [key, value] of Object.entries(invalidationData)) {
-      await client.hSet(goalId, key, value);
-    }
+    // Update user's display name (which is stored as username in our system)
+    await client.hSet(userId, 'username', displayName);
 
     res.json({ 
       success: true, 
-      message: 'Goal invalidated successfully',
-      invalidationReason: reason
+      message: 'User display name updated successfully',
+      displayName: displayName
     });
   } catch (error) {
-    console.error('Error invalidating goal:', error);
+    console.error('Error updating user display name:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to invalidate goal' 
+      error: 'Failed to update user display name' 
     });
   }
 }

@@ -1,6 +1,7 @@
 // Admin Panel Application State
 let adminState = {
     currentAdmin: null,
+    adminName: localStorage.getItem('adminName') || '',
     goals: [],
     prompts: {},
     stats: {}
@@ -77,6 +78,9 @@ function handleDynamicButtonClicks(e) {
     }
 }
 
+// Debounce timer for display name updates
+let displayNameUpdateTimer = null;
+
 // Handle change events on dynamically generated elements
 function handleDynamicChangeEvents(e) {
     if (e.target.matches('.house-selector')) {
@@ -85,6 +89,23 @@ function handleDynamicChangeEvents(e) {
         if (userId) {
             updateUserHouse(userId, house);
         }
+    } else if (e.target.matches('#adminNameInput')) {
+        adminState.adminName = e.target.value.trim();
+        localStorage.setItem('adminName', adminState.adminName);
+    } else if (e.target.matches('.display-name-input')) {
+        const userId = e.target.dataset.userId;
+        const newDisplayName = e.target.value.trim();
+        
+        // Debounce the update to avoid excessive API calls
+        if (displayNameUpdateTimer) {
+            clearTimeout(displayNameUpdateTimer);
+        }
+        
+        displayNameUpdateTimer = setTimeout(() => {
+            if (userId && newDisplayName) {
+                updateUserDisplayName(userId, newDisplayName);
+            }
+        }, 1000); // Wait 1 second after user stops typing
     }
 }
 
@@ -148,6 +169,12 @@ function showAdminPanel() {
     
     // Update admin info
     document.getElementById('adminEmail').textContent = adminState.currentAdmin.email;
+    
+    // Set admin name input
+    const adminNameInput = document.getElementById('adminNameInput');
+    if (adminNameInput) {
+        adminNameInput.value = adminState.adminName;
+    }
 }
 
 // Admin Panel Navigation
@@ -311,6 +338,11 @@ function displayGoals(goals) {
                     </div>
                 </div>
                 
+                <div class="user-management">
+                    <label>✏️ Display Name:</label>
+                    <input type="text" class="display-name-input" data-user-id="${escapeHtml(goal.userId)}" value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
+                </div>
+                
                 <div class="goal-content-simple">
                     <h4>🎯 ${escapeHtml(goal.goal)}</h4>
                     ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
@@ -318,8 +350,21 @@ function displayGoals(goals) {
                     <div class="goal-dates">
                         <span>📅 Created: ${new Date(goal.createdAt).toLocaleDateString()}</span>
                         ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
+                        ${goal.invalidatedAt ? `<span class="invalidation-date">❌ Invalidated: ${new Date(goal.invalidatedAt).toLocaleDateString()}</span>` : ''}
                     </div>
                 </div>
+                
+                ${goal.status === 'invalidated' && goal.invalidationReason ? `
+                    <div class="invalidation-history">
+                        <h6>📋 Invalidation Details</h6>
+                        <div class="invalidation-info">
+                            <p><strong>Reason:</strong> ${escapeHtml(goal.invalidationReason)}</p>
+                            ${goal.invalidatedBy ? `<p><strong>Admin:</strong> ${escapeHtml(goal.invalidatedBy)}</p>` : ''}
+                            ${goal.adminName ? `<p><strong>Admin Name:</strong> ${escapeHtml(goal.adminName)}</p>` : ''}
+                            ${goal.invalidatedAt ? `<p><strong>Date:</strong> ${new Date(goal.invalidatedAt).toLocaleString()}</p>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
                 
                 <div class="house-assignment">
                     <label>🏛️ House:</label>
@@ -438,9 +483,47 @@ async function updateUserHouse(userId, house) {
     }
 }
 
+// Function to update user display name
+async function updateUserDisplayName(userId, newDisplayName) {
+    if (!newDisplayName) {
+        showToast('Display name cannot be empty', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/update-user-display-name', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId, displayName: newDisplayName })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showToast(`Display name updated to "${newDisplayName}"`, 'success');
+            loadGoals(); // Refresh to show updated display name
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to update display name', 'error');
+    }
+}
+
 // Enhanced invalidation functions
 async function quickInvalidate(goalId, reason) {
-    if (!confirm(`Invalidate this goal?\n\nReason: ${reason}`)) {
+    // Check if admin name is provided
+    if (!adminState.adminName) {
+        showToast('Please enter your admin name in the header before invalidating goals', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+        }
+        return;
+    }
+    
+    if (!confirm(`Invalidate this goal?\n\nReason: ${reason}\nAdmin: ${adminState.adminName}`)) {
         return;
     }
     
@@ -450,12 +533,12 @@ async function quickInvalidate(goalId, reason) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ goalId, reason })
+            body: JSON.stringify({ goalId, reason, adminName: adminState.adminName })
         });
         
         const data = await response.json();
         if (data.success) {
-            showToast('Goal invalidated successfully', 'success');
+            showToast(`Goal invalidated successfully by ${adminState.adminName}`, 'success');
             loadGoals();
         } else {
             showToast(data.error, 'error');
@@ -551,20 +634,30 @@ async function invalidateGoal(goalId) {
         return;
     }
     
-    if (!confirm('Are you sure you want to invalidate this goal? This action cannot be undone.')) {
+    // Check if admin name is provided
+    if (!adminState.adminName) {
+        showToast('Please enter your admin name in the header before invalidating goals', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+        }
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to invalidate this goal?\n\nReason: ${reason}\nAdmin: ${adminState.adminName}\n\nThis action cannot be undone.`)) {
         return;
     }
     
     showLoading('Invalidating goal...');
     
     try {
-        console.log('Invalidating goal:', goalId, 'with reason:', reason);
+        console.log('Invalidating goal:', goalId, 'with reason:', reason, 'by admin:', adminState.adminName);
         const response = await fetch('/api/invalidate-goal', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ goalId, reason })
+            body: JSON.stringify({ goalId, reason, adminName: adminState.adminName })
         });
         
         const data = await response.json();
@@ -573,7 +666,7 @@ async function invalidateGoal(goalId) {
         console.log('Invalidation response:', data);
         
         if (data.success) {
-            showToast('Goal invalidated successfully', 'success');
+            showToast(`Goal invalidated successfully by ${adminState.adminName}`, 'success');
             loadGoals(); // Reload goals
         } else {
             console.error('Invalidation failed:', data.error);

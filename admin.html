@@ -604,6 +604,76 @@
         .hidden {
             display: none !important;
         }
+        
+        /* Admin Name Input Styling */
+        #adminNameInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+        }
+        
+        /* User Management Section */
+        .user-management {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--surface-light);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .user-management label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .display-name-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--background);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .display-name-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+        }
+        
+        /* Invalidation History */
+        .invalidation-history {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #ffebee;
+            border-radius: 0.5rem;
+            border: 1px solid #f44336;
+        }
+        
+        .invalidation-history h6 {
+            margin-bottom: 0.5rem;
+            color: #c62828;
+            font-size: 0.9rem;
+        }
+        
+        .invalidation-info p {
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .invalidation-info strong {
+            color: #c62828;
+        }
+        
+        .invalidation-date {
+            color: #f44336 !important;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -651,10 +721,16 @@
                         <h1>📊 Admin Dashboard</h1>
                         <p>Welcome, <span id="adminEmail"></span></p>
                     </div>
-                    <button onclick="adminLogout()" class="btn btn-secondary">
-                        <span class="btn-icon">🚪</span>
-                        Logout
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <label for="adminNameInput" style="font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--text-secondary);">Admin Name (required for invalidation):</label>
+                            <input type="text" id="adminNameInput" placeholder="Enter your admin name" style="padding: 0.5rem; border: 2px solid var(--border-color); border-radius: 0.5rem; background: var(--background); color: var(--text-primary); min-width: 200px;">
+                        </div>
+                        <button onclick="adminLogout()" class="btn btn-secondary">
+                            <span class="btn-icon">🚪</span>
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </div>
 
