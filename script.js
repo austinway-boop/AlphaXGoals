@@ -67,100 +67,145 @@ function handleCompletionFileUpload(goalId) {
     });
 }
 
-// Goal completion modal functions
+// Goal completion modal functions  
+let currentCompletionGoal = null;
+
 function showCompletionModal(goalId) {
     console.log('Showing completion modal for goalId:', goalId);
-    const modal = document.getElementById(`completionModal_${goalId}`);
-    if (modal) {
-        // Remove hidden class to show modal
-        modal.classList.remove('hidden');
-        
-        // Prevent body scroll
-        document.body.style.overflow = 'hidden';
-        
-        // Initialize character counter for text tab
-        const textarea = document.getElementById(`completionText_${goalId}`);
-        const counter = document.getElementById(`textCount_${goalId}`);
-        if (textarea && counter) {
-            // Remove existing listeners to prevent duplicates
-            textarea.replaceWith(textarea.cloneNode(true));
-            const newTextarea = document.getElementById(`completionText_${goalId}`);
-            
-            newTextarea.addEventListener('input', () => {
-                counter.textContent = newTextarea.value.length;
-                counter.style.color = newTextarea.value.length >= 200 ? 'var(--success-color)' : 'var(--warning-color)';
-            });
-        }
-        
-        // Focus the modal for better accessibility
-        setTimeout(() => {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.focus();
-            }
-        }, 100);
-    } else {
-        console.error('Completion modal not found for goalId:', goalId);
-        console.log('Available modals:', document.querySelectorAll('[id^="completionModal_"]'));
+    
+    // Find the goal data
+    const goal = appState.goals.find(g => g.id === goalId);
+    if (!goal) {
+        console.error('Goal not found:', goalId);
+        return;
     }
+    
+    currentCompletionGoal = goal;
+    
+    // Create modal HTML dynamically and add to body
+    const modalHTML = `
+        <div id="completionModal" class="completion-modal" onclick="handleModalClick(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>🎉 Complete Your Goal</h3>
+                    <button class="modal-close" onclick="hideCompletionModal()">&times;</button>
+                </div>
+                
+                <div class="goal-preview">
+                    <h4>📝 "${escapeHtml(goal.goal)}"</h4>
+                    ${goal.alphaXProject ? `<p class="alpha-project">🚀 Project: ${escapeHtml(goal.alphaXProject)}</p>` : ''}
+                </div>
+                
+                <div class="proof-tabs">
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 Screenshot</button>
+                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('text')">📝 Text Proof</button>
+                        <button class="tab-btn" data-tab="video" onclick="switchProofTab('video')">🎥 Video</button>
+                    </div>
+                    
+                    <!-- Screenshot Tab -->
+                    <div id="screenshotTab" class="proof-tab active">
+                        <h5>📷 Upload Screenshot Proof</h5>
+                        <p>Upload a screenshot showing you completed this goal:</p>
+                        
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="completionScreenshot" accept="image/*">
+                            <div class="file-upload-display">
+                                <div class="file-upload-text">
+                                    <span class="upload-icon">📷</span>
+                                    <span>Upload Completion Screenshot</span>
+                                </div>
+                                <div class="file-upload-hint">Show proof of goal completion</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Text Proof Tab -->
+                    <div id="textTab" class="proof-tab hidden">
+                        <h5>📝 Describe Your Completion</h5>
+                        <p>Describe how you completed this goal and what you accomplished:</p>
+                        <textarea id="completionText" rows="6" placeholder="Describe in detail how you completed this goal, what you accomplished, what challenges you faced, and what you learned..." class="completion-textarea"></textarea>
+                        <div class="character-count">
+                            <span id="textCount">0</span> / 200 characters minimum
+                        </div>
+                    </div>
+                    
+                    <!-- Video Tab -->
+                    <div id="videoTab" class="proof-tab hidden">
+                        <h5>🎥 Upload Video Proof</h5>
+                        <p>Upload a video showing your goal completion (max 50MB):</p>
+                        
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="completionVideo" accept="video/*">
+                            <div class="file-upload-display">
+                                <div class="file-upload-text">
+                                    <span class="upload-icon">🎥</span>
+                                    <span>Upload Completion Video</span>
+                                </div>
+                                <div class="file-upload-hint">Upload video proof of completion</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="completion-requirement">
+                    <p><strong>✨ Choose Multiple:</strong> You can use any combination of proof methods (screenshot + text + video).</p>
+                    <p><strong>⚠️ Requirement:</strong> At least one proof method must be provided.</p>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn btn-success" onclick="confirmCompletion()">
+                        ✅ Complete Goal
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideCompletionModal()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing modal
+    const existingModal = document.getElementById('completionModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Initialize all handlers
+    initializeCompletionModal();
 }
 
-function handleModalClick(event, goalId) {
+function handleModalClick(event) {
     // Only close if clicking the modal background, not the content
     if (event.target === event.currentTarget) {
-        hideCompletionModal(goalId);
+        hideCompletionModal();
     }
 }
 
-function hideCompletionModal(goalId) {
-    const modal = document.getElementById(`completionModal_${goalId}`);
+function hideCompletionModal() {
+    const modal = document.getElementById('completionModal');
     if (modal) {
-        modal.classList.add('hidden');
-        
-        // Restore body scroll
-        document.body.style.overflow = '';
-        
-        // Reset all inputs
-        resetCompletionModal(goalId);
+        modal.remove();
     }
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+    
+    // Clear current goal
+    currentCompletionGoal = null;
 }
 
-function resetCompletionModal(goalId) {
-    // Reset screenshot
-    const screenshotInput = document.getElementById(`completionScreenshot_${goalId}`);
-    if (screenshotInput) screenshotInput.value = '';
-    
-    // Reset text
-    const textInput = document.getElementById(`completionText_${goalId}`);
-    if (textInput) textInput.value = '';
-    
-    // Reset video
-    const videoInput = document.getElementById(`completionVideo_${goalId}`);
-    if (videoInput) videoInput.value = '';
-    
-    // Reset file displays
-    const displays = document.querySelectorAll(`#completionModal_${goalId} .file-upload-display`);
-    displays.forEach(display => {
-        display.classList.remove('file-selected');
-        const text = display.querySelector('.file-upload-text span:last-child');
-        if (text) {
-            if (display.closest('#screenshotTab_' + goalId)) {
-                text.textContent = 'Upload Completion Screenshot';
-            } else if (display.closest('#videoTab_' + goalId)) {
-                text.textContent = 'Upload Completion Video';
-            }
-        }
-    });
-    
-    // Reset tab to screenshot
-    switchProofTab(goalId, 'screenshot');
-}
-
-function switchProofTab(goalId, tabType) {
-    console.log('Switching to tab:', tabType, 'for goal:', goalId);
+function switchProofTab(tabType) {
+    console.log('Switching to tab:', tabType);
     
     // Update tab buttons
-    const modal = document.getElementById(`completionModal_${goalId}`);
+    const modal = document.getElementById('completionModal');
     if (!modal) return;
     
     modal.querySelectorAll('.tab-btn').forEach(btn => {
@@ -176,23 +221,35 @@ function switchProofTab(goalId, tabType) {
         tab.classList.remove('active');
     });
     
-    const activeTab = document.getElementById(`${tabType}Tab_${goalId}`);
+    const activeTab = document.getElementById(`${tabType}Tab`);
     if (activeTab) {
         activeTab.classList.remove('hidden');
         activeTab.classList.add('active');
     }
 }
 
-function initializeCompletionModal(goalId) {
+function initializeCompletionModal() {
     // Initialize file upload handlers
-    handleCompletionFileUpload(goalId);
-    handleCompletionVideoUpload(goalId);
+    handleCompletionFileUpload();
+    handleCompletionVideoUpload();
+    
+    // Initialize character counter
+    const textarea = document.getElementById('completionText');
+    const counter = document.getElementById('textCount');
+    if (textarea && counter) {
+        textarea.addEventListener('input', () => {
+            counter.textContent = textarea.value.length;
+            counter.style.color = textarea.value.length >= 200 ? 'var(--success-color)' : 'var(--warning-color)';
+        });
+        
+        // Trigger initial count
+        counter.textContent = textarea.value.length;
+    }
 }
 
-function handleCompletionVideoUpload(goalId) {
-    const fileInput = document.getElementById(`completionVideo_${goalId}`);
-    const escapedGoalId = goalId.replace(/:/g, '\\:');
-    const display = document.querySelector(`#videoTab_${escapedGoalId} .file-upload-display`);
+function handleCompletionVideoUpload() {
+    const fileInput = document.getElementById('completionVideo');
+    const display = document.querySelector('#videoTab .file-upload-display');
     const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
     
     if (!fileInput) return;
@@ -225,13 +282,19 @@ function handleCompletionVideoUpload(goalId) {
     });
 }
 
-async function confirmCompletion(goalId) {
+async function confirmCompletion() {
+    if (!currentCompletionGoal) {
+        console.error('No goal selected for completion');
+        return;
+    }
+    
+    const goalId = currentCompletionGoal.id;
     console.log('Confirming completion for goalId:', goalId);
     
     // Check what proof methods are filled
-    const screenshotFile = document.getElementById(`completionScreenshot_${goalId}`)?.files[0];
-    const textProof = document.getElementById(`completionText_${goalId}`)?.value.trim();
-    const videoFile = document.getElementById(`completionVideo_${goalId}`)?.files[0];
+    const screenshotFile = document.getElementById('completionScreenshot')?.files[0];
+    const textProof = document.getElementById('completionText')?.value.trim();
+    const videoFile = document.getElementById('completionVideo')?.files[0];
     
     // Validate that at least one proof method is provided
     if (!screenshotFile && !textProof && !videoFile) {
@@ -242,7 +305,7 @@ async function confirmCompletion(goalId) {
     // Validate text proof length if provided
     if (textProof && textProof.length < 200) {
         showToast('Text proof must be at least 200 characters', 'error');
-        switchProofTab(goalId, 'text');
+        switchProofTab('text');
         return;
     }
     
@@ -279,7 +342,7 @@ async function confirmCompletion(goalId) {
         
         if (data.success) {
             showToast('Goal completed successfully! 🎉', 'success');
-            hideCompletionModal(goalId);
+            hideCompletionModal();
             loadGoals();
         } else {
             showToast(data.error, 'error');
@@ -1123,97 +1186,6 @@ function displayGoals(goals) {
         `;
     }).join('');
     
-    // Add completion modals for active goals
-    const completionModals = goals.filter(goal => goal.status === 'active').map(goal => `
-        <div id="completionModal_${goal.id}" class="completion-modal hidden" onclick="handleModalClick(event, '${goal.id}')">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>🎉 Complete Your Goal</h3>
-                    <button class="modal-close" onclick="hideCompletionModal('${goal.id}')">&times;</button>
-                </div>
-                
-                <div class="goal-preview">
-                    <h4>📝 "${escapeHtml(goal.goal)}"</h4>
-                    ${goal.alphaXProject ? `<p class="alpha-project">🚀 Project: ${escapeHtml(goal.alphaXProject)}</p>` : ''}
-                </div>
-                
-                <div class="proof-tabs">
-                    <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('${goal.id}', 'screenshot')">📷 Screenshot</button>
-                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('${goal.id}', 'text')">📝 Text Proof</button>
-                        <button class="tab-btn" data-tab="video" onclick="switchProofTab('${goal.id}', 'video')">🎥 Video</button>
-                    </div>
-                    
-                    <!-- Screenshot Tab -->
-                    <div id="screenshotTab_${goal.id}" class="proof-tab active">
-                        <h5>📷 Upload Screenshot Proof</h5>
-                        <p>Upload a screenshot showing you completed this goal:</p>
-                        
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="completionScreenshot_${goal.id}" accept="image/*">
-                            <div class="file-upload-display">
-                                <div class="file-upload-text">
-                                    <span class="upload-icon">📷</span>
-                                    <span>Upload Completion Screenshot</span>
-                                </div>
-                                <div class="file-upload-hint">Show proof of goal completion</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Text Proof Tab -->
-                    <div id="textTab_${goal.id}" class="proof-tab hidden">
-                        <h5>📝 Describe Your Completion</h5>
-                        <p>Describe how you completed this goal and what you accomplished:</p>
-                        <textarea id="completionText_${goal.id}" rows="6" placeholder="Describe in detail how you completed this goal, what you accomplished, what challenges you faced, and what you learned..." class="completion-textarea"></textarea>
-                        <div class="character-count">
-                            <span id="textCount_${goal.id}">0</span> / 200 characters minimum
-                        </div>
-                    </div>
-                    
-                    <!-- Video Tab -->
-                    <div id="videoTab_${goal.id}" class="proof-tab hidden">
-                        <h5>🎥 Upload Video Proof</h5>
-                        <p>Upload a video showing your goal completion (max 50MB):</p>
-                        
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="completionVideo_${goal.id}" accept="video/*">
-                            <div class="file-upload-display">
-                                <div class="file-upload-text">
-                                    <span class="upload-icon">🎥</span>
-                                    <span>Upload Completion Video</span>
-                                </div>
-                                <div class="file-upload-hint">Upload video proof of completion</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="completion-requirement">
-                    <p><strong>⚠️ Requirement:</strong> Choose at least one proof method above before submitting.</p>
-                </div>
-                
-                <div class="modal-actions">
-                    <button class="btn btn-success" onclick="confirmCompletion('${goal.id}')">
-                        ✅ Complete Goal
-                    </button>
-                    <button class="btn btn-secondary" onclick="hideCompletionModal('${goal.id}')">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-    
-    // Add modals to the page
-    if (completionModals) {
-        goalsList.innerHTML += completionModals;
-        
-        // Initialize handlers for completion modals
-        goals.filter(goal => goal.status === 'active').forEach(goal => {
-            initializeCompletionModal(goal.id);
-        });
-    }
 }
 
 async function completeGoal(goalId) {
