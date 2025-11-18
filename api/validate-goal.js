@@ -76,7 +76,14 @@ export default async function handler(req, res) {
 Goal: "${goal}"
 Alpha X Project: "${alphaXProject}"
 
-Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts. For brainlift goals, adding 500 words minimum is required as it should take at least 3 solid hours of work.
+Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts. 
+
+IMPORTANT BRAINLIFT RULES:
+- BrainLift goals MUST include additional tasks beyond just adding words
+- Even with 500+ words, students must do OTHER activities too (research, analysis, posting, sharing, etc.)
+- Examples of GOOD BrainLift goals: "Add 500 words to BrainLift AND post 4 times on X about findings"
+- Examples of BAD BrainLift goals: "Add 500 words to BrainLift" (missing additional tasks)
+- BrainLift + other activities = good goal. BrainLift alone = insufficient.
 
 CRITICAL EVALUATION REQUIREMENTS:
 
@@ -92,8 +99,12 @@ AMBITION STANDARDS (4/5 required):
 - If you estimate the goal will take 3.5+ hours, automatically give it 4/5 or 5/5
 - Goals requiring 3+ hours of focused work should get 4/5 minimum
 - Goals requiring 4+ hours of work should get 5/5
-- Examples that should get 4/5+: "write 500+ words", "research and write analysis", "create detailed plans", "multiple emails with research"
-- Only give low scores (1-3/5) for truly trivial tasks under 2 hours
+
+SPECIAL BRAINLIFT SCORING:
+- BrainLift goals with ONLY word addition = 2/5 or 3/5 (insufficient ambition)
+- BrainLift + additional tasks = 4/5 or 5/5 (good ambition)
+- Examples: "Add 300 words to BrainLift AND post 4 times on X" = 4/5+
+- Examples: "Add 500 words to BrainLift" (alone) = 3/5 (needs more tasks)
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher

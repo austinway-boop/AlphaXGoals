@@ -234,7 +234,18 @@ function displayGoals(goals) {
                     <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not ambitious enough')">Not Ambitious</button>
                     <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not measurable')">Not Measurable</button>
                     <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not relevant')">Not Relevant</button>
-                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Too short')">Too Short</button>
+                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'BrainLift goal missing additional tasks')">BrainLift Only</button>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="showInvalidationForm('${goal.id}')" style="margin-top: 0.5rem;">
+                    ✏️ Custom Reason
+                </button>
+                <div id="invalidationForm_${goal.id}" class="invalidation-form hidden">
+                    <label for="reason_${goal.id}">Custom invalidation reason:</label>
+                    <textarea id="reason_${goal.id}" rows="3" placeholder="Enter detailed reason..."></textarea>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button class="btn btn-danger btn-sm" onclick="invalidateGoal('${goal.id}')">Confirm</button>
+                        <button class="btn btn-secondary btn-sm" onclick="hideInvalidationForm('${goal.id}')">Cancel</button>
+                    </div>
                 </div>
             </div>
         ` : '';
@@ -496,30 +507,31 @@ async function invalidateGoal(goalId) {
     showLoading('Invalidating goal...');
     
     try {
-        const response = await fetch('/api/admin-goals', {
+        console.log('Invalidating goal:', goalId, 'with reason:', reason);
+        const response = await fetch('/api/invalidate-goal', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                goalId,
-                action: 'invalidate',
-                reason
-            })
+            body: JSON.stringify({ goalId, reason })
         });
         
         const data = await response.json();
         hideLoading();
         
+        console.log('Invalidation response:', data);
+        
         if (data.success) {
             showToast('Goal invalidated successfully', 'success');
             loadGoals(); // Reload goals
         } else {
+            console.error('Invalidation failed:', data.error);
             showToast(data.error, 'error');
         }
     } catch (error) {
         hideLoading();
-        showToast('Failed to invalidate goal', 'error');
+        console.error('Invalidation error:', error);
+        showToast('Failed to invalidate goal - network error', 'error');
     }
 }
 
