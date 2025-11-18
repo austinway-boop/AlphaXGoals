@@ -48,8 +48,8 @@ function handleCompletionFileUpload() {
                 return;
             }
             
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                showToast('File size must be less than 10MB', 'error');
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit for images
+                showToast('Image file size must be less than 2MB', 'error');
                 fileInput.value = '';
                 return;
             }
@@ -145,7 +145,7 @@ function showCompletionModal(goalId) {
                     <!-- Video Tab -->
                     <div id="videoTab" class="proof-tab hidden">
                         <h5>🎥 Video</h5>
-                        <p>Upload a video showing your completion:</p>
+                        <p>Upload a video showing your completion (max 5MB):</p>
                         
                         <div class="file-upload-wrapper">
                             <input type="file" id="completionVideo" accept="video/*">
@@ -321,8 +321,8 @@ function handleCompletionVideoUpload() {
                 return;
             }
             
-            if (file.size > 50 * 1024 * 1024) { // 50MB limit
-                showToast('Video file size must be less than 50MB', 'error');
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit for videos (due to base64 encoding)
+                showToast('Video file size must be less than 5MB', 'error');
                 fileInput.value = '';
                 return;
             }
@@ -411,18 +411,50 @@ async function confirmCompletion() {
     showLoading('Processing proof and completing goal...');
     
     try {
+        // Calculate total file size before processing
+        let totalSize = 0;
+        if (screenshotFile) totalSize += screenshotFile.size;
+        if (videoFile) totalSize += videoFile.size;
+        
+        // Base64 encoding increases size by ~33%, so check if it will exceed limits
+        const estimatedBase64Size = totalSize * 1.33;
+        const maxPayloadSize = 5 * 1024 * 1024; // 5MB estimated max for Vercel
+        
+        if (estimatedBase64Size > maxPayloadSize) {
+            hideLoading();
+            showToast('Total file size too large. Please use smaller files or fewer files.', 'error');
+            return;
+        }
+        
         // Process files to base64
         let screenshotData = null;
         let videoData = null;
         
         if (screenshotFile) {
-            screenshotData = await fileToBase64(screenshotFile);
+            try {
+                screenshotData = await fileToBase64(screenshotFile);
+                console.log('Screenshot processed, size:', screenshotData.length);
+            } catch (error) {
+                console.error('Failed to process screenshot:', error);
+                hideLoading();
+                showToast('Failed to process screenshot. Try a smaller image.', 'error');
+                return;
+            }
         }
         
         if (videoFile) {
-            videoData = await fileToBase64(videoFile);
+            try {
+                videoData = await fileToBase64(videoFile);
+                console.log('Video processed, size:', videoData.length);
+            } catch (error) {
+                console.error('Failed to process video:', error);
+                hideLoading();
+                showToast('Failed to process video. Try a smaller video file.', 'error');
+                return;
+            }
         }
         
+        console.log('Sending completion request for goal:', goalId);
         const response = await fetch('/api/complete-goal', {
             method: 'POST',
             headers: {
@@ -435,6 +467,22 @@ async function confirmCompletion() {
                 videoData 
             })
         });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            if (response.status === 413) {
+                throw new Error('Request too large - please use smaller files');
+            }
+            throw new Error(`Server error: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text);
+            throw new Error('Server returned invalid response');
+        }
         
         const data = await response.json();
         hideLoading();
