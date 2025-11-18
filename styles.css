@@ -178,6 +178,7 @@ body {
     background: var(--surface-light);
     transition: all 0.3s ease;
     cursor: pointer;
+    position: relative;
 }
 
 .file-upload-display:hover {
@@ -191,11 +192,11 @@ body {
     justify-content: center;
     gap: 0.5rem;
     color: var(--text-primary);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .upload-icon {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 }
 
 .file-upload-hint {
@@ -206,15 +207,16 @@ body {
 
 .file-selected {
     border-color: var(--success-color);
-    background: var(--success-color);
+    background: rgba(16, 185, 129, 0.1);
+    border-style: solid;
 }
 
 .file-selected .file-upload-text {
-    color: white;
+    color: var(--success-color);
 }
 
 .file-selected .file-upload-hint {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--success-color);
 }
 
 /* Completion Modal Styling */

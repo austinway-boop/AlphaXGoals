@@ -194,8 +194,10 @@ function showCompletionModal(goalId) {
     // Prevent body scroll
     document.body.style.overflow = 'hidden';
     
-    // Initialize all handlers
-    initializeCompletionModal();
+    // Initialize all handlers after modal is added to DOM
+    setTimeout(() => {
+        initializeCompletionModal();
+    }, 50);
 }
 
 function handleModalClick(event) {
@@ -246,6 +248,8 @@ function switchProofTab(tabType) {
 }
 
 function initializeCompletionModal() {
+    console.log('Initializing completion modal handlers');
+    
     // Initialize file upload handlers
     handleCompletionFileUpload();
     handleCompletionVideoUpload();
@@ -255,11 +259,14 @@ function initializeCompletionModal() {
     const counter = document.getElementById('textCount');
     const textPreview = document.getElementById('textPreviewContent');
     
+    console.log('Text elements found:', {textarea, counter, textPreview});
+    
     if (textarea && counter) {
-        textarea.addEventListener('input', () => {
+        // Add input event listener for character counting and preview
+        const handleTextInput = () => {
             const text = textarea.value;
             counter.textContent = text.length;
-            counter.style.color = 'var(--text-secondary)';
+            console.log('Text length updated:', text.length);
             
             // Update live preview
             if (textPreview) {
@@ -271,14 +278,20 @@ function initializeCompletionModal() {
                     textPreview.classList.add('empty');
                 }
             }
+        };
+        
+        textarea.addEventListener('input', handleTextInput);
+        textarea.addEventListener('keyup', handleTextInput);
+        textarea.addEventListener('paste', () => {
+            setTimeout(handleTextInput, 10); // Handle paste events
         });
         
         // Trigger initial count and preview
-        counter.textContent = textarea.value.length;
-        if (textPreview) {
-            textPreview.textContent = 'Start typing...';
-            textPreview.classList.add('empty');
-        }
+        handleTextInput();
+        
+        console.log('Text input handlers attached successfully');
+    } else {
+        console.error('Text elements not found for initialization');
     }
 }
 
@@ -291,9 +304,15 @@ function handleCompletionVideoUpload() {
     const fileName = document.getElementById('videoFileName');
     const fileSize = document.getElementById('videoFileSize');
     
-    if (!fileInput) return;
+    console.log('Initializing video upload handler', {fileInput, display, text, preview, previewVideo});
+    
+    if (!fileInput) {
+        console.error('Video file input not found');
+        return;
+    }
     
     fileInput.addEventListener('change', (e) => {
+        console.log('Video file changed:', e.target.files[0]);
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('video/')) {
@@ -311,22 +330,32 @@ function handleCompletionVideoUpload() {
             // Update upload display
             if (display && text) {
                 display.classList.add('file-selected');
-                text.textContent = file.name;
+                text.textContent = `✅ ${file.name}`;
+                console.log('Updated video display text to:', file.name);
+            } else {
+                console.error('Display elements not found for video');
             }
             
             // Show video preview
             if (preview && previewVideo) {
-                const videoURL = URL.createObjectURL(file);
-                previewVideo.src = videoURL;
-                preview.classList.remove('hidden');
-                
-                if (fileName) fileName.textContent = file.name;
-                if (fileSize) fileSize.textContent = formatFileSize(file.size);
-                
-                // Clean up URL when modal is closed
-                previewVideo.addEventListener('loadeddata', () => {
-                    console.log('Video loaded for preview');
-                });
+                try {
+                    const videoURL = URL.createObjectURL(file);
+                    previewVideo.src = videoURL;
+                    preview.classList.remove('hidden');
+                    console.log('Video preview URL created');
+                    
+                    if (fileName) fileName.textContent = file.name;
+                    if (fileSize) fileSize.textContent = formatFileSize(file.size);
+                    
+                    // Clean up URL when modal is closed
+                    previewVideo.addEventListener('loadeddata', () => {
+                        console.log('Video loaded for preview');
+                    });
+                } catch (error) {
+                    console.error('Failed to create video preview:', error);
+                }
+            } else {
+                console.error('Video preview elements not found:', {preview, previewVideo});
             }
         } else {
             // Reset display and preview
@@ -336,8 +365,12 @@ function handleCompletionVideoUpload() {
             }
             if (preview) {
                 preview.classList.add('hidden');
-                if (previewVideo.src) {
-                    URL.revokeObjectURL(previewVideo.src);
+                if (previewVideo && previewVideo.src) {
+                    try {
+                        URL.revokeObjectURL(previewVideo.src);
+                    } catch (e) {
+                        console.log('URL already revoked');
+                    }
                     previewVideo.src = '';
                 }
             }
