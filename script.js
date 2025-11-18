@@ -72,19 +72,43 @@ function showCompletionModal(goalId) {
     console.log('Showing completion modal for goalId:', goalId);
     const modal = document.getElementById(`completionModal_${goalId}`);
     if (modal) {
+        // Remove hidden class to show modal
         modal.classList.remove('hidden');
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+        
         // Initialize character counter for text tab
         const textarea = document.getElementById(`completionText_${goalId}`);
         const counter = document.getElementById(`textCount_${goalId}`);
         if (textarea && counter) {
-            textarea.addEventListener('input', () => {
-                counter.textContent = textarea.value.length;
-                counter.style.color = textarea.value.length >= 200 ? 'var(--success-color)' : 'var(--warning-color)';
+            // Remove existing listeners to prevent duplicates
+            textarea.replaceWith(textarea.cloneNode(true));
+            const newTextarea = document.getElementById(`completionText_${goalId}`);
+            
+            newTextarea.addEventListener('input', () => {
+                counter.textContent = newTextarea.value.length;
+                counter.style.color = newTextarea.value.length >= 200 ? 'var(--success-color)' : 'var(--warning-color)';
             });
         }
+        
+        // Focus the modal for better accessibility
+        setTimeout(() => {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.focus();
+            }
+        }, 100);
     } else {
         console.error('Completion modal not found for goalId:', goalId);
         console.log('Available modals:', document.querySelectorAll('[id^="completionModal_"]'));
+    }
+}
+
+function handleModalClick(event, goalId) {
+    // Only close if clicking the modal background, not the content
+    if (event.target === event.currentTarget) {
+        hideCompletionModal(goalId);
     }
 }
 
@@ -92,6 +116,10 @@ function hideCompletionModal(goalId) {
     const modal = document.getElementById(`completionModal_${goalId}`);
     if (modal) {
         modal.classList.add('hidden');
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+        
         // Reset all inputs
         resetCompletionModal(goalId);
     }
@@ -1097,8 +1125,7 @@ function displayGoals(goals) {
     
     // Add completion modals for active goals
     const completionModals = goals.filter(goal => goal.status === 'active').map(goal => `
-        <div id="completionModal_${goal.id}" class="completion-modal hidden">
-            <div class="modal-overlay" onclick="hideCompletionModal('${goal.id}')"></div>
+        <div id="completionModal_${goal.id}" class="completion-modal hidden" onclick="handleModalClick(event, '${goal.id}')">
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>🎉 Complete Your Goal</h3>
