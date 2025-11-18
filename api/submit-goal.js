@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goal, alphaXProject, screenshotData, aiQuestions, aiAnswers, validationData } = req.body;
+  const { goal, alphaXProject, aiQuestions, aiAnswers, validationData } = req.body;
   
   if (!goal) {
     return res.status(400).json({ success: false, error: 'Goal is required' });
@@ -42,10 +42,6 @@ export default async function handler(req, res) {
   
   if (!alphaXProject) {
     return res.status(400).json({ success: false, error: 'Alpha X project is required' });
-  }
-  
-  if (!screenshotData) {
-    return res.status(400).json({ success: false, error: 'Screenshot proof is required' });
   }
   
   try {
@@ -57,8 +53,6 @@ export default async function handler(req, res) {
       userId,
       goal,
       alphaXProject,
-      screenshotData,
-      hasScreenshot: true,
       status: 'active',
       createdAt: new Date().toISOString(),
       completedAt: null,

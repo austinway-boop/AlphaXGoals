@@ -34,12 +34,14 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  // Extract goal ID from URL query parameter
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const goalId = url.searchParams.get('goalId');
+  const { goalId, screenshotData } = req.body;
   
   if (!goalId) {
     return res.status(400).json({ success: false, error: 'Goal ID is required' });
+  }
+  
+  if (!screenshotData) {
+    return res.status(400).json({ success: false, error: 'Screenshot proof is required to complete a goal' });
   }
 
   try {
@@ -86,10 +88,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // Update goal status to completed
+    // Update goal status to completed with screenshot
     const updatedGoal = await updateGoal(goalId, {
       status: 'completed',
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      screenshotData,
+      hasScreenshot: true
     });
     
     res.json({ success: true, goal: updatedGoal });

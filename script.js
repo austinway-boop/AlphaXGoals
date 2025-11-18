@@ -29,12 +29,13 @@ function resetFileUploadDisplay() {
     }
 }
 
-function handleFileUpload() {
-    const fileInput = document.getElementById('screenshot');
-    const display = document.querySelector('.file-upload-display');
-    const text = document.querySelector('.file-upload-text span:last-child');
+// File upload functions for goal completion
+function handleCompletionFileUpload(goalId) {
+    const fileInput = document.getElementById(`completionScreenshot_${goalId}`);
+    const display = document.querySelector(`#completionModal_${goalId} .file-upload-display`);
+    const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
     
-    if (!fileInput) return; // Element might not exist yet
+    if (!fileInput) return;
     
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -115,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize file upload after DOM is ready
     setTimeout(() => {
-        handleFileUpload();
         setupGoalTextMonitoring();
     }, 100);
     setupEventListeners();
@@ -735,29 +735,12 @@ async function handleGoalSubmit(e) {
         return;
     }
     
-    // Check if screenshot is uploaded
-    const screenshotFile = document.getElementById('screenshot').files[0];
-    if (!screenshotFile) {
-        showToast('Please upload a screenshot proving your goal was completed', 'error');
-        return;
-    }
-    
     const goal = document.getElementById('goalInput').value;
     const alphaXProject = appState.userAlphaXProject;
-    
-    let screenshotData = null;
-    try {
-        screenshotData = await fileToBase64(screenshotFile);
-    } catch (error) {
-        console.error('Failed to process screenshot:', error);
-        showToast('Failed to process screenshot. Please try again.', 'error');
-        return;
-    }
     
     const requestBody = {
         goal,
         alphaXProject,
-        screenshotData,
         // Include AI questions and answers if they exist
         aiQuestions: appState.aiQuestions || null,
         aiAnswers: appState.aiAnswers || null,
@@ -791,8 +774,6 @@ async function handleGoalSubmit(e) {
             appState.aiQuestions = null;
             appState.aiAnswers = null;
             
-            // Reset file upload display
-            resetFileUploadDisplay();
             
             // Alpha X project persists, no need to reset
             
@@ -915,6 +896,59 @@ function displayGoals(goals) {
             </div>
         `;
     }).join('');
+    
+    // Add completion modals for active goals
+    const completionModals = goals.filter(goal => goal.status === 'active').map(goal => `
+        <div id="completionModal_${goal.id}" class="completion-modal hidden">
+            <div class="modal-overlay" onclick="hideCompletionModal('${goal.id}')"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🎉 Complete Your Goal</h3>
+                    <button class="modal-close" onclick="hideCompletionModal('${goal.id}')">&times;</button>
+                </div>
+                
+                <div class="goal-preview">
+                    <h4>📝 "${escapeHtml(goal.goal)}"</h4>
+                    ${goal.alphaXProject ? `<p class="alpha-project">🚀 Project: ${escapeHtml(goal.alphaXProject)}</p>` : ''}
+                </div>
+                
+                <div class="screenshot-requirement">
+                    <h5>📷 Upload Completion Proof</h5>
+                    <p>Please upload a screenshot showing you completed this goal:</p>
+                    
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="completionScreenshot_${goal.id}" accept="image/*" required>
+                        <div class="file-upload-display">
+                            <div class="file-upload-text">
+                                <span class="upload-icon">📷</span>
+                                <span>Upload Completion Screenshot</span>
+                            </div>
+                            <div class="file-upload-hint">Required: Show proof of goal completion</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn btn-success" onclick="confirmCompletion('${goal.id}')">
+                        ✅ Complete Goal
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideCompletionModal('${goal.id}')">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add modals to the page
+    if (completionModals) {
+        goalsList.innerHTML += completionModals;
+        
+        // Initialize file upload handlers for completion modals
+        goals.filter(goal => goal.status === 'active').forEach(goal => {
+            handleCompletionFileUpload(goal.id);
+        });
+    }
 }
 
 async function completeGoal(goalId) {
