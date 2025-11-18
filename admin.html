@@ -348,7 +348,7 @@
         .house-athens { background: #4169e1; color: #ffffff; }
         .house-corinth { background: #008b8b; color: #ffffff; }
         .house-olympia { background: #daa520; color: #000000; }
-        .house-delfi { background: #9932cc; color: #ffffff; }
+        .house-delphi { background: #9932cc; color: #ffffff; }
         .house-none { background: #708090; color: #fff; }
         
         .view-tabs {
@@ -915,6 +915,48 @@
             color: var(--text-secondary);
             font-style: italic;
             font-size: 0.85rem;
+        }
+        
+        /* Goal revocation functionality */
+        .goal-revocation {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--surface-light);
+            border-radius: 0.5rem;
+            border: 1px solid var(--warning-color);
+        }
+        
+        .goal-revocation h6 {
+            color: var(--warning-color);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .revocation-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .revocation-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .revoke-completion-btn {
+            background: var(--warning-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .revoke-completion-btn:hover {
+            background: var(--danger-color);
+            transform: translateY(-1px);
         }
         
         /* Invalidation History */
@@ -1588,7 +1630,7 @@
                         <option value="athens">🦉 Athens</option>
                         <option value="corinth">🌊 Corinth</option>
                         <option value="olympia">🏛️ Olympia</option>
-                        <option value="delfi">🔮 Delfi</option>
+                        <option value="delphi">🔮 Delphi</option>
                         <option value="none">🏛️ No House</option>
                     </select>
                     <input type="text" id="usernameFilter" class="filter-input" placeholder="Filter by username...">

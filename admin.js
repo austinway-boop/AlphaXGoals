@@ -157,6 +157,12 @@ function handleDynamicButtonClicks(e) {
         if (goalId) {
             cancelGoalEdit(goalId);
         }
+    } else if (e.target.matches('.revoke-completion-btn')) {
+        e.preventDefault();
+        const goalId = e.target.dataset.goalId;
+        if (goalId) {
+            revokeCompletion(goalId);
+        }
     }
 }
 
@@ -443,6 +449,18 @@ function displayGoals(goals) {
             </div>
         ` : '';
         
+        const revocationSection = goal.status === 'completed' ? `
+            <div class="goal-revocation">
+                <h6>🔄 Revoke Completion</h6>
+                <p class="revocation-description">Goal marked as completed but needs review?</p>
+                <div class="revocation-actions">
+                    <button class="btn btn-warning btn-sm revoke-completion-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="revokeCompletion('${escapeHtml(goal.id)}')">
+                        🔄 Revoke Completion
+                    </button>
+                </div>
+            </div>
+        ` : '';
+        
         return `
             <div class="admin-goal-card">
                 <div class="goal-header-simple">
@@ -535,7 +553,7 @@ function displayGoals(goals) {
                         <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
                         <option value="corinth" ${goal.user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
                         <option value="olympia" ${goal.user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
-                        <option value="delfi" ${goal.user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
+                        <option value="delphi" ${goal.user.house === 'delphi' ? 'selected' : ''}>🔮 Delphi</option>
                     </select>
                 </div>
                 
@@ -554,6 +572,8 @@ function displayGoals(goals) {
                 ` : ''}
                 
                 ${invalidationSection}
+                
+                ${revocationSection}
             </div>
         `;
     });
@@ -603,7 +623,7 @@ function getHouseDisplay(house) {
         'athens': '🦉 Athens',
         'corinth': '🌊 Corinth',
         'olympia': '🏛️ Olympia',
-        'delfi': '🔮 Delfi'
+        'delphi': '🔮 Delphi'
     };
     return houses[house] || '🏛️ No House';
 }
@@ -1095,6 +1115,60 @@ async function saveGoalEdit(goalId) {
     }
 }
 
+// Goal revocation functions
+async function revokeCompletion(goalId) {
+    console.log('revokeCompletion called for goalId:', goalId);
+    
+    // Check if admin name is provided
+    if (!adminState.adminName || adminState.adminName.trim() === '') {
+        showToast('Please enter your admin name in the header before revoking goal completion', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+            adminNameInput.style.border = '2px solid orange';
+            setTimeout(() => {
+                adminNameInput.style.border = '';
+            }, 3000);
+        }
+        return;
+    }
+    
+    if (!confirm(`Revoke completion for this goal?\n\nThis will change the goal status from "completed" back to "active".\n\nAdmin: ${adminState.adminName}\n\nThis action will be logged.`)) {
+        return;
+    }
+    
+    showLoading('Revoking goal completion...');
+    
+    try {
+        console.log('Revoking completion for goal:', goalId, 'by admin:', adminState.adminName);
+        const response = await fetch('/api/revoke-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ goalId, adminName: adminState.adminName })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        console.log('Revocation response:', data);
+        
+        if (data.success) {
+            showToast(`Goal completion revoked successfully by ${adminState.adminName}`, 'success');
+            await logAdminAction('goal_revocation', `Revoked completion for goal and changed status back to active`, { goalId });
+            loadGoals(); // Reload goals to show updated status
+        } else {
+            console.error('Revocation failed:', data.error);
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Revocation error:', error);
+        showToast('Failed to revoke goal completion - network error', 'error');
+    }
+}
+
 // Enhanced invalidation functions
 async function quickInvalidate(goalId, reason) {
     // Check if admin name is provided
@@ -1465,7 +1539,7 @@ function displayUsers(users) {
                             <option value="athens" ${user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
                             <option value="corinth" ${user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
                             <option value="olympia" ${user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
-                            <option value="delfi" ${user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
+                            <option value="delphi" ${user.house === 'delphi' ? 'selected' : ''}>🔮 Delphi</option>
                         </select>
                     </div>
                 </div>
@@ -1618,6 +1692,7 @@ function getLogTypeDisplay(type) {
     const types = {
         'goal_invalidation': '🎯 Goal Invalidation',
         'goal_update': '✏️ Goal Edit',
+        'goal_revocation': '🔄 Goal Revocation',
         'user_update': '👤 User Update',
         'user_removal': '🗑️ User Removal',
         'house_change': '🏛️ House Change'

@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'User ID is required' });
   }
 
-  const validHouses = ['sparta', 'athens', 'corinth', 'olympia', 'delfi', ''];
+  const validHouses = ['sparta', 'athens', 'corinth', 'olympia', 'delphi', ''];
   if (house && !validHouses.includes(house)) {
     return res.status(400).json({ success: false, error: 'Invalid house selection' });
   }
