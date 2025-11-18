@@ -788,22 +788,22 @@ async function saveNameEdit(userId) {
             await logAdminAction('user_update', `Updated user display name to "${newDisplayName}"`, { userId, newDisplayName });
             
             // Update the display immediately
-            const userCard = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card');
             let nameDisplay;
+            const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
             
-            if (userCard) {
-                // Users section
-                nameDisplay = userCard.querySelector('.name-display');
-                if (nameDisplay) {
-                    const h4Element = nameDisplay.querySelector('h4');
-                    if (h4Element) {
-                        h4Element.textContent = newDisplayName;
+            if (editButton) {
+                const userCard = editButton.closest('.user-card');
+                if (userCard) {
+                    // Users section
+                    nameDisplay = userCard.querySelector('.name-display');
+                    if (nameDisplay) {
+                        const h4Element = nameDisplay.querySelector('h4');
+                        if (h4Element) {
+                            h4Element.textContent = newDisplayName;
+                        }
                     }
-                }
-            } else {
-                // Goals section - find by edit button
-                const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
-                if (editButton) {
+                } else {
+                    // Goals section
                     nameDisplay = editButton.closest('.name-display');
                     if (nameDisplay) {
                         const currentNameElement = nameDisplay.querySelector('.current-name');
@@ -812,6 +812,8 @@ async function saveNameEdit(userId) {
                         }
                     }
                 }
+            } else {
+                console.warn('Could not find edit button for userId:', userId);
             }
             
             if (nameDisplay) {
