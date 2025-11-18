@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - After School Goals</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .admin-header {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            border: 2px solid var(--primary-color);
+        }
+        
+        .admin-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .nav-btn:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .admin-section {
+            display: none;
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 2px solid var(--border-color-color);
+        }
+        
+        .admin-section.active {
+            display: block;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-input {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--background);
+            color: var(--text-primary);
+            min-width: 200px;
+        }
+        
+        .goals-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        }
+        
+        .admin-goal-card {
+            background: var(--background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 2px solid var(--border-color);
+        }
+        
+        .goal-user-info {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .goal-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .goal-status.active {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .goal-status.completed {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .goal-status.invalidated {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .goal-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+            border: 2px solid #f44336;
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+            border-color: #d32f2f;
+        }
+        
+        .prompt-editor {
+            margin-bottom: 2rem;
+        }
+        
+        .prompt-textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        
+        .prompt-info {
+            background: var(--background);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 2px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .invalidation-form {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--surface);
+            border-radius: 0.5rem;
+            border: 2px solid var(--border-color);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Admin Login Section -->
+    <section id="adminAuthSection" class="auth-section">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h1>🔐 Admin Panel</h1>
+                <p>Access the administrative dashboard</p>
+                
+                <form id="adminLoginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="adminPasswordField">Admin Password</label>
+                        <input type="password" id="adminPasswordField" required placeholder="Enter admin password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-icon">🚀</span>
+                        Access Admin Panel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Admin Panel Section -->
+    <section id="adminPanelSection" class="hidden">
+        <div class="admin-container">
+            <div class="admin-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h1>📊 Admin Dashboard</h1>
+                        <p>Welcome, <span id="adminEmail"></span></p>
+                    </div>
+                    <button onclick="adminLogout()" class="btn btn-secondary">
+                        <span class="btn-icon">🚪</span>
+                        Logout
+                    </button>
+                </div>
+            </div>
+
+            <nav class="admin-nav">
+                <button class="nav-btn active" onclick="showAdminSection('goals')">📋 Student Goals</button>
+                <button class="nav-btn" onclick="showAdminSection('prompts')">🤖 AI Prompts</button>
+                <button class="nav-btn" onclick="showAdminSection('stats')">📈 Statistics</button>
+            </nav>
+
+            <!-- Goals Management Section -->
+            <div id="goalsSection" class="admin-section active">
+                <div class="filters">
+                    <select id="dateFilter" class="filter-input">
+                        <option value="all">All Time</option>
+                        <option value="today" selected>Today</option>
+                        <option value="week">This Week</option>
+                    </select>
+                    <input type="text" id="usernameFilter" class="filter-input" placeholder="Filter by username...">
+                    <input type="text" id="emailFilter" class="filter-input" placeholder="Filter by email...">
+                    <button onclick="applyFilters()" class="btn btn-primary">Apply Filters</button>
+                    <button onclick="clearFilters()" class="btn btn-secondary">Clear</button>
+                </div>
+
+                <div id="goalsContainer">
+                    <div class="loading">Loading goals...</div>
+                </div>
+            </div>
+
+            <!-- AI Prompts Section -->
+            <div id="promptsSection" class="admin-section">
+                <h2>🤖 AI System Prompts</h2>
+                <p>Customize the AI validation prompts used throughout the system.</p>
+                
+                <div class="prompt-editor">
+                    <h3>Goal Validation Prompt</h3>
+                    <div class="prompt-info">
+                        <strong>Available Variables:</strong> {contextInfo}, {goal}, {xpInfo}, {screenshotInfo}
+                    </div>
+                    <textarea id="validationPrompt" class="prompt-textarea" placeholder="Loading validation prompt..."></textarea>
+                    <button onclick="savePrompt('validation')" class="btn btn-primary">Save Validation Prompt</button>
+                </div>
+                
+                <div class="prompt-editor">
+                    <h3>Answer Questions Prompt</h3>
+                    <div class="prompt-info">
+                        <strong>Available Variables:</strong> {contextInfo}, {goal}, {xpInfo}, {screenshotInfo}, {questionsAndAnswers}
+                    </div>
+                    <textarea id="answerQuestionsPrompt" class="prompt-textarea" placeholder="Loading answer questions prompt..."></textarea>
+                    <button onclick="savePrompt('answerQuestions')" class="btn btn-primary">Save Answer Questions Prompt</button>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div id="statsSection" class="admin-section">
+                <h2>📈 System Statistics</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalGoals">-</div>
+                        <div>Total Goals</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeGoals">-</div>
+                        <div>Active Goals</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="completedGoals">-</div>
+                        <div>Completed Goals</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="invalidatedGoals">-</div>
+                        <div>Invalidated Goals</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalUsers">-</div>
+                        <div>Total Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="admin.js"></script>
+</body>
+</html>

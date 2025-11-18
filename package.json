@@ -1,0 +1,23 @@
+{
+  "name": "afterschool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "After School Learning Tool",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18.x"
+  },
+  "dependencies": {
+    "axios": "^1.5.1",
+    "redis": "^4.6.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+.git
+.env.local
+README.md
+Knowledge*.md
+Target.md
+test-goals.md
+UPDATE_API_KEYS.md
+env-template.txt
+env.example
+server.js.backup
+*.md

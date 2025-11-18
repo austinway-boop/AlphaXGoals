@@ -1,0 +1,879 @@
+// Application State
+let appState = {
+    currentUser: null,
+    goals: [],
+    validationResult: null,
+    pendingQuestions: null,
+    userAlphaXProject: null
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Goal Tracker initialized');
+    checkSession();
+    setupEventListeners();
+});
+
+// Check if user has an active session
+async function checkSession() {
+    try {
+        // Check database status first
+        await checkDatabaseStatus();
+        
+        const response = await fetch('/api/session');
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+            appState.currentUser = data.user;
+            appState.userAlphaXProject = data.user.alphaXProject;
+            
+            // Check if user needs to set up Alpha X project
+            if (!appState.userAlphaXProject) {
+                showAlphaXModal();
+            } else {
+                showApp();
+                loadGoals();
+            }
+        } else {
+            showAuth();
+        }
+    } catch (error) {
+        console.error('Session check failed:', error);
+        showAuth();
+    }
+}
+
+// Check database connectivity status
+async function checkDatabaseStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        if (data.success && data.database.connected) {
+            showToast('Database connected successfully', 'success');
+            console.log('Database status:', data.database);
+        } else {
+            showToast('Database connection issues detected', 'warning');
+            console.warn('Database status:', data.database);
+        }
+    } catch (error) {
+        showToast('Unable to check database status', 'error');
+        console.error('Database status check failed:', error);
+    }
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Authentication forms
+    document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
+    document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
+    document.getElementById('adminLoginFormElement').addEventListener('submit', handleAdminLogin);
+    
+    // Goal form
+    document.getElementById('goalForm').addEventListener('submit', handleGoalSubmit);
+    
+    // Alpha X project handler
+    document.getElementById('alphaXProject').addEventListener('input', handleAlphaXProjectChange);
+    
+    // Alpha X project setup form
+    document.getElementById('alphaXSetupForm').addEventListener('submit', handleAlphaXSetup);
+}
+
+// Authentication Functions
+function switchToRegister() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.remove('hidden');
+}
+
+function switchToLogin() {
+    document.getElementById('registerForm').classList.add('hidden');
+    document.getElementById('adminLoginForm').classList.add('hidden');
+    document.getElementById('loginForm').classList.remove('hidden');
+}
+
+function showAdminLogin() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.add('hidden');
+    document.getElementById('adminLoginForm').classList.remove('hidden');
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    showLoading('Signing you in...');
+    
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.currentUser = data.user;
+            appState.userAlphaXProject = data.user.alphaXProject;
+            showToast('Welcome back!', 'success');
+            
+            // Check if user needs to set up Alpha X project
+            if (!appState.userAlphaXProject) {
+                showAlphaXModal();
+            } else {
+                showApp();
+                loadGoals();
+            }
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Login failed. Please try again.', 'error');
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById('registerUsername').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    
+    showLoading('Creating your account...');
+    
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, email, password })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.currentUser = data.user;
+            appState.userAlphaXProject = data.user.alphaXProject;
+            showToast('Account created successfully!', 'success');
+            
+            // New users always need to set up Alpha X project
+            showAlphaXModal();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Registration failed. Please try again.', 'error');
+    }
+}
+
+async function handleAdminLogin(e) {
+    e.preventDefault();
+    const password = document.getElementById('adminPassword').value;
+    
+    showLoading('Authenticating admin...');
+    
+    try {
+        const response = await fetch('/api/admin-login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast('Redirecting to Admin Panel...', 'success');
+            // Redirect to admin panel
+            window.location.href = '/admin.html';
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Admin login failed. Please try again.', 'error');
+    }
+}
+
+async function logout() {
+    try {
+        await fetch('/api/logout', { method: 'POST' });
+        appState.currentUser = null;
+        appState.goals = [];
+        showToast('Logged out successfully', 'success');
+        showAuth();
+    } catch (error) {
+        showToast('Logout failed', 'error');
+    }
+}
+
+// UI State Management
+function showAuth() {
+    document.getElementById('authSection').classList.remove('hidden');
+    document.getElementById('appSection').classList.add('hidden');
+    
+    // Reset forms
+    document.getElementById('loginFormElement').reset();
+    document.getElementById('registerFormElement').reset();
+}
+
+function showApp() {
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('appSection').classList.remove('hidden');
+    document.getElementById('alphaXModal').classList.add('hidden');
+    
+    // Update welcome message
+    document.getElementById('welcomeUser').textContent = `Welcome, ${appState.currentUser.username}!`;
+    
+    // Auto-populate Alpha X project field if available
+    if (appState.userAlphaXProject) {
+        document.getElementById('alphaXProject').value = appState.userAlphaXProject;
+    }
+    
+    // Reset goal form
+    document.getElementById('goalForm').reset();
+    // Re-populate Alpha X project after reset
+    if (appState.userAlphaXProject) {
+        document.getElementById('alphaXProject').value = appState.userAlphaXProject;
+    }
+    document.getElementById('validationResults').classList.add('hidden');
+    document.getElementById('submitGoalBtn').disabled = true;
+    appState.validationResult = null;
+}
+
+function showAlphaXModal() {
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('alphaXModal').classList.remove('hidden');
+}
+
+async function handleAlphaXSetup(e) {
+    e.preventDefault();
+    const alphaXProject = document.getElementById('userAlphaXProject').value.trim();
+    
+    if (!alphaXProject) {
+        showToast('Please describe your Alpha X project', 'warning');
+        return;
+    }
+    
+    if (alphaXProject.length < 20) {
+        showToast('Please provide more details about your Alpha X project', 'warning');
+        return;
+    }
+    
+    showLoading('Saving your Alpha X project...');
+    
+    try {
+        const response = await fetch('/api/update-alpha-x-project', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ alphaXProject })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.userAlphaXProject = alphaXProject;
+            appState.currentUser.alphaXProject = alphaXProject;
+            showToast('Alpha X project saved successfully!', 'success');
+            showApp();
+            loadGoals();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to save Alpha X project. Please try again.', 'error');
+    }
+}
+
+// Goal Management Functions
+async function validateGoal() {
+    const goal = document.getElementById('goalInput').value.trim();
+    const alphaXProject = document.getElementById('alphaXProject').value.trim();
+    
+    if (!goal) {
+        showToast('Please enter a goal first', 'warning');
+        return;
+    }
+    
+    if (!alphaXProject) {
+        showToast('Please enter your Alpha X project', 'warning');
+        return;
+    }
+    
+    showLoading('Validating your goal with AI...');
+    
+    try {
+        const response = await fetch('/api/validate-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                goal,
+                alphaXProject
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.validationResult = data.validation;
+            displayValidationResults(data.validation);
+            
+            // Enable submit button if goal is valid
+            document.getElementById('submitGoalBtn').disabled = !data.validation.isValid;
+            
+            if (data.validation.isValid) {
+                showToast('Goal validated successfully! You can now submit it.', 'success');
+            } else {
+                showToast('Goal needs improvement. Check the validation feedback.', 'warning');
+            }
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Validation failed. Please try again.', 'error');
+    }
+}
+
+function displayValidationResults(validation) {
+    const resultsContainer = document.getElementById('validationResults');
+    const contentContainer = document.getElementById('validationContent');
+    
+    // Check if AI has questions
+    if (validation.hasQuestions && validation.questions && validation.questions.length > 0) {
+        displayAIQuestions(validation.questions);
+        return;
+    }
+    
+    const statusClass = validation.isValid ? 'valid' : 'invalid';
+    const statusIcon = validation.isValid ? '✅' : '❌';
+    const statusText = validation.isValid ? 'Goal Approved' : 'Needs Improvement';
+    
+    const getScoreIcon = (score) => {
+        if (score >= 9) return '🟢';
+        if (score >= 7) return '🟡';
+        return '🔴';
+    };
+    
+    const getScoreColor = (score) => {
+        if (score >= 9) return 'var(--success-color)';
+        if (score >= 7) return 'var(--warning-color)';
+        return 'var(--danger-color)';
+    };
+    
+    contentContainer.innerHTML = `
+        <div class="validation-status ${statusClass}">
+            <span>${statusIcon}</span>
+            ${statusText} (Overall Score: ${validation.overallScore || 0}/10)
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">${getScoreIcon(validation.ambitionScore || 0)}</div>
+            <div class="validation-content">
+                <h4>Ambition Score</h4>
+                <p><strong style="color: ${getScoreColor(validation.ambitionScore || 0)}">${validation.ambitionScore || 0}/10</strong> - How challenging and growth-oriented is this goal?</p>
+                <p><em>Requirement: 9/10 to pass</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">${getScoreIcon(validation.measurableScore || 0)}</div>
+            <div class="validation-content">
+                <h4>Measurable Score</h4>
+                <p><strong style="color: ${getScoreColor(validation.measurableScore || 0)}">${validation.measurableScore || 0}/10</strong> - How clearly defined and measurable are the success criteria?</p>
+                <p><em>Requirement: 9/10 to pass</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">${getScoreIcon(validation.relevanceScore || 0)}</div>
+            <div class="validation-content">
+                <h4>Relevance Score</h4>
+                <p><strong style="color: ${getScoreColor(validation.relevanceScore || 0)}">${validation.relevanceScore || 0}/10</strong> - How relevant is this goal to your Alpha X project?</p>
+                <p><em>Requirement: 9/10 to pass</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">⏱️</div>
+            <div class="validation-content">
+                <h4>Time Estimate</h4>
+                <p><strong>${validation.estimatedHours || 0} hours</strong> of work required</p>
+                <p><em>Minimum: 3 hours required</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">🤖</div>
+            <div class="validation-content">
+                <h4>AI Feedback</h4>
+                <p>${validation.feedback}</p>
+                ${validation.suggestions && validation.suggestions.length > 0 ? `
+                    <div class="validation-suggestions">
+                        <strong>Suggestions for improvement:</strong>
+                        <ul>
+                            ${validation.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    resultsContainer.classList.remove('hidden');
+}
+
+function displayAIQuestions(questions) {
+    const resultsContainer = document.getElementById('validationResults');
+    const contentContainer = document.getElementById('validationContent');
+    
+    contentContainer.innerHTML = `
+        <div class="validation-status invalid">
+            <span>❓</span>
+            AI Needs Clarification
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">🤖</div>
+            <div class="validation-content">
+                <h4>AI Questions</h4>
+                <p>The AI needs more information to properly validate your goal. Please answer the following questions with detailed explanations:</p>
+                <div class="ai-help-note">
+                    <strong>💡 Tip:</strong> If the AI asks about something unfamiliar (like a platform, tool, or concept), explain what it is and how it works. This helps the AI better understand and validate your goal.
+                </div>
+            </div>
+        </div>
+        
+        <div class="ai-questions-form">
+            ${questions.map((question, index) => `
+                <div class="question-group">
+                    <label for="aiQuestion${index}" class="question-label">
+                        <span class="question-number">${index + 1}.</span>
+                        ${escapeHtml(question)}
+                    </label>
+                    <textarea 
+                        id="aiQuestion${index}" 
+                        class="question-answer" 
+                        placeholder="Provide a detailed explanation... If this is about an unfamiliar platform or concept, please explain what it is and how it works."
+                        rows="3"
+                        required
+                    ></textarea>
+                </div>
+            `).join('')}
+            
+            <div class="questions-actions">
+                <button type="button" class="btn btn-primary" onclick="submitAnswers()">
+                    <span class="btn-icon">💬</span>
+                    Submit Answers
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Store questions in state for later use
+    appState.pendingQuestions = questions;
+    
+    resultsContainer.classList.remove('hidden');
+}
+
+async function submitAnswers() {
+    const questions = appState.pendingQuestions;
+    if (!questions || questions.length === 0) {
+        showToast('No questions to answer', 'error');
+        return;
+    }
+    
+    // Collect answers
+    const answers = [];
+    for (let i = 0; i < questions.length; i++) {
+        const answer = document.getElementById(`aiQuestion${i}`).value.trim();
+        if (!answer) {
+            showToast(`Please answer question ${i + 1}`, 'warning');
+            return;
+        }
+        answers.push(answer);
+    }
+    
+    const goal = document.getElementById('goalInput').value.trim();
+    const alphaXProject = document.getElementById('alphaXProject').value.trim();
+    
+    showLoading('Processing your answers...');
+    
+    try {
+        const response = await fetch('/api/answer-questions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                goal,
+                alphaXProject,
+                questions,
+                answers
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.validationResult = data.validation;
+            appState.pendingQuestions = null;
+            // Store AI questions and answers for goal submission
+            appState.aiQuestions = questions;
+            appState.aiAnswers = answers;
+            displayValidationResults(data.validation);
+            
+            // Enable submit button if goal is valid
+            document.getElementById('submitGoalBtn').disabled = !data.validation.isValid;
+            
+            if (data.validation.isValid) {
+                showToast('Goal validated successfully! Submitting your goal...', 'success');
+                // Automatically submit the goal since user already went through validation process
+                setTimeout(() => {
+                    document.getElementById('submitGoalBtn').click();
+                }, 1500); // Small delay to show the success message
+            } else {
+                showToast('Goal still needs improvement. Check the validation feedback.', 'warning');
+            }
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to process answers. Please try again.', 'error');
+    }
+}
+
+async function handleGoalSubmit(e) {
+    e.preventDefault();
+    
+    if (!appState.validationResult || !appState.validationResult.isValid) {
+        showToast('Please validate your goal first', 'warning');
+        return;
+    }
+    
+    const goal = document.getElementById('goalInput').value;
+    const alphaXProject = document.getElementById('alphaXProject').value;
+    
+    const requestBody = {
+        goal,
+        alphaXProject,
+        // Include AI questions and answers if they exist
+        aiQuestions: appState.aiQuestions || null,
+        aiAnswers: appState.aiAnswers || null
+    };
+    
+    showLoading('Submitting your goal...');
+    
+    try {
+        const response = await fetch('/api/submit-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast('Goal submitted successfully!', 'success');
+            
+            // Reset form and validation
+            document.getElementById('goalForm').reset();
+            document.getElementById('validationResults').classList.add('hidden');
+            document.getElementById('submitGoalBtn').disabled = true;
+            appState.validationResult = null;
+            appState.aiQuestions = null;
+            appState.aiAnswers = null;
+            
+            // Reset alpha X project field
+            document.getElementById('alphaXProject').value = '';
+            
+            // Reload goals
+            loadGoals();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to submit goal. Please try again.', 'error');
+    }
+}
+
+async function loadGoals() {
+    const goalsList = document.getElementById('goalsList');
+    goalsList.innerHTML = '<div class="loading">Loading your goals...</div>';
+    
+    try {
+        const response = await fetch('/api/goals');
+        const data = await response.json();
+        
+        if (data.success) {
+            appState.goals = data.goals;
+            displayGoals(data.goals);
+        } else {
+            goalsList.innerHTML = '<div class="loading">Failed to load goals</div>';
+        }
+    } catch (error) {
+        goalsList.innerHTML = '<div class="loading">Failed to load goals</div>';
+    }
+}
+
+function displayGoals(goals) {
+    const goalsList = document.getElementById('goalsList');
+    
+    if (!goals || goals.length === 0) {
+        goalsList.innerHTML = `
+            <div class="goal-card text-center">
+                <h3>No Goals Yet</h3>
+                <p>Submit your first goal above to get started!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort goals: today's goals first, then by creation date (newest first)
+    const today = new Date().toDateString();
+    const sortedGoals = [...goals].sort((a, b) => {
+        const aIsToday = new Date(a.createdAt).toDateString() === today;
+        const bIsToday = new Date(b.createdAt).toDateString() === today;
+        
+        // If one is today's goal and the other isn't, today's goal comes first
+        if (aIsToday && !bIsToday) return -1;
+        if (!aIsToday && bIsToday) return 1;
+        
+        // Otherwise sort by creation date (newest first)
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    
+    goalsList.innerHTML = sortedGoals.map(goal => {
+        const createdDate = new Date(goal.createdAt).toLocaleDateString();
+        const completedDate = goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : null;
+        const isToday = new Date(goal.createdAt).toDateString() === today;
+        
+        return `
+            <div class="goal-card${isToday ? ' today-goal' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
+                <div class="goal-header">
+                    <div class="goal-status ${goal.status}">
+                        <span>${goal.status === 'completed' ? '✅' : '🎯'}</span>
+                        ${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}
+                    </div>
+                </div>
+                
+                <div class="goal-content">
+                    <h3>${escapeHtml(goal.goal)}</h3>
+                    
+                    <div class="goal-meta">
+                        <span><span>📅</span> Created: ${createdDate}</span>
+                        ${goal.alphaXProject ? `<span><span>🚀</span> Project: ${escapeHtml(goal.alphaXProject)}</span>` : ''}
+                        ${completedDate ? `<span><span>🎉</span> Completed: ${completedDate}</span>` : ''}
+                    </div>
+                </div>
+                
+                ${goal.status === 'active' ? `
+                    <div class="goal-actions">
+                        <button class="btn btn-success" onclick="completeGoal('${goal.id}')">
+                            <span class="btn-icon">✅</span>
+                            Mark Complete
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function completeGoal(goalId) {
+    if (!confirm('Are you sure you want to mark this goal as completed?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/complete-goal?goalId=${goalId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Goal marked as completed! 🎉', 'success');
+            loadGoals();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to complete goal', 'error');
+    }
+}
+
+// Alpha X project change handler
+function handleAlphaXProjectChange(e) {
+    const project = e.target.value.trim();
+    
+    if (project.length > 0 && project.length < 10) {
+        showToast('Please provide more details about your Alpha X project', 'warning');
+    }
+}
+
+// Image modal for screenshots
+function openImageModal(imageSrc) {
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+        <div class="image-modal-content">
+            <img src="${imageSrc}" alt="Screenshot">
+            <button class="close-modal" onclick="closeImageModal()">&times;</button>
+        </div>
+    `;
+    
+    modal.onclick = (e) => {
+        if (e.target === modal) closeImageModal();
+    };
+    
+    document.body.appendChild(modal);
+    
+    // Add modal styles dynamically
+    if (!document.getElementById('modalStyles')) {
+        const style = document.createElement('style');
+        style.id = 'modalStyles';
+        style.textContent = `
+            .image-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .image-modal-content {
+                position: relative;
+                max-width: 90vw;
+                max-height: 90vh;
+            }
+            
+            .image-modal img {
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0.5rem;
+            }
+            
+            .close-modal {
+                position: absolute;
+                top: -40px;
+                right: 0;
+                background: var(--surface);
+                color: var(--text-primary);
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                font-size: 1.5rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function closeImageModal() {
+    const modal = document.querySelector('.image-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Loading overlay functions
+function showLoading(message = 'Loading...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const text = document.getElementById('loadingText');
+    text.textContent = message;
+    overlay.classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    toastMessage.textContent = message;
+    
+    // Remove existing type classes
+    toast.classList.remove('success', 'error', 'warning');
+    
+    // Add new type class
+    if (type !== 'info') {
+        toast.classList.add(type);
+    }
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 4000);
+}
+
+// Test Claude API connectivity
+async function testClaude() {
+    showLoading('Testing Claude API connection...');
+    
+    try {
+        const response = await fetch('/api/test-claude', {
+            method: 'GET'
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast(`✅ Claude API is working! Response: ${data.claudeResponse}`, 'success');
+            console.log('Claude API Test Success:', data);
+        } else {
+            showToast(`❌ Claude API test failed: ${data.error}`, 'error');
+            console.error('Claude API Test Failed:', data);
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('❌ Failed to test Claude API connection', 'error');
+        console.error('Claude API Test Error:', error);
+    }
+}
+
+// Utility function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
