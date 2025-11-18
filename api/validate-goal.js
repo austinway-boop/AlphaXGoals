@@ -96,9 +96,11 @@ AMBITION STANDARDS (4/5 required):
 - Examples of SUFFICIENT ambition: "write 500+ word analysis", "create detailed project plan", "conduct 3+ interviews"
 
 MEASURABILITY (8/10 required):
-- Must have specific, quantifiable outcomes
-- Clear success criteria that can be objectively verified
-- No vague terms like "improve" or "better"
+- If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
+- Clear success criteria that can be objectively verified = automatic 8/10+
+- Examples of measurable: "write 500 words", "send 5 emails", "read 3 papers", "post 4 times"
+- Only fail if completely vague like "get better" or "improve skills" with no specifics
+- Be generous with measurability scoring - most goals with numbers should pass
 
 RELEVANCE (8/10 required):
 - Must directly advance their Alpha X project

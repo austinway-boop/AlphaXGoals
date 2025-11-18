@@ -205,133 +205,79 @@ function displayGoals(goals) {
         return;
     }
     
-    container.innerHTML = `
-        <div class="goals-grid">
-            ${goals.map(goal => {
-                return `
-                <div class="admin-goal-card">
-                    <div class="goal-header-admin" onclick="toggleGoalExpansion('${goal.id}')">
-                        <div class="goal-user-info">
-                            <div class="user-details">
-                                <strong>👤 ${escapeHtml(goal.user.username)}</strong>
-                                <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span><br>
-                                <small>📧 ${escapeHtml(goal.user.email)}</small>
-                            </div>
-                            <div class="goal-status ${goal.status}">${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}</div>
-                        </div>
-                        <div class="goal-preview">
-                            <h4>🎯 ${escapeHtml(goal.goal.length > 100 ? goal.goal.substring(0, 100) + '...' : goal.goal)}</h4>
-                            <div class="expand-indicator">
-                                <span class="expand-arrow">▼</span>
-                                <small>Click to expand</small>
-                            </div>
-                        </div>
+    // Create each goal card separately to avoid nesting issues
+    const goalCards = goals.map(goal => {
+        const validationScores = goal.validationData ? `
+            <div class="admin-validation-summary">
+                <h5>🤖 AI Validation Analysis</h5>
+                <div class="validation-scores-admin">
+                    <div class="score-row">
+                        <span>Ambition: <strong class="${goal.validationData.ambitionScore >= 4 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/5</strong></span>
+                        <span>Measurable: <strong class="${goal.validationData.measurableScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</strong></span>
+                        <span>Relevance: <strong class="${goal.validationData.relevanceScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</strong></span>
                     </div>
-                    
-                    <div class="goal-details" id="details-${goal.id}" style="display: none;">
-                    
-                        <div class="house-management">
-                            <label>🏛️ Assign House:</label>
-                            <select onchange="updateUserHouse('${goal.userId}', this.value)" class="house-selector-dropdown">
-                                <option value="">No House</option>
-                                <option value="sparta" ${goal.user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
-                                <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
-                                <option value="corinth" ${goal.user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
-                                <option value="olympia" ${goal.user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
-                                <option value="delfi" ${goal.user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
-                            </select>
-                        </div>
-                        
-                        <div class="goal-content-full">
-                            <h4>🎯 Full Goal</h4>
-                            <p class="goal-text">${escapeHtml(goal.goal)}</p>
-                            ${goal.alphaXProject ? `<p class="alpha-project"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
-                        
-                        <div class="goal-meta">
-                            <span>📅 ${new Date(goal.createdAt).toLocaleDateString()}</span>
-                            ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
-                        </div>
-                        
-                        ${goal.validationData ? `
-                            <div class="admin-validation-summary">
-                                <h5>🤖 AI Validation Analysis</h5>
-                                <div class="validation-scores-admin">
-                                    <div class="score-row">
-                                        <span>Ambition: <strong class="${goal.validationData.ambitionScore >= 4 ? 'score-pass' : 'score-fail'}">${goal.validationData.ambitionScore || 0}/5</strong></span>
-                                        <span>Measurable: <strong class="${goal.validationData.measurableScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.measurableScore || 0}/10</strong></span>
-                                        <span>Relevance: <strong class="${goal.validationData.relevanceScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.relevanceScore || 0}/10</strong></span>
-                                    </div>
-                                    <div class="overall-score">
-                                        Overall: <strong class="${goal.validationData.overallScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</strong>
-                                    </div>
-                                </div>
-                                <div class="time-analysis">
-                                    <p><strong>⏱️ Time Estimate:</strong> ${goal.validationData.estimatedHours || 0} hours</p>
-                                    ${goal.validationData.timeReasoning ? `<p class="time-reasoning"><em>${escapeHtml(goal.validationData.timeReasoning)}</em></p>` : ''}
-                                </div>
-                                <div class="ai-feedback">
-                                    <p><strong>💬 AI Feedback:</strong></p>
-                                    <p class="feedback-text">"${escapeHtml(goal.validationData.feedback || 'No feedback available')}"</p>
-                                </div>
-                                ${goal.validationData.suggestions && goal.validationData.suggestions.length > 0 ? `
-                                    <div class="ai-suggestions">
-                                        <p><strong>💡 Suggestions:</strong></p>
-                                        <ul>
-                                            ${goal.validationData.suggestions.map(suggestion => `<li>${escapeHtml(suggestion)}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        ` : ''}
-                        
-                        
-                        ${goal.invalidatedAt ? `
-                            <div class="invalidation-notice">
-                                <strong>❌ Invalidated</strong><br>
-                                <small>By: ${goal.invalidatedBy} on ${new Date(goal.invalidatedAt).toLocaleDateString()}</small><br>
-                                <small>Reason: ${escapeHtml(goal.invalidationReason || 'No reason provided')}</small>
-                            </div>
-                        ` : ''}
-                        
-                        ${goal.aiQuestions && goal.aiAnswers ? `
-                            <div class="ai-qa-section">
-                                <h5>🤖 AI Questions & Student Answers</h5>
-                                ${safeParseAndDisplayQA(goal.aiQuestions, goal.aiAnswers)}
-                            </div>
-                        ` : ''}
-                        
-                        ${goal.status === 'active' ? `
-                            <div class="quick-invalidate">
-                                <h6>⚡ Quick Invalidate</h6>
-                                <div class="invalidation-reasons">
-                                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not ambitious enough - too easy')">Not Ambitious</button>
-                                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not measurable - unclear success criteria')">Not Measurable</button>
-                                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not relevant to Alpha X project')">Not Relevant</button>
-                                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Insufficient time commitment - less than 3 hours')">Too Short</button>
-                                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Inappropriate or off-topic content')">Inappropriate</button>
-                                </div>
-                                <div class="goal-actions">
-                                    <button class="btn btn-danger btn-sm" onclick="showInvalidationForm('${goal.id}')">
-                                        <span class="btn-icon">✏️</span>
-                                        Custom Reason
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="invalidationForm_${goal.id}" class="invalidation-form hidden">
-                                <label for="reason_${goal.id}">Custom invalidation reason:</label>
-                                <textarea id="reason_${goal.id}" style="width: 100%; margin: 0.5rem 0; padding: 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border-color);" rows="3" placeholder="Enter detailed reason for invalidation..."></textarea>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-danger btn-sm" onclick="invalidateGoal('${goal.id}')">Confirm Invalidation</button>
-                                    <button class="btn btn-secondary btn-sm" onclick="hideInvalidationForm('${goal.id}')">Cancel</button>
-                                </div>
-                            </div>
-                        ` : ''}
+                    <div class="overall-score">
+                        Overall: <strong class="${goal.validationData.overallScore >= 8 ? 'score-pass' : 'score-fail'}">${goal.validationData.overallScore || 0}/10</strong>
+                    </div>
+                </div>
+                <div class="ai-feedback">
+                    <p><strong>💬 AI Feedback:</strong></p>
+                    <p class="feedback-text">"${escapeHtml(goal.validationData.feedback || 'No feedback available')}"</p>
+                </div>
             </div>
-        </div>
-                `;
-            }).join('')}
-        </div>
-    `;
+        ` : '';
+        
+        const invalidationSection = goal.status === 'active' ? `
+            <div class="quick-invalidate">
+                <h6>⚡ Quick Invalidate</h6>
+                <div class="invalidation-reasons">
+                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not ambitious enough')">Not Ambitious</button>
+                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not measurable')">Not Measurable</button>
+                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Not relevant')">Not Relevant</button>
+                    <button class="reason-btn" onclick="quickInvalidate('${goal.id}', 'Too short')">Too Short</button>
+                </div>
+            </div>
+        ` : '';
+        
+        return `
+            <div class="admin-goal-card">
+                <div class="goal-header-simple">
+                    <div class="user-info-simple">
+                        <strong>👤 ${escapeHtml(goal.user.username)}</strong>
+                        <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span>
+                        <div class="goal-status ${goal.status}">${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}</div>
+                    </div>
+                </div>
+                
+                <div class="goal-content-simple">
+                    <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                    ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
+                    
+                    <div class="goal-dates">
+                        <span>📅 Created: ${new Date(goal.createdAt).toLocaleDateString()}</span>
+                        ${goal.completedAt ? `<span>🎉 Completed: ${new Date(goal.completedAt).toLocaleDateString()}</span>` : ''}
+                    </div>
+                </div>
+                
+                <div class="house-assignment">
+                    <label>🏛️ House:</label>
+                    <select onchange="updateUserHouse('${goal.userId}', this.value)">
+                        <option value="">No House</option>
+                        <option value="sparta" ${goal.user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
+                        <option value="athens" ${goal.user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
+                        <option value="corinth" ${goal.user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
+                        <option value="olympia" ${goal.user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
+                        <option value="delfi" ${goal.user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
+                    </select>
+                </div>
+                
+                ${validationScores}
+                ${invalidationSection}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = `<div class="goals-grid">${goalCards.join('')}</div>`;
 }
 
 // Time view management
