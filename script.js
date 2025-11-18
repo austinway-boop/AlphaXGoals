@@ -878,7 +878,7 @@ function displayGoals(goals) {
                     </div>
                     
                     ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
-                        <button class="btn-complete-minimal" onclick="completeGoal('${goal.id}')">
+                        <button class="btn-complete-minimal" onclick="showCompletionModal('${goal.id}')">
                             Complete
                         </button>
                     ` : goal.status === 'active' ? `
