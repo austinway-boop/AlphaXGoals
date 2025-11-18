@@ -98,10 +98,11 @@ TIME ESTIMATION - BE SKEPTICAL:
 - Simple tasks are NOT ambitious regardless of claimed time
 
 AMBITION STANDARDS (4/5 required):
-- Should challenge the student and promote growth
-- Involves meaningful learning or skill development
-- Requires focused work, not just busy work
+- If you estimate the goal will take 3.5+ hours, automatically give it 4/5 or 5/5
+- Goals requiring 3+ hours of focused work should get 4/5 minimum
+- Goals requiring 4+ hours of work should get 5/5
 - Use their answers to assess true difficulty level
+- Be generous for substantial, time-consuming goals
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
@@ -139,9 +140,9 @@ Score on these categories:
 - Relevance: How relevant is this goal to their Alpha X project? (8/10 required - BE GENEROUS)
 
 SCORING STRATEGY:
-- AMBITION: Be strict and critical - this is the main filter
-- MEASURABLE: Be generous - if it has numbers/specifics, give 8/10+
-- RELEVANCE: Be generous - if it relates to education/skills/project, give 8/10+
+- AMBITION: If 3.5+ hours estimated, give 4/5+. If 4+ hours, give 5/5. Be generous for substantial goals.
+- MEASURABLE: If it has numbers/specifics, automatically give 8/10+
+- RELEVANCE: If it relates to education/skills/project in any way, automatically give 8/10+
 
 Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevance to be valid. Overall score should be 8/10 minimum.`;
 
