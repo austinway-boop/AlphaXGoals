@@ -83,6 +83,24 @@ function handleDynamicButtonClicks(e) {
         if (userId && username) {
             removeUser(userId, username);
         }
+    } else if (e.target.matches('.edit-name-btn')) {
+        e.preventDefault();
+        const userId = e.target.dataset.userId;
+        if (userId) {
+            showNameEditor(userId);
+        }
+    } else if (e.target.matches('.save-name-btn')) {
+        e.preventDefault();
+        const userId = e.target.dataset.userId;
+        if (userId) {
+            saveNameEdit(userId);
+        }
+    } else if (e.target.matches('.cancel-name-btn')) {
+        e.preventDefault();
+        const userId = e.target.dataset.userId;
+        if (userId) {
+            cancelNameEdit(userId);
+        }
     }
 }
 
@@ -115,13 +133,33 @@ function handleDynamicChangeEvents(e) {
             }
         }, 1000); // Wait 1 second after user stops typing
     } else if (e.target.matches('#userSearchFilter')) {
-        // Re-filter users when search changes
-        const currentUsers = adminState.users || [];
-        if (currentUsers.length > 0) {
-            displayUsers(currentUsers);
+        // Debounced search functionality
+        if (displayNameUpdateTimer) {
+            clearTimeout(displayNameUpdateTimer);
         }
+        
+        displayNameUpdateTimer = setTimeout(() => {
+            const currentUsers = adminState.users || [];
+            if (currentUsers.length > 0) {
+                displayUsers(currentUsers);
+            }
+        }, 300); // Shorter delay for search
     }
 }
+
+// Handle keyboard events for inline name editing
+document.addEventListener('keydown', (e) => {
+    if (e.target.matches('.inline-name-input')) {
+        const userId = e.target.dataset.userId;
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveNameEdit(userId);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelNameEdit(userId);
+        }
+    }
+});
 
 // Admin Authentication Functions
 async function handleAdminLogin(e) {
@@ -540,6 +578,92 @@ async function updateUserDisplayName(userId, newDisplayName) {
     }
 }
 
+// Inline name editing functions
+function showNameEditor(userId) {
+    const nameDisplay = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card').querySelector('.name-display');
+    const nameEditor = document.getElementById(`nameEditor_${userId}`);
+    const input = nameEditor.querySelector('.inline-name-input');
+    
+    if (nameDisplay && nameEditor && input) {
+        nameDisplay.classList.add('hidden');
+        nameEditor.classList.remove('hidden');
+        input.focus();
+        input.select();
+    }
+}
+
+function cancelNameEdit(userId) {
+    const nameDisplay = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card').querySelector('.name-display');
+    const nameEditor = document.getElementById(`nameEditor_${userId}`);
+    const input = nameEditor.querySelector('.inline-name-input');
+    
+    if (nameDisplay && nameEditor && input) {
+        // Reset input to original value
+        const originalName = nameDisplay.querySelector('h4').textContent;
+        input.value = originalName;
+        
+        nameEditor.classList.add('hidden');
+        nameDisplay.classList.remove('hidden');
+    }
+}
+
+async function saveNameEdit(userId) {
+    const nameEditor = document.getElementById(`nameEditor_${userId}`);
+    const input = nameEditor.querySelector('.inline-name-input');
+    const newDisplayName = input.value.trim();
+    
+    if (!newDisplayName) {
+        showToast('Display name cannot be empty', 'warning');
+        input.focus();
+        return;
+    }
+    
+    // Show saving state
+    const saveBtn = nameEditor.querySelector('.save-name-btn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '⏳';
+    saveBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/update-user-display-name', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId, displayName: newDisplayName })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showToast(`Display name updated to "${newDisplayName}"`, 'success');
+            await logAdminAction('user_update', `Updated user display name to "${newDisplayName}"`, { userId, newDisplayName });
+            
+            // Update the display immediately
+            const nameDisplay = document.querySelector(`[data-user-id="${userId}"]`).closest('.user-card').querySelector('.name-display');
+            nameDisplay.querySelector('h4').textContent = newDisplayName;
+            
+            // Hide editor and show display
+            const nameEditor = document.getElementById(`nameEditor_${userId}`);
+            nameEditor.classList.add('hidden');
+            nameDisplay.classList.remove('hidden');
+            
+            // Refresh data in background
+            if (adminState.users.length > 0) {
+                loadUsers();
+            }
+            loadGoals();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to update display name', 'error');
+    } finally {
+        // Restore button state
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
 // Enhanced invalidation functions
 async function quickInvalidate(goalId, reason) {
     // Check if admin name is provided
@@ -878,29 +1002,41 @@ function displayUsers(users) {
             <div class="user-card ${isDeleted ? 'deleted' : ''}">
                 <div class="user-header">
                     <div class="user-info">
-                        <h4>${escapeHtml(user.username)}</h4>
-                        <p><strong>📧 Email:</strong> ${escapeHtml(user.email)}</p>
-                        <p><strong>🏛️ House:</strong> ${getHouseDisplay(user.house)}</p>
-                        ${user.createdAt ? `<p><strong>📅 Joined:</strong> ${new Date(user.createdAt).toLocaleDateString()}</p>` : ''}
-                        ${isDeleted ? `<p style="color: var(--danger-color); font-weight: 600;">❌ Account Deleted</p>` : ''}
+                        <div class="user-name-section">
+                            <div class="name-display">
+                                <h4>${escapeHtml(user.username)}</h4>
+                                ${!isDeleted ? `<button class="edit-name-btn" data-user-id="${escapeHtml(user.id)}" title="Edit display name">✏️</button>` : ''}
+                            </div>
+                            <div class="name-editor hidden" id="nameEditor_${escapeHtml(user.id)}">
+                                <input type="text" class="inline-name-input" data-user-id="${escapeHtml(user.id)}" 
+                                       value="${escapeHtml(user.username)}" placeholder="Enter display name...">
+                                <div class="name-editor-actions">
+                                    <button class="save-name-btn" data-user-id="${escapeHtml(user.id)}" title="Save">✅</button>
+                                    <button class="cancel-name-btn" data-user-id="${escapeHtml(user.id)}" title="Cancel">❌</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-details">
+                            <p><strong>📧 Email:</strong> ${escapeHtml(user.email)}</p>
+                            <p><strong>🏛️ House:</strong> ${getHouseDisplay(user.house)}</p>
+                            ${user.createdAt ? `<p><strong>📅 Joined:</strong> ${new Date(user.createdAt).toLocaleDateString()}</p>` : ''}
+                            ${isDeleted ? `<p class="deleted-status">❌ Account Deleted</p>` : ''}
+                        </div>
                     </div>
                 </div>
                 
                 <div class="user-management-controls">
-                    <label>✏️ Display Name:</label>
-                    <input type="text" class="user-display-name-input" data-user-id="${escapeHtml(user.id)}" 
-                           value="${escapeHtml(user.username)}" placeholder="Enter display name..." 
-                           ${isDeleted ? 'disabled' : ''}>
-                    
-                    <label>🏛️ House Assignment:</label>
-                    <select class="user-house-selector" data-user-id="${escapeHtml(user.id)}" ${isDeleted ? 'disabled' : ''}>
-                        <option value="">No House</option>
-                        <option value="sparta" ${user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
-                        <option value="athens" ${user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
-                        <option value="corinth" ${user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
-                        <option value="olympia" ${user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
-                        <option value="delfi" ${user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
-                    </select>
+                    <div class="house-management">
+                        <label>🏛️ House Assignment:</label>
+                        <select class="user-house-selector" data-user-id="${escapeHtml(user.id)}" ${isDeleted ? 'disabled' : ''}>
+                            <option value="">No House</option>
+                            <option value="sparta" ${user.house === 'sparta' ? 'selected' : ''}>⚔️ Sparta</option>
+                            <option value="athens" ${user.house === 'athens' ? 'selected' : ''}>🦉 Athens</option>
+                            <option value="corinth" ${user.house === 'corinth' ? 'selected' : ''}>🌊 Corinth</option>
+                            <option value="olympia" ${user.house === 'olympia' ? 'selected' : ''}>🏛️ Olympia</option>
+                            <option value="delfi" ${user.house === 'delfi' ? 'selected' : ''}>🔮 Delfi</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="user-stats">
