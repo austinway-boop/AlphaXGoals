@@ -34,18 +34,20 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goalId, screenshotData, textProof, videoData } = req.body;
+  const { goalId, screenshotDataArray, textProof } = req.body;
   
   if (!goalId) {
     return res.status(400).json({ success: false, error: 'Goal ID is required' });
   }
   
-  // Require at least one form of proof
-  if (!screenshotData && !textProof && !videoData) {
-    return res.status(400).json({ success: false, error: 'At least one form of proof (screenshot, text, or video) is required to complete a goal' });
+  // Require both screenshots and text proof
+  if (!screenshotDataArray || !Array.isArray(screenshotDataArray) || screenshotDataArray.length === 0) {
+    return res.status(400).json({ success: false, error: 'Screenshots are required to complete a goal' });
   }
   
-  // Text proof can be any length (no minimum requirement)
+  if (!textProof || textProof.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'Text description is required to complete a goal' });
+  }
 
   try {
     // Check if it's after midnight CST - prevent goal completion
@@ -94,24 +96,13 @@ export default async function handler(req, res) {
     // Update goal status to completed with proof
     const updateData = {
       status: 'completed',
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      screenshotDataArray: JSON.stringify(screenshotDataArray),
+      textProof: textProof.trim(),
+      hasScreenshots: true,
+      hasTextProof: true,
+      screenshotCount: screenshotDataArray.length
     };
-    
-    // Add proof data based on what was provided
-    if (screenshotData) {
-      updateData.screenshotData = screenshotData;
-      updateData.hasScreenshot = true;
-    }
-    
-    if (textProof) {
-      updateData.textProof = textProof;
-      updateData.hasTextProof = true;
-    }
-    
-    if (videoData) {
-      updateData.videoData = videoData;
-      updateData.hasVideo = true;
-    }
     
     const updatedGoal = await updateGoal(goalId, updateData);
     

@@ -98,38 +98,37 @@ function showCompletionModal(goalId) {
                 
                 <div class="proof-tabs">
                     <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 Screenshot</button>
-                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('text')">📝 Text Proof</button>
-                        <button class="tab-btn" data-tab="video" onclick="switchProofTab('video')">🎥 Video</button>
+                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 Screenshots</button>
+                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('text')">📝 Description</button>
                     </div>
                     
                     <!-- Screenshot Tab -->
                     <div id="screenshotTab" class="proof-tab active">
-                        <h5>📷 Screenshot</h5>
-                        <p>Upload an image showing your completion:</p>
+                        <h5>📷 Screenshots Required</h5>
+                        <p>Upload one or more images showing your completion:</p>
                         
                         <div class="file-upload-wrapper">
-                            <input type="file" id="completionScreenshot" accept="image/*">
+                            <input type="file" id="completionScreenshot" accept="image/*" multiple required>
                             <div class="file-upload-display">
                                 <div class="file-upload-text">
                                     <span class="upload-icon">📷</span>
-                                    <span>Choose Image</span>
+                                    <span>Choose Images</span>
                                 </div>
+                                <div class="file-upload-hint">Select multiple images if needed</div>
                             </div>
                         </div>
                         
                         <div id="screenshotPreview" class="content-preview hidden">
-                            <div class="image-preview-container">
-                                <img id="screenshotPreviewImg" alt="Screenshot preview" onclick="openImageModal(this.src)">
-                            </div>
+                            <h6>📷 Selected Images</h6>
+                            <div id="imagePreviewContainer" class="image-preview-grid"></div>
                         </div>
                     </div>
                     
                     <!-- Text Proof Tab -->
                     <div id="textTab" class="proof-tab hidden">
-                        <h5>📝 Describe Your Completion</h5>
-                        <p>Tell us how you completed this goal:</p>
-                        <textarea id="completionText" rows="4" placeholder="Describe what you accomplished and how you completed this goal..." class="completion-textarea"></textarea>
+                        <h5>📝 Description Required</h5>
+                        <p>Describe how you completed this goal:</p>
+                        <textarea id="completionText" rows="4" placeholder="Describe what you accomplished and how you completed this goal..." class="completion-textarea" required></textarea>
                         <div class="character-count">
                             <span id="textCount">0</span> characters
                         </div>
@@ -142,28 +141,6 @@ function showCompletionModal(goalId) {
                         </div>
                     </div>
                     
-                    <!-- Video Tab -->
-                    <div id="videoTab" class="proof-tab hidden">
-                        <h5>🎥 Video</h5>
-                        <p>Upload a video showing your completion (max 5MB):</p>
-                        
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="completionVideo" accept="video/*">
-                            <div class="file-upload-display">
-                                <div class="file-upload-text">
-                                    <span class="upload-icon">🎥</span>
-                                    <span>Choose Video</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="videoPreview" class="content-preview hidden">
-                            <div class="video-preview-container">
-                                <video id="videoPreviewPlayer" controls></video>
-                                <p class="video-info"><span id="videoFileName"></span> • <span id="videoFileSize"></span></p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="completion-requirement">
@@ -252,7 +229,6 @@ function initializeCompletionModal() {
     
     // Initialize file upload handlers
     handleCompletionFileUpload();
-    handleCompletionVideoUpload();
     
     // Initialize character counter and text preview
     const textarea = document.getElementById('completionText');
@@ -295,87 +271,40 @@ function initializeCompletionModal() {
     }
 }
 
-function handleCompletionVideoUpload() {
-    const fileInput = document.getElementById('completionVideo');
-    const display = document.querySelector('#videoTab .file-upload-display');
-    const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
-    const preview = document.getElementById('videoPreview');
-    const previewVideo = document.getElementById('videoPreviewPlayer');
-    const fileName = document.getElementById('videoFileName');
-    const fileSize = document.getElementById('videoFileSize');
-    
-    console.log('Initializing video upload handler', {fileInput, display, text, preview, previewVideo});
-    
-    if (!fileInput) {
-        console.error('Video file input not found');
-        return;
+// Error display function that shows outside modal
+function showErrorOutsideModal(message) {
+    // Create or update error overlay
+    let errorOverlay = document.getElementById('errorOverlay');
+    if (!errorOverlay) {
+        errorOverlay = document.createElement('div');
+        errorOverlay.id = 'errorOverlay';
+        errorOverlay.className = 'error-overlay';
+        document.body.appendChild(errorOverlay);
     }
     
-    fileInput.addEventListener('change', (e) => {
-        console.log('Video file changed:', e.target.files[0]);
-        const file = e.target.files[0];
-        if (file) {
-            if (!file.type.startsWith('video/')) {
-                showToast('Please upload a video file', 'error');
-                fileInput.value = '';
-                return;
-            }
-            
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit for videos (due to base64 encoding)
-                showToast('Video file size must be less than 5MB', 'error');
-                fileInput.value = '';
-                return;
-            }
-            
-            // Update upload display
-            if (display && text) {
-                display.classList.add('file-selected');
-                text.textContent = `✅ ${file.name}`;
-                console.log('Updated video display text to:', file.name);
-            } else {
-                console.error('Display elements not found for video');
-            }
-            
-            // Show video preview
-            if (preview && previewVideo) {
-                try {
-                    const videoURL = URL.createObjectURL(file);
-                    previewVideo.src = videoURL;
-                    preview.classList.remove('hidden');
-                    console.log('Video preview URL created');
-                    
-                    if (fileName) fileName.textContent = file.name;
-                    if (fileSize) fileSize.textContent = formatFileSize(file.size);
-                    
-                    // Clean up URL when modal is closed
-                    previewVideo.addEventListener('loadeddata', () => {
-                        console.log('Video loaded for preview');
-                    });
-                } catch (error) {
-                    console.error('Failed to create video preview:', error);
-                }
-            } else {
-                console.error('Video preview elements not found:', {preview, previewVideo});
-            }
-        } else {
-            // Reset display and preview
-            if (display && text) {
-                display.classList.remove('file-selected');
-                text.textContent = 'Choose Video';
-            }
-            if (preview) {
-                preview.classList.add('hidden');
-                if (previewVideo && previewVideo.src) {
-                    try {
-                        URL.revokeObjectURL(previewVideo.src);
-                    } catch (e) {
-                        console.log('URL already revoked');
-                    }
-                    previewVideo.src = '';
-                }
-            }
+    errorOverlay.innerHTML = `
+        <div class="error-content">
+            <div class="error-icon">⚠️</div>
+            <div class="error-message">${message}</div>
+            <button class="error-close" onclick="hideErrorOverlay()">Got it</button>
+        </div>
+    `;
+    
+    errorOverlay.classList.remove('hidden');
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (errorOverlay && !errorOverlay.classList.contains('hidden')) {
+            hideErrorOverlay();
         }
-    });
+    }, 5000);
+}
+
+function hideErrorOverlay() {
+    const errorOverlay = document.getElementById('errorOverlay');
+    if (errorOverlay) {
+        errorOverlay.classList.add('hidden');
+    }
 }
 
 function formatFileSize(bytes) {
@@ -396,13 +325,19 @@ async function confirmCompletion() {
     console.log('Confirming completion for goalId:', goalId);
     
     // Check what proof methods are filled
-    const screenshotFile = document.getElementById('completionScreenshot')?.files[0];
+    const screenshotFiles = document.getElementById('completionScreenshot')?.files;
     const textProof = document.getElementById('completionText')?.value.trim();
-    const videoFile = document.getElementById('completionVideo')?.files[0];
     
-    // Validate that at least one proof method is provided
-    if (!screenshotFile && !textProof && !videoFile) {
-        showToast('Please provide at least one form of proof (screenshot, text, or video)', 'error');
+    // Both screenshots and text are required
+    if (!screenshotFiles || screenshotFiles.length === 0) {
+        showErrorOutsideModal('Screenshots are required - please upload at least one image');
+        switchProofTab('screenshot');
+        return;
+    }
+    
+    if (!textProof || textProof.length === 0) {
+        showErrorOutsideModal('Description is required - please describe how you completed this goal');
+        switchProofTab('text');
         return;
     }
     
@@ -411,10 +346,11 @@ async function confirmCompletion() {
     showLoading('Processing proof and completing goal...');
     
     try {
-        // Calculate total file size before processing
+        // Calculate total file size before processing  
         let totalSize = 0;
-        if (screenshotFile) totalSize += screenshotFile.size;
-        if (videoFile) totalSize += videoFile.size;
+        for (let i = 0; i < screenshotFiles.length; i++) {
+            totalSize += screenshotFiles[i].size;
+        }
         
         // Base64 encoding increases size by ~33%, so check if it will exceed limits
         const estimatedBase64Size = totalSize * 1.33;
@@ -422,34 +358,26 @@ async function confirmCompletion() {
         
         if (estimatedBase64Size > maxPayloadSize) {
             hideLoading();
-            showToast('Total file size too large. Please use smaller files or fewer files.', 'error');
+            showErrorOutsideModal('Total image size too large. Please use smaller images or fewer images.');
             return;
         }
         
-        // Process files to base64
-        let screenshotData = null;
-        let videoData = null;
+        // Process multiple screenshots to base64
+        let screenshotDataArray = [];
         
-        if (screenshotFile) {
+        for (let i = 0; i < screenshotFiles.length; i++) {
             try {
-                screenshotData = await fileToBase64(screenshotFile);
-                console.log('Screenshot processed, size:', screenshotData.length);
+                const screenshotData = await fileToBase64(screenshotFiles[i]);
+                screenshotDataArray.push({
+                    data: screenshotData,
+                    filename: screenshotFiles[i].name,
+                    size: screenshotFiles[i].size
+                });
+                console.log(`Screenshot ${i+1} processed, size:`, screenshotData.length);
             } catch (error) {
-                console.error('Failed to process screenshot:', error);
+                console.error(`Failed to process screenshot ${i+1}:`, error);
                 hideLoading();
-                showToast('Failed to process screenshot. Try a smaller image.', 'error');
-                return;
-            }
-        }
-        
-        if (videoFile) {
-            try {
-                videoData = await fileToBase64(videoFile);
-                console.log('Video processed, size:', videoData.length);
-            } catch (error) {
-                console.error('Failed to process video:', error);
-                hideLoading();
-                showToast('Failed to process video. Try a smaller video file.', 'error');
+                showErrorOutsideModal(`Failed to process image "${screenshotFiles[i].name}". Try a smaller image.`);
                 return;
             }
         }
@@ -462,9 +390,8 @@ async function confirmCompletion() {
             },
             body: JSON.stringify({ 
                 goalId, 
-                screenshotData, 
-                textProof: textProof || null,
-                videoData 
+                screenshotDataArray,
+                textProof
             })
         });
         
