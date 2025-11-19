@@ -1,7 +1,6 @@
 // Vercel serverless function for completing goals with BrainLift word count extraction
 import { updateGoal, getGoalById } from './redis.js';
 import axios from 'axios';
-import { JSDOM } from 'jsdom';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -128,27 +127,50 @@ export default async function handler(req, res) {
             } catch (exportError) {
               console.log('Plain text export failed, trying HTML scraping...');
               
-              // Fallback: Try to access the public HTML version
-              const publicUrl = goal.brainliftLink.includes('/edit') ? 
-                goal.brainliftLink.replace('/edit', '/pub') : 
-                goal.brainliftLink + (goal.brainliftLink.includes('?') ? '&' : '?') + 'output=html';
+              // Try multiple Google Docs public access methods
+              const baseUrl = `https://docs.google.com/document/d/${docId}`;
+              const publishUrls = [
+                `${baseUrl}/pub`,
+                `${baseUrl}/edit?usp=sharing`,
+                goal.brainliftLink.includes('/edit') ? goal.brainliftLink : `${baseUrl}/edit`
+              ];
               
-              const htmlResponse = await axios.get(publicUrl, { 
-                timeout: 15000,
-                headers: {
-                  'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+              let htmlResponse = null;
+              for (const testUrl of publishUrls) {
+                try {
+                  htmlResponse = await axios.get(testUrl, { 
+                    timeout: 10000,
+                    headers: {
+                      'User-Agent': 'Mozilla/5.0 (compatible; AlphaXGoals/1.0)'
+                    }
+                  });
+                  console.log(`Successfully accessed Google Doc via: ${testUrl}`);
+                  break;
+                } catch (urlError) {
+                  console.log(`Failed to access ${testUrl}:`, urlError.response?.status);
+                  continue;
                 }
-              });
+              }
               
-              // Parse HTML and extract text
-              const dom = new JSDOM(htmlResponse.data);
-              const document = dom.window.document;
+              if (!htmlResponse) {
+                throw new Error('Could not access Google Doc via any method');
+              }
               
-              // Remove script and style elements
-              document.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+              // Simple regex-based HTML text extraction (no JSDOM needed)
+              let htmlContent = htmlResponse.data;
               
-              // Get text content
-              documentContent = document.body?.textContent || document.textContent || '';
+              // Remove script and style tags
+              htmlContent = htmlContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+              htmlContent = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+              htmlContent = htmlContent.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+              
+              // Extract text content by removing all HTML tags
+              documentContent = htmlContent.replace(/<[^>]*>/g, ' ')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"');
               endingExtractionMethod = 'google_docs_html';
               console.log('Successfully extracted Google Doc as HTML');
             }
@@ -165,20 +187,28 @@ export default async function handler(req, res) {
             }
           });
           
-          // Parse HTML and extract text
-          const dom = new JSDOM(response.data);
-          const document = dom.window.document;
+          // Simple regex-based HTML text extraction (no JSDOM needed)
+          let htmlContent = response.data;
           
-          // Remove script and style elements
-          document.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+          // Remove script and style tags
+          htmlContent = htmlContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+          htmlContent = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+          htmlContent = htmlContent.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
           
-          // Get text content
-          documentContent = document.body?.textContent || document.textContent || '';
+          // Extract text content by removing all HTML tags
+          documentContent = htmlContent.replace(/<[^>]*>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"');
           endingExtractionMethod = 'html_scraping';
           console.log('Successfully extracted document as HTML');
         }
 
         // Clean and count words
+        console.log('Ending document content extracted, length:', documentContent.length);
+        
         if (documentContent && documentContent.trim().length > 0) {
           const cleanText = documentContent
             .replace(/\s+/g, ' ') // Normalize whitespace
@@ -189,6 +219,11 @@ export default async function handler(req, res) {
           endingWordCount = words.length;
           
           console.log(`Extracted ending word count: ${endingWordCount} words using ${endingExtractionMethod}`);
+          
+          if (endingWordCount === 0) {
+            console.warn('Document contains no readable words at completion');
+            endingWordCount = 0;
+          }
         } else {
           console.warn('Document appears to be empty at completion');
           endingWordCount = 0;
