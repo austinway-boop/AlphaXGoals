@@ -4,7 +4,7 @@ import { getUserGoals } from './redis.js';
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'https://alpha-x-goals.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -28,7 +28,9 @@ export default async function handler(req, res) {
 
   let userId;
   try {
-    const sessionData = JSON.parse(sessionCookie.split('=')[1]);
+    const sessionValue = sessionCookie.split('=')[1];
+    const decodedValue = decodeURIComponent(sessionValue);
+    const sessionData = JSON.parse(decodedValue);
     userId = sessionData.userId;
   } catch (e) {
     return res.status(401).json({ success: false, error: 'Invalid session' });

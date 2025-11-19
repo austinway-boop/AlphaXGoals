@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   try {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', 'https://alpha-x-goals.vercel.app');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
       'Access-Control-Allow-Headers',
@@ -36,11 +36,13 @@ export default async function handler(req, res) {
 
     let userId;
     try {
-      const sessionData = JSON.parse(sessionCookie.split('=')[1]);
+      const sessionValue = sessionCookie.split('=')[1];
+      const decodedValue = decodeURIComponent(sessionValue);
+      const sessionData = JSON.parse(decodedValue);
       userId = sessionData.userId;
       console.log('User authenticated:', userId);
     } catch (e) {
-      console.log('Session parsing failed');
+      console.log('Session parsing failed:', e.message);
       return res.status(401).json({ success: false, error: 'Invalid session' });
     }
 

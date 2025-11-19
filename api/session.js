@@ -4,7 +4,7 @@ import { getRedisClient } from './redis.js';
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'https://alpha-x-goals.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -24,7 +24,10 @@ export default async function handler(req, res) {
   
   if (sessionCookie) {
     try {
-      const sessionData = JSON.parse(sessionCookie.split('=')[1]);
+      // Extract and decode the session value
+      const sessionValue = sessionCookie.split('=')[1];
+      const decodedValue = decodeURIComponent(sessionValue);
+      const sessionData = JSON.parse(decodedValue);
       
       // Fetch full user data from Redis
       const client = await getRedisClient();
