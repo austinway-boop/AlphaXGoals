@@ -1059,6 +1059,12 @@ function cancelGoalEdit(goalId) {
     const originalGoal = goalDisplay.querySelector('h4').textContent.replace('🎯 ', '');
     textarea.value = originalGoal;
     
+    // Clear any validation feedback when canceling
+    const validationFeedback = goalEditor.querySelector('.validation-feedback');
+    if (validationFeedback) {
+        validationFeedback.remove();
+    }
+    
     // Force hide/show with direct style manipulation
     goalEditor.style.display = 'none';
     goalDisplay.style.display = '';
@@ -1092,10 +1098,10 @@ async function saveGoalEdit(goalId) {
     
     // Show saving state
     const saveBtn = goalEditor.querySelector('.save-goal-btn');
-    let originalText = '✅';
+    let originalText = '✅ Save';
     if (saveBtn) {
         originalText = saveBtn.textContent;
-        saveBtn.textContent = '⏳';
+        saveBtn.textContent = '🤖 AI Validating...';
         saveBtn.disabled = true;
     }
     
@@ -1117,8 +1123,12 @@ async function saveGoalEdit(goalId) {
         console.log('Goal update response:', data);
         
         if (data.success) {
-            showToast(`Goal updated successfully by ${adminState.adminName}`, 'success');
-            await logAdminAction('goal_update', `Updated goal to: "${newGoalText}"`, { goalId, newGoalText });
+            showToast(`✅ Goal updated successfully and passed AI validation by ${adminState.adminName}`, 'success');
+            
+            const validationInfo = data.validation ? 
+                `Updated goal passed AI validation - Scores: Ambition ${data.validation.ambitionScore}/5, Measurable ${data.validation.measurableScore}/10, Relevance ${data.validation.relevanceScore}/10` : 
+                `Updated goal to: "${newGoalText}"`;
+            await logAdminAction('goal_update', validationInfo, { goalId, newGoalText });
             
             // Update the display immediately
             const goalDisplay = document.getElementById(`goalDisplay_${goalId}`);
@@ -1128,11 +1138,28 @@ async function saveGoalEdit(goalId) {
                     h4Element.textContent = `🎯 ${newGoalText}`;
                 }
                 
+                // Add validation info to display
+                const editInfo = goalDisplay.querySelector('.goal-edit-info') || document.createElement('div');
+                editInfo.className = 'goal-edit-info';
+                editInfo.style.cssText = 'font-size: 0.8rem; color: #666; margin-top: 0.5rem; font-style: italic;';
+                const validationDisplay = data.validation ? 
+                    `<br><span style="color: #4caf50;">✅ AI Validation Passed - A:${data.validation.ambitionScore}/5, M:${data.validation.measurableScore}/10, R:${data.validation.relevanceScore}/10</span>` : '';
+                editInfo.innerHTML = `Edited by: ${adminState.adminName}${validationDisplay}`;
+                if (!goalDisplay.querySelector('.goal-edit-info')) {
+                    goalDisplay.appendChild(editInfo);
+                }
+                
                 // Hide editor and show display
                 goalEditor.style.display = 'none';
                 goalDisplay.style.display = '';
                 goalEditor.classList.add('hidden');
                 goalDisplay.classList.remove('hidden');
+                
+                // Clear any validation feedback from editor
+                const validationFeedback = goalEditor.querySelector('.validation-feedback');
+                if (validationFeedback) {
+                    validationFeedback.remove();
+                }
             }
             
             // Reset editing state
@@ -1141,7 +1168,34 @@ async function saveGoalEdit(goalId) {
             // Refresh data in background
             loadGoals();
         } else {
-            showToast(data.error || 'Failed to update goal', 'error');
+            // Handle validation failure specifically
+            if (data.validation && !data.validation.isValid) {
+                const validationMsg = data.validation.feedback || 'Goal does not meet validation criteria';
+                const scores = `Scores: Ambition ${data.validation.ambitionScore}/5, Measurable ${data.validation.measurableScore}/10, Relevance ${data.validation.relevanceScore}/10`;
+                showToast(`❌ AI Validation Failed: ${validationMsg}. ${scores}`, 'error', 10000);
+                
+                // Show validation details in the editor UI
+                let validationFeedback = goalEditor.querySelector('.validation-feedback');
+                if (!validationFeedback) {
+                    validationFeedback = document.createElement('div');
+                    validationFeedback.className = 'validation-feedback';
+                    goalEditor.appendChild(validationFeedback);
+                }
+                validationFeedback.innerHTML = `
+                    <div style="background: #ffebee; border: 2px solid #f44336; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; color: #c62828;">
+                        <strong>❌ AI Validation Failed - Goal Not Updated</strong><br><br>
+                        <strong>Feedback:</strong> ${validationMsg}<br><br>
+                        <strong>Scores (Requirements):</strong><br>
+                        • Ambition: ${data.validation.ambitionScore}/5 ${data.validation.ambitionScore >= 4 ? '✅' : '❌ (Need 4+)'}<br>
+                        • Measurable: ${data.validation.measurableScore}/10 ${data.validation.measurableScore >= 8 ? '✅' : '❌ (Need 8+)'}<br>
+                        • Relevance: ${data.validation.relevanceScore}/10 ${data.validation.relevanceScore >= 8 ? '✅' : '❌ (Need 8+)'}<br>
+                        ${data.validation.suggestions && data.validation.suggestions.length > 0 ? 
+                            '<br><strong>Suggestions:</strong><br>• ' + data.validation.suggestions.join('<br>• ') : ''}
+                    </div>
+                `;
+            } else {
+                showToast(data.error || 'Failed to update goal', 'error');
+            }
         }
     } catch (error) {
         console.error('Error updating goal:', error);
