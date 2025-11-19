@@ -492,6 +492,54 @@ function displayGoals(goals) {
                         
                         ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                         
+                        ${goal.brainliftLink ? `
+                            <div class="brainlift-tracking-section">
+                                <h6>📚 BrainLift Word Count Tracking</h6>
+                                <div class="brainlift-info">
+                                    <div class="brainlift-link">
+                                        <strong>📄 Document:</strong> <a href="${escapeHtml(goal.brainliftLink)}" target="_blank" rel="noopener">View BrainLift</a>
+                                    </div>
+                                    <div class="word-count-display">
+                                        <div class="word-count-item start">
+                                            <strong>🔢 Starting Words:</strong> 
+                                            <span class="word-count-number">${goal.startingWordCount || 0}</span>
+                                            <span class="word-count-label">(when goal created)</span>
+                                        </div>
+                                        ${goal.status === 'completed' && goal.endingWordCount !== null ? `
+                                            <div class="word-count-item end">
+                                                <strong>🎯 Ending Words:</strong> 
+                                                <span class="word-count-number">${goal.endingWordCount}</span>
+                                                <span class="word-count-label">(when goal completed)</span>
+                                            </div>
+                                            <div class="word-count-item difference">
+                                                <strong>📈 Words Added:</strong> 
+                                                <span class="word-count-difference ${(goal.endingWordCount - goal.startingWordCount) > 0 ? 'positive' : 'neutral'}">
+                                                    +${Math.max(0, goal.endingWordCount - goal.startingWordCount)}
+                                                </span>
+                                                <span class="word-count-label">(net change)</span>
+                                            </div>
+                                        ` : goal.status === 'completed' ? `
+                                            <div class="word-count-item pending">
+                                                <strong>⏳ Ending Words:</strong> 
+                                                <span class="word-count-pending">Pending extraction</span>
+                                            </div>
+                                        ` : `
+                                            <div class="word-count-item pending">
+                                                <strong>⏳ Ending Words:</strong> 
+                                                <span class="word-count-pending">Will be counted on completion</span>
+                                            </div>
+                                        `}
+                                    </div>
+                                    ${goal.contentPreview ? `
+                                        <div class="content-preview">
+                                            <strong>📝 Content Preview:</strong>
+                                            <p class="content-preview-text">"${escapeHtml(goal.contentPreview)}"</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
                         ${(goal.screenshotDataArray || goal.textProof) ? `
                             <div class="goal-proof-section">
                                 <h6>📋 Completion Proof</h6>
@@ -1027,6 +1075,20 @@ function showGoalCreationModalWithUsers() {
                         </div>
                         
                         <div class="form-group">
+                            <label for="adminBrainliftLink" class="form-label">
+                                <strong>📚 Student's BrainLift Link:</strong>
+                                <span class="form-help">Provide the link to the student's BrainLift document (publicly viewable)</span>
+                            </label>
+                            <input 
+                                type="url" 
+                                id="adminBrainliftLink" 
+                                class="alpha-x-input"
+                                placeholder="https://docs.google.com/document/d/... (must be publicly viewable)"
+                                required
+                            />
+                        </div>
+                        
+                        <div class="form-group">
                             <label for="goalTextCreator" class="form-label">
                                 <strong>🎯 Goal Text:</strong>
                                 <span class="form-help">Write the goal for the student. It will be validated by AI.</span>
@@ -1099,6 +1161,7 @@ function closeGoalCreationModal() {
 async function createGoalForStudent() {
     const studentSelect = document.getElementById('studentSelect');
     const alphaXInput = document.getElementById('alphaXProjectInput');
+    const brainliftLinkInput = document.getElementById('adminBrainliftLink');
     const goalTextarea = document.getElementById('goalTextCreator');
     
     // Validate form inputs
@@ -1112,6 +1175,22 @@ async function createGoalForStudent() {
     if (!alphaXProject) {
         showToast('Please enter the Alpha X project', 'warning');
         alphaXInput.focus();
+        return;
+    }
+    
+    const brainliftLink = brainliftLinkInput.value.trim();
+    if (!brainliftLink) {
+        showToast('Please enter the BrainLift document link', 'warning');
+        brainliftLinkInput.focus();
+        return;
+    }
+    
+    // Validate BrainLift URL
+    try {
+        new URL(brainliftLink);
+    } catch (e) {
+        showToast('Please provide a valid URL for the BrainLift document', 'warning');
+        brainliftLinkInput.focus();
         return;
     }
     
@@ -1139,6 +1218,7 @@ async function createGoalForStudent() {
             body: JSON.stringify({ 
                 userId: studentSelect.value,
                 goal: goalText,
+                brainliftLink: brainliftLink,
                 alphaXProject: alphaXProject,
                 adminName: adminState.adminName 
             })

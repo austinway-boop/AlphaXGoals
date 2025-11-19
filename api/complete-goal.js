@@ -1,5 +1,7 @@
-// Vercel serverless function for completing goals
+// Vercel serverless function for completing goals with BrainLift word count extraction
 import { updateGoal, getGoalById } from './redis.js';
+import axios from 'axios';
+import { JSDOM } from 'jsdom';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -93,6 +95,113 @@ export default async function handler(req, res) {
       });
     }
 
+    // Extract ending word count from BrainLift if goal has a BrainLift link
+    let endingWordCount = null;
+    let endingExtractionMethod = 'none';
+    
+    if (goal.brainliftLink) {
+      console.log('Extracting ending word count from BrainLift...');
+      
+      try {
+        let documentContent = '';
+        const url = new URL(goal.brainliftLink);
+
+        // Handle Google Docs
+        if (url.hostname === 'docs.google.com' && goal.brainliftLink.includes('/document/d/')) {
+          console.log('Processing Google Doc for ending word count...');
+          
+          const docId = goal.brainliftLink.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+          if (docId) {
+            // Try the plain text export URL
+            const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+            
+            try {
+              const docResponse = await axios.get(exportUrl, { 
+                timeout: 15000,
+                headers: {
+                  'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+                }
+              });
+              documentContent = docResponse.data;
+              endingExtractionMethod = 'google_docs_export';
+              console.log('Successfully extracted Google Doc as plain text');
+            } catch (exportError) {
+              console.log('Plain text export failed, trying HTML scraping...');
+              
+              // Fallback: Try to access the public HTML version
+              const publicUrl = goal.brainliftLink.includes('/edit') ? 
+                goal.brainliftLink.replace('/edit', '/pub') : 
+                goal.brainliftLink + (goal.brainliftLink.includes('?') ? '&' : '?') + 'output=html';
+              
+              const htmlResponse = await axios.get(publicUrl, { 
+                timeout: 15000,
+                headers: {
+                  'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+                }
+              });
+              
+              // Parse HTML and extract text
+              const dom = new JSDOM(htmlResponse.data);
+              const document = dom.window.document;
+              
+              // Remove script and style elements
+              document.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+              
+              // Get text content
+              documentContent = document.body?.textContent || document.textContent || '';
+              endingExtractionMethod = 'google_docs_html';
+              console.log('Successfully extracted Google Doc as HTML');
+            }
+          }
+        } 
+        // Handle other document types
+        else {
+          console.log('Processing generic document for ending word count...');
+          
+          const response = await axios.get(goal.brainliftLink, { 
+            timeout: 15000,
+            headers: {
+              'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+            }
+          });
+          
+          // Parse HTML and extract text
+          const dom = new JSDOM(response.data);
+          const document = dom.window.document;
+          
+          // Remove script and style elements
+          document.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+          
+          // Get text content
+          documentContent = document.body?.textContent || document.textContent || '';
+          endingExtractionMethod = 'html_scraping';
+          console.log('Successfully extracted document as HTML');
+        }
+
+        // Clean and count words
+        if (documentContent && documentContent.trim().length > 0) {
+          const cleanText = documentContent
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+            .trim();
+          
+          const words = cleanText.split(/\s+/).filter(word => word.length > 0);
+          endingWordCount = words.length;
+          
+          console.log(`Extracted ending word count: ${endingWordCount} words using ${endingExtractionMethod}`);
+        } else {
+          console.warn('Document appears to be empty at completion');
+          endingWordCount = 0;
+        }
+        
+      } catch (extractionError) {
+        console.error('Error extracting ending word count:', extractionError);
+        // Don't fail goal completion if word count extraction fails
+        endingWordCount = null;
+        endingExtractionMethod = 'extraction_failed';
+      }
+    }
+
     // Update goal status to completed with proof
     const updateData = {
       status: 'completed',
@@ -101,7 +210,11 @@ export default async function handler(req, res) {
       textProof: textProof.trim(),
       hasScreenshots: true,
       hasTextProof: true,
-      screenshotCount: screenshotDataArray.length
+      screenshotCount: screenshotDataArray.length,
+      // Add ending word count data
+      endingWordCount: endingWordCount,
+      endingExtractionMethod: endingExtractionMethod,
+      endingWordCountExtractedAt: endingWordCount !== null ? new Date().toISOString() : null
     };
     
     const updatedGoal = await updateGoal(goalId, updateData);

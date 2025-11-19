@@ -143,6 +143,22 @@
                                     ⚠️ Goal text changed - validation required before submission
                                 </div>
                             </div>
+
+                            <!-- BrainLift Link Field -->
+                            <div class="form-group">
+                                <label for="brainliftLink">BrainLift Document Link <span class="required">*</span></label>
+                                <input 
+                                    type="url" 
+                                    id="brainliftLink" 
+                                    placeholder="https://docs.google.com/document/d/... (must be publicly viewable)"
+                                    required
+                                />
+                                <div class="form-hint">
+                                    <strong>Required:</strong> Provide a publicly viewable link to your BrainLift document. 
+                                    We'll track your starting word count and ending word count when you complete your goal.
+                                    Make sure the document is set to "Anyone with the link can view".
+                                </div>
+                            </div>
                             
                             <!-- Alpha X Project Display (Read-only) -->
                             <div class="form-group" id="alphaXProjectDisplay">

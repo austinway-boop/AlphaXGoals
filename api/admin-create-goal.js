@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const { userId, goal, alphaXProject, adminName } = req.body;
+  const { userId, goal, brainliftLink, alphaXProject, adminName } = req.body;
   
   // Check admin authentication
   const adminCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('admin_session='));
@@ -39,10 +39,21 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid admin session' });
   }
 
-  if (!userId || !goal || !alphaXProject || !adminName) {
+  if (!userId || !goal || !brainliftLink || !alphaXProject || !adminName) {
     return res.status(400).json({ 
       success: false, 
-      error: 'User ID, goal, Alpha X project, and admin name are required' 
+      error: 'User ID, goal, BrainLift link, Alpha X project, and admin name are required' 
+    });
+  }
+  
+  // Validate BrainLift URL
+  let url;
+  try {
+    url = new URL(brainliftLink);
+  } catch (e) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid BrainLift link format' 
     });
   }
 
@@ -59,6 +70,131 @@ export default async function handler(req, res) {
     }
 
     console.log('Creating goal for user:', user.email);
+
+    // Extract starting word count from BrainLift document
+    console.log('Extracting starting word count from BrainLift...');
+    let startingWordCount = 0;
+    let extractionMethod = 'unknown';
+    let contentPreview = '';
+    
+    try {
+      let documentContent = '';
+
+      // Handle Google Docs
+      if (url.hostname === 'docs.google.com' && brainliftLink.includes('/document/d/')) {
+        console.log('Processing Google Doc for word count...');
+        
+        const docId = brainliftLink.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+        if (!docId) {
+          throw new Error('Could not extract Google Doc ID from link');
+        }
+        
+        // Try the plain text export URL
+        const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+        
+        try {
+          const docResponse = await axios.get(exportUrl, { 
+            timeout: 15000,
+            headers: {
+              'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+            }
+          });
+          documentContent = docResponse.data;
+          extractionMethod = 'google_docs_export';
+          console.log('Successfully extracted Google Doc as plain text');
+        } catch (exportError) {
+          console.log('Plain text export failed, trying HTML scraping...');
+          
+          // Fallback: Try to access the public HTML version
+          const publicUrl = brainliftLink.includes('/edit') ? 
+            brainliftLink.replace('/edit', '/pub') : 
+            brainliftLink + (brainliftLink.includes('?') ? '&' : '?') + 'output=html';
+          
+          const htmlResponse = await axios.get(publicUrl, { 
+            timeout: 15000,
+            headers: {
+              'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+            }
+          });
+          
+          // Parse HTML and extract text
+          const dom = new JSDOM(htmlResponse.data);
+          const document = dom.window.document;
+          
+          // Remove script and style elements
+          document.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+          
+          // Get text content
+          documentContent = document.body?.textContent || document.textContent || '';
+          extractionMethod = 'google_docs_html';
+          console.log('Successfully extracted Google Doc as HTML');
+        }
+      } 
+      // Handle other document types
+      else {
+        console.log('Processing generic document for word count...');
+        
+        const response = await axios.get(brainliftLink, { 
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'AlphaXGoals-WordCounter/1.0'
+          }
+        });
+        
+        // Parse HTML and extract text
+        const dom = new JSDOM(response.data);
+        const document = dom.window.document;
+        
+        // Remove script and style elements
+        document.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+        
+        // Get text content
+        documentContent = document.body?.textContent || document.textContent || '';
+        extractionMethod = 'html_scraping';
+        console.log('Successfully extracted document as HTML');
+      }
+
+      // Clean and count words
+      if (documentContent && documentContent.trim().length > 0) {
+        const cleanText = documentContent
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+          .trim();
+        
+        const words = cleanText.split(/\s+/).filter(word => word.length > 0);
+        startingWordCount = words.length;
+        
+        // Get a preview of the content (first 200 characters)
+        contentPreview = documentContent.trim().substring(0, 200) + (documentContent.length > 200 ? '...' : '');
+        
+        console.log(`Extracted starting word count: ${startingWordCount} words using ${extractionMethod}`);
+      } else {
+        console.warn('Document appears to be empty, setting starting word count to 0');
+      }
+      
+    } catch (extractionError) {
+      console.error('Error extracting word count:', extractionError);
+      
+      if (extractionError.code === 'ENOTFOUND' || extractionError.response?.status === 404) {
+        return res.status(400).json({
+          success: false,
+          error: 'Could not access BrainLift document. Please ensure the link is correct and publicly viewable.'
+        });
+      }
+      
+      if (extractionError.response?.status === 403) {
+        return res.status(400).json({
+          success: false,
+          error: 'BrainLift document is not publicly accessible. Please set it to "Anyone with the link can view" and try again.'
+        });
+      }
+      
+      // For other extraction errors, warn but don't fail the goal creation
+      console.warn('Word count extraction failed, proceeding with 0 starting count:', extractionError.message);
+      startingWordCount = 0;
+      extractionMethod = 'extraction_failed';
+      contentPreview = 'Word count extraction failed - will retry on completion';
+    }
 
     // Get API key for AI validation
     const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
@@ -298,7 +434,14 @@ Respond with a JSON array of exactly ${aiQuestions.length} answers corresponding
       validationData: validationResult || null,
       // Add admin creation info
       createdByAdmin: adminName,
-      adminCreated: true
+      adminCreated: true,
+      // Store BrainLift tracking data
+      brainliftLink: brainliftLink,
+      startingWordCount: startingWordCount,
+      endingWordCount: null,
+      wordCountExtractionMethod: extractionMethod,
+      contentPreview: contentPreview,
+      wordCountExtractedAt: new Date().toISOString()
     };
     
     const newGoal = await createGoal(goalData);

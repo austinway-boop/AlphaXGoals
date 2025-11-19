@@ -1356,13 +1356,29 @@ async function handleGoalSubmit(e) {
     }
     
     const goal = document.getElementById('goalInput').value;
+    const brainliftLink = document.getElementById('brainliftLink').value.trim();
     const alphaXProject = appState.userAlphaXProject;
     
-    showLoading('Submitting your goal...');
+    // Validate BrainLift link
+    if (!brainliftLink) {
+        showToast('Please provide your BrainLift document link', 'warning');
+        return;
+    }
+    
+    // Basic URL validation
+    try {
+        new URL(brainliftLink);
+    } catch (e) {
+        showToast('Please provide a valid URL for your BrainLift document', 'warning');
+        return;
+    }
+    
+    showLoading('Extracting BrainLift word count and submitting your goal...');
     
     try {
     const requestBody = {
         goal,
+        brainliftLink,
         alphaXProject,
         // Include AI questions and answers if they exist
         aiQuestions: appState.aiQuestions || null,
