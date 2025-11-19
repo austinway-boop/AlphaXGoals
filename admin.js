@@ -472,22 +472,9 @@ function displayGoals(goals) {
                 
                 <div class="goal-details-section hidden" id="details-${escapeHtml(goal.id)}" onclick="event.stopPropagation()">
                     <div class="user-management">
-                        <div class="user-name-section">
-                            <div class="name-display">
-                                <label>✏️ Display Name:</label>
-                                <div class="name-display-content">
-                                    <span class="current-name">${escapeHtml(goal.user.username)}</span>
-                                    <button class="edit-name-btn" data-user-id="${escapeHtml(goal.userId)}" title="Edit display name">✏️</button>
-                                </div>
-                            </div>
-                            <div class="name-editor hidden" id="nameEditor_${escapeHtml(goal.userId)}">
-                                <input type="text" class="inline-name-input" data-user-id="${escapeHtml(goal.userId)}" 
-                                       value="${escapeHtml(goal.user.username)}" placeholder="Enter display name...">
-                                <div class="name-editor-actions">
-                                    <button class="save-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="saveNameEdit('${escapeHtml(goal.userId)}')" title="Save">✅</button>
-                                    <button class="cancel-name-btn" data-user-id="${escapeHtml(goal.userId)}" onclick="cancelNameEdit('${escapeHtml(goal.userId)}')" title="Cancel">❌</button>
-                                </div>
-                            </div>
+                        <div class="user-info-display">
+                            <label>👤 Student Name:</label>
+                            <span class="student-name">${escapeHtml(goal.user.username)}</span>
                         </div>
                     </div>
                     
@@ -814,30 +801,27 @@ function showNameEditor(userId) {
     
     window.editingUser = userId;
     
-    // Find the edit button first to get the correct context
-    const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+    // ONLY work in User Management section - find the user card
+    const editButton = document.querySelector(`.user-card .edit-name-btn[data-user-id="${userId}"]`);
     if (!editButton) {
-        console.error('Edit button not found for userId:', userId);
+        console.error('Edit button not found in User Management section for userId:', userId);
+        showToast('Edit name is only available in User Management section', 'warning');
         window.editingUser = null;
         return;
     }
     
-    let nameDisplay, nameEditor;
-    
-    // Try to find in user card first (users section)
-    let userCard = editButton.closest('.user-card');
-    
-    if (userCard) {
-        // Found in users section
-        console.log('Found user card in users section');
-        nameDisplay = userCard.querySelector('.name-display');
-    } else {
-        // In goals section
-        console.log('Looking in goals section');
-        nameDisplay = editButton.closest('.name-display');
+    // Find the user card (User Management section only)
+    const userCard = editButton.closest('.user-card');
+    if (!userCard) {
+        console.error('User card not found - edit only works in User Management section');
+        showToast('Edit name is only available in User Management section', 'warning');
+        window.editingUser = null;
+        return;
     }
     
-    nameEditor = document.getElementById(`nameEditor_${userId}`);
+    console.log('Found user card in User Management section');
+    const nameDisplay = userCard.querySelector('.name-display');
+    const nameEditor = document.getElementById(`nameEditor_${userId}`);
     
     if (!nameDisplay || !nameEditor) {
         console.error('Name display or editor elements not found for userId:', userId);
@@ -880,18 +864,15 @@ function cancelNameEdit(userId) {
     // Always reset editing state first
     window.editingUser = null;
     
-    // Find the name display and editor elements
-    let nameDisplay, nameEditor;
-    const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+    // ONLY work in User Management section - find the user card
+    const editButton = document.querySelector(`.user-card .edit-name-btn[data-user-id="${userId}"]`);
     
+    let nameDisplay, nameEditor;
     if (editButton) {
         const userCard = editButton.closest('.user-card');
         if (userCard) {
-            // Found in users section
+            // Found in User Management section
             nameDisplay = userCard.querySelector('.name-display');
-        } else {
-            // Goals section
-            nameDisplay = editButton.closest('.name-display');
         }
     }
     
@@ -908,16 +889,10 @@ function cancelNameEdit(userId) {
         return;
     }
     
-    // Reset input to original value
+    // Reset input to original value (User Management format)
     const h4Element = nameDisplay.querySelector('h4');
-    const currentNameElement = nameDisplay.querySelector('.current-name');
-    
     if (h4Element) {
-        // Users section format
         input.value = h4Element.textContent;
-    } else if (currentNameElement) {
-        // Goals section format
-        input.value = currentNameElement.textContent;
     }
     
     // Force hide/show with direct style manipulation
@@ -980,14 +955,14 @@ async function saveNameEdit(userId) {
             showToast(`Display name updated to "${newDisplayName}"`, 'success');
             await logAdminAction('user_update', `Updated user display name to "${newDisplayName}"`, { userId, newDisplayName });
             
-            // Update the display immediately
+            // Update the display immediately in User Management section only
             let nameDisplay;
-            const editButton = document.querySelector(`.edit-name-btn[data-user-id="${userId}"]`);
+            const editButton = document.querySelector(`.user-card .edit-name-btn[data-user-id="${userId}"]`);
             
             if (editButton) {
                 const userCard = editButton.closest('.user-card');
                 if (userCard) {
-                    // Users section
+                    // User Management section
                     nameDisplay = userCard.querySelector('.name-display');
                     if (nameDisplay) {
                         const h4Element = nameDisplay.querySelector('h4');
@@ -995,18 +970,9 @@ async function saveNameEdit(userId) {
                             h4Element.textContent = newDisplayName;
                         }
                     }
-                } else {
-                    // Goals section
-                    nameDisplay = editButton.closest('.name-display');
-                    if (nameDisplay) {
-                        const currentNameElement = nameDisplay.querySelector('.current-name');
-                        if (currentNameElement) {
-                            currentNameElement.textContent = newDisplayName;
-                        }
-                    }
                 }
             } else {
-                console.warn('Could not find edit button for userId:', userId);
+                console.warn('Could not find edit button in User Management section for userId:', userId);
             }
             
             if (nameDisplay) {
