@@ -439,9 +439,15 @@ VALIDATION APPROACH:
 - Give users the benefit of the doubt when goals are reasonable
 
 VALIDATION CRITERIA:
-1. DIFFICULTY: The goal should require at least 2 hours of work (120 minutes). Goals can take longer - that's great! If XP is mentioned, 1 XP = 1.5 minutes. Goals can combine XP with other activities, so lower XP amounts are acceptable if the goal includes additional meaningful work.
+1. DIFFICULTY: The goal should require at least 3 hours of work (180 minutes). Goals can take longer - that's great! If XP is mentioned, 1 XP = 1.5 minutes. Goals can combine XP with other activities, so lower XP amounts are acceptable if the goal includes additional meaningful work.
 2. MEASURABILITY: The goal should have some measurable outcome (completing X problems, earning Y XP, finishing Z lessons, etc.)
 3. REASONABLENESS: The goal should be achievable and meaningful.
+
+TIME ESTIMATION GUIDELINES:
+- Writing 1000 words of quality content = approximately 3.5 hours (research + writing + editing)
+- This includes research time, organizing thoughts, writing, and reviewing
+- 1000 words is considered a good, substantial goal that meets our standards
+- Shorter writing (300-500 words) = 1-2 hours depending on complexity and research required
 
 Goal: "{goal}"
 {xpInfo}

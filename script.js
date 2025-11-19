@@ -109,12 +109,15 @@ function showCompletionModal(goalId) {
                         
                         <div class="file-upload-wrapper">
                             <input type="file" id="completionScreenshot" accept="image/*" multiple required>
-                            <div class="file-upload-display">
+                            <div class="file-upload-display" id="screenshotDropzone">
                                 <div class="file-upload-text">
                                     <span class="upload-icon">📷</span>
-                                    <span>Choose Images</span>
+                                    <span>Drag & Drop Images or Click to Choose</span>
                                 </div>
-                                <div class="file-upload-hint">Select multiple images if needed</div>
+                                <div class="file-upload-hint">Add multiple images one at a time or all together</div>
+                            </div>
+                            <div class="add-more-images">
+                                <button type="button" class="btn-add-more" id="addMoreImages" onclick="document.getElementById('completionScreenshot').click()">+ Add More Images</button>
                             </div>
                         </div>
                         
@@ -193,7 +196,10 @@ function hideCompletionModal() {
     // Restore body scroll
     document.body.style.overflow = '';
     
-    // Clear current goal
+    // Clear selected images and current goal
+    if (window.clearSelectedImages) {
+        window.clearSelectedImages();
+    }
     currentCompletionGoal = null;
 }
 
@@ -325,7 +331,7 @@ async function confirmCompletion() {
     console.log('Confirming completion for goalId:', goalId);
     
     // Check what proof methods are filled
-    const screenshotFiles = document.getElementById('completionScreenshot')?.files;
+    const screenshotFiles = window.getSelectedImages ? window.getSelectedImages() : [];
     const textProof = document.getElementById('completionText')?.value.trim();
     
     // Both screenshots and text are required

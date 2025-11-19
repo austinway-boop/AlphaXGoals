@@ -96,12 +96,13 @@ ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || 'No answer provided'}`).j
 
 CRITICAL EVALUATION REQUIREMENTS:
 
-TIME ESTIMATION - BE SKEPTICAL:
+TIME ESTIMATION - BE REALISTIC:
 - Don't trust student time estimates - calculate realistic time yourself based on their answers
 - 3 emails = 30 minutes max (NOT ambitious enough)
 - 5-10 emails = 1-2 hours (borderline)
 - 15+ personalized emails = 3+ hours (acceptable)
 - Writing 500 words = 2-3 hours of research + writing
+- Writing 1000 words = 3.5 hours of research + writing + editing (GOOD GOAL)
 - Simple tasks are NOT ambitious regardless of claimed time
 
 AMBITION STANDARDS (4/5 required):
