@@ -20,6 +20,9 @@ function fileToBase64(file) {
     });
 }
 
+// Global variable to store selected project screenshots
+let selectedProjectScreenshots = [];
+
 function resetFileUploadDisplay() {
     const display = document.querySelector('.file-upload-display');
     const text = document.querySelector('.file-upload-text span:last-child');
@@ -27,6 +30,179 @@ function resetFileUploadDisplay() {
         display.classList.remove('file-selected');
         text.textContent = 'Upload Screenshot';
     }
+}
+
+// Project Screenshots Upload Functions
+function initializeProjectScreenshots() {
+    const fileInput = document.getElementById('projectScreenshots');
+    const dropzone = document.getElementById('screenshotDropzone');
+    
+    if (!fileInput || !dropzone) return;
+    
+    // File input change handler
+    fileInput.addEventListener('change', handleProjectScreenshotSelect);
+    
+    // Drag and drop handlers
+    dropzone.addEventListener('dragover', handleDragOver);
+    dropzone.addEventListener('dragenter', handleDragEnter);
+    dropzone.addEventListener('dragleave', handleDragLeave);
+    dropzone.addEventListener('drop', handleDrop);
+    
+    // Click handler for dropzone
+    dropzone.addEventListener('click', () => fileInput.click());
+}
+
+function handleProjectScreenshotSelect(e) {
+    const files = Array.from(e.target.files || []);
+    addProjectScreenshots(files);
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+}
+
+function handleDragEnter(e) {
+    e.preventDefault();
+    e.target.classList.add('drag-active');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-active');
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-active');
+    
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    if (files.length === 0) {
+        showToast('Please drop image files only', 'warning');
+        return;
+    }
+    
+    addProjectScreenshots(files);
+}
+
+function addProjectScreenshots(files) {
+    const validFiles = [];
+    
+    for (const file of files) {
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            showToast(`"${file.name}" is not an image file`, 'warning');
+            continue;
+        }
+        
+        // Check file size (2MB limit)
+        if (file.size > 2 * 1024 * 1024) {
+            showToast(`"${file.name}" is too large. Please use images under 2MB`, 'warning');
+            continue;
+        }
+        
+        // Check for duplicates
+        const isDuplicate = selectedProjectScreenshots.some(existing => 
+            existing.name === file.name && existing.size === file.size
+        );
+        
+        if (isDuplicate) {
+            showToast(`"${file.name}" is already selected`, 'warning');
+            continue;
+        }
+        
+        validFiles.push(file);
+    }
+    
+    if (validFiles.length === 0) {
+        return;
+    }
+    
+    // Add valid files to selection
+    selectedProjectScreenshots.push(...validFiles);
+    
+    // Update UI
+    updateProjectScreenshotPreview();
+    showToast(`Added ${validFiles.length} image${validFiles.length > 1 ? 's' : ''}`, 'success');
+}
+
+function removeProjectScreenshot(index) {
+    selectedProjectScreenshots.splice(index, 1);
+    updateProjectScreenshotPreview();
+    showToast('Image removed', 'info');
+}
+
+function clearProjectScreenshots() {
+    selectedProjectScreenshots = [];
+    updateProjectScreenshotPreview();
+}
+
+function updateProjectScreenshotPreview() {
+    const preview = document.getElementById('screenshotPreview');
+    const container = document.getElementById('imagePreviewContainer');
+    const dropzone = document.getElementById('screenshotDropzone');
+    
+    if (!preview || !container || !dropzone) return;
+    
+    if (selectedProjectScreenshots.length === 0) {
+        preview.classList.add('hidden');
+        dropzone.classList.remove('file-selected');
+        return;
+    }
+    
+    // Show preview section
+    preview.classList.remove('hidden');
+    dropzone.classList.add('file-selected');
+    
+    // Clear previous previews
+    container.innerHTML = '';
+    
+    // Create preview for each image
+    selectedProjectScreenshots.forEach((file, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'preview-image-wrapper';
+        
+        const img = document.createElement('img');
+        img.className = 'preview-image';
+        img.alt = file.name;
+        img.title = `${file.name} (${formatFileSize(file.size)})`;
+        
+        // Create object URL for preview
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        
+        // Click to view full size
+        img.addEventListener('click', () => {
+            openImageModal(objectUrl);
+        });
+        
+        // Remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-image-btn';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remove image';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            URL.revokeObjectURL(objectUrl);
+            removeProjectScreenshot(index);
+        });
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+    });
+    
+    // Update dropzone text
+    const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
+    if (dropzoneText) {
+        dropzoneText.textContent = `${selectedProjectScreenshots.length} image${selectedProjectScreenshots.length > 1 ? 's' : ''} selected`;
+    }
+}
+
+function getSelectedProjectScreenshots() {
+    return selectedProjectScreenshots;
 }
 
 // File upload functions for goal completion
@@ -98,14 +274,14 @@ function showCompletionModal(goalId) {
                 
                 <div class="proof-tabs">
                     <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 Screenshots</button>
-                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('text')">📝 Description</button>
+                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 1. Screenshots</button>
+                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('text')">📝 2. Description</button>
                     </div>
                     
                     <!-- Screenshot Tab -->
                     <div id="screenshotTab" class="proof-tab active">
-                        <h5>📷 Screenshots Required</h5>
-                        <p>Upload one or more images showing your completion:</p>
+                        <h5>📷 Step 1: Upload Completion Screenshots</h5>
+                        <p>Upload one or more images showing your completed work:</p>
                         
                         <div class="file-upload-wrapper">
                             <input type="file" id="completionScreenshot" accept="image/*" multiple required>
@@ -129,8 +305,8 @@ function showCompletionModal(goalId) {
                     
                     <!-- Text Proof Tab -->
                     <div id="textTab" class="proof-tab hidden">
-                        <h5>📝 Description Required</h5>
-                        <p>Describe how you completed this goal:</p>
+                        <h5>📝 Step 2: Write Your Completion Description</h5>
+                        <p>Describe how you completed this goal and what you accomplished:</p>
                         <textarea id="completionText" rows="4" placeholder="Describe what you accomplished and how you completed this goal..." class="completion-textarea" required></textarea>
                         <div class="character-count">
                             <span id="textCount">0</span> characters
@@ -147,7 +323,7 @@ function showCompletionModal(goalId) {
                 </div>
                 
                 <div class="completion-requirement">
-                    <p>Choose any combination of proof methods. At least one required.</p>
+                    <p><strong>Both screenshots and description are required to complete this goal.</strong></p>
                 </div>
                 
                 <div class="modal-actions">
@@ -486,6 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize file upload after DOM is ready
     setTimeout(() => {
         setupGoalTextMonitoring();
+        initializeProjectScreenshots();
     }, 100);
     setupEventListeners();
 });
@@ -1107,19 +1284,59 @@ async function handleGoalSubmit(e) {
     const goal = document.getElementById('goalInput').value;
     const alphaXProject = appState.userAlphaXProject;
     
-    const requestBody = {
-        goal,
-        alphaXProject,
-        // Include AI questions and answers if they exist
-        aiQuestions: appState.aiQuestions || null,
-        aiAnswers: appState.aiAnswers || null,
-        // Include validation data from AI
-        validationData: appState.validationResult || null
-    };
-    
     showLoading('Submitting your goal...');
     
     try {
+        // Process project screenshots to base64 if any
+        let projectScreenshotDataArray = [];
+        
+        if (selectedProjectScreenshots.length > 0) {
+            // Calculate total file size
+            let totalSize = 0;
+            for (let i = 0; i < selectedProjectScreenshots.length; i++) {
+                totalSize += selectedProjectScreenshots[i].size;
+            }
+            
+            // Check size limits
+            const estimatedBase64Size = totalSize * 1.33;
+            const maxPayloadSize = 5 * 1024 * 1024; // 5MB
+            
+            if (estimatedBase64Size > maxPayloadSize) {
+                hideLoading();
+                showToast('Total image size too large. Please use smaller images or fewer images.', 'error');
+                return;
+            }
+            
+            // Convert images to base64
+            for (let i = 0; i < selectedProjectScreenshots.length; i++) {
+                try {
+                    const screenshotData = await fileToBase64(selectedProjectScreenshots[i]);
+                    projectScreenshotDataArray.push({
+                        data: screenshotData,
+                        filename: selectedProjectScreenshots[i].name,
+                        size: selectedProjectScreenshots[i].size
+                    });
+                } catch (error) {
+                    console.error(`Failed to process screenshot ${i+1}:`, error);
+                    hideLoading();
+                    showToast(`Failed to process image "${selectedProjectScreenshots[i].name}". Try a smaller image.`, 'error');
+                    return;
+                }
+            }
+        }
+        
+        const requestBody = {
+            goal,
+            alphaXProject,
+            // Include AI questions and answers if they exist
+            aiQuestions: appState.aiQuestions || null,
+            aiAnswers: appState.aiAnswers || null,
+            // Include validation data from AI
+            validationData: appState.validationResult || null,
+            // Include project screenshots
+            projectScreenshotDataArray: projectScreenshotDataArray
+        };
+        
         const response = await fetch('/api/submit-goal', {
             method: 'POST',
             headers: {
@@ -1143,8 +1360,8 @@ async function handleGoalSubmit(e) {
             appState.aiQuestions = null;
             appState.aiAnswers = null;
             
-            
-            // Alpha X project persists, no need to reset
+            // Clear project screenshots
+            clearProjectScreenshots();
             
             // Reload goals
             loadGoals();
@@ -1260,6 +1477,23 @@ function displayGoals(goals) {
                         <span class="score-mini ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}" title="Ambition: ${goal.validationData.ambitionScore || 0}/5">${goal.validationData.ambitionScore || 0}</span>
                         <span class="score-mini ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}" title="Measurable: ${goal.validationData.measurableScore || 0}/10">${goal.validationData.measurableScore || 0}</span>
                         <span class="score-mini ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}" title="Relevance: ${goal.validationData.relevanceScore || 0}/10">${goal.validationData.relevanceScore || 0}</span>
+                    </div>
+                ` : ''}
+                
+                ${goal.projectScreenshots && goal.projectScreenshots.length > 0 ? `
+                    <div class="goal-screenshots">
+                        <h6>📷 Project Screenshots (${goal.projectScreenshots.length})</h6>
+                        <div class="screenshot-gallery">
+                            ${goal.projectScreenshots.map((screenshot, index) => `
+                                <img 
+                                    src="${screenshot.data}" 
+                                    alt="${screenshot.filename || `Screenshot ${index + 1}`}"
+                                    class="screenshot-thumbnail"
+                                    title="${screenshot.filename || `Screenshot ${index + 1}`} (${formatFileSize(screenshot.size || 0)})"
+                                    onclick="openImageModal('${screenshot.data}')"
+                                />
+                            `).join('')}
+                        </div>
                     </div>
                 ` : ''}
             </div>
