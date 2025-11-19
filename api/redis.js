@@ -16,8 +16,21 @@ export async function getRedisClient() {
     });
     
     redis.on('error', (err) => {
-      console.error('Redis Client Error:', err);
-      redis = null; // Reset client on error
+      console.error('⚠️ Redis Client Error - but NOT resetting connection:', err);
+      // DON'T reset to null - keep connection alive for recovery
+      // redis = null; // REMOVED: This was causing data loss
+    });
+    
+    redis.on('disconnect', () => {
+      console.error('⚠️ Redis disconnected - attempting to reconnect...');
+    });
+    
+    redis.on('reconnecting', () => {
+      console.log('🔄 Redis reconnecting...');
+    });
+    
+    redis.on('connect', () => {
+      console.log('✅ Redis connected successfully');
     });
     
     try {
@@ -35,16 +48,31 @@ export async function getRedisClient() {
 
 // Helper functions for user management
 export async function createUser(userData) {
+  console.log('🔄 Creating new user...');
   const client = await getRedisClient();
   const userId = `user:${Date.now()}`;
   
-  // Hash password before storing
-  const hashedPassword = await bcrypt.hash(userData.password, 12);
-  const userDataWithHashedPassword = { ...userData, password: hashedPassword };
-  
-  await client.hSet(userId, userDataWithHashedPassword);
-  await client.sAdd('users', userId);
-  return { id: userId, ...userData }; // Return without password
+  try {
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(userData.password, 12);
+    const userDataWithHashedPassword = { ...userData, password: hashedPassword };
+    
+    console.log('💾 Storing user data in Redis:', userId);
+    await client.hSet(userId, userDataWithHashedPassword);
+    await client.sAdd('users', userId);
+    
+    console.log('✅ User created successfully:', userId);
+    
+    // Trigger automatic backup after user creation
+    setTimeout(() => {
+      triggerAutomaticBackup('user_created');
+    }, 1000);
+    
+    return { id: userId, ...userData }; // Return without password
+  } catch (error) {
+    console.error('❌ Failed to create user:', error);
+    throw error;
+  }
 }
 
 export async function findUser(username, email) {
@@ -565,4 +593,64 @@ Based on the original goal and the provided answers, respond with a JSON object 
 }
 
 Since the user provided clarifying answers, you should approve the goal unless it clearly fails to meet the basic criteria even after their explanation.`;
+}
+
+// Data protection and backup functions
+export async function triggerAutomaticBackup(reason = 'manual') {
+  try {
+    console.log('🛡️ Triggering automatic backup, reason:', reason);
+    
+    // Don't make HTTP requests in serverless - instead implement backup logic directly
+    const client = await getRedisClient();
+    
+    // Get current data counts for logging
+    const userIds = await client.sMembers('users') || [];
+    const goalKeys = await client.keys('goal:*') || [];
+    
+    console.log('📊 Current data state:', {
+      users: userIds.length,
+      goals: goalKeys.length,
+      reason
+    });
+    
+    // Create backup timestamp
+    const backup = {
+      timestamp: new Date().toISOString(),
+      reason,
+      version: '1.0',
+      users: {},
+      goals: {},
+      metadata: {
+        userCount: userIds.length,
+        goalCount: goalKeys.length
+      }
+    };
+    
+    // Backup users
+    for (const userId of userIds) {
+      const userData = await client.hGetAll(userId);
+      if (userData && Object.keys(userData).length > 0) {
+        backup.users[userId] = userData;
+      }
+    }
+    
+    // Backup goals
+    for (const goalKey of goalKeys) {
+      const goalData = await client.hGetAll(goalKey);
+      if (goalData && Object.keys(goalData).length > 0) {
+        backup.goals[goalKey] = goalData;
+      }
+    }
+    
+    // Store backup
+    const backupKey = `backup:${Date.now()}:${reason}`;
+    await client.set(backupKey, JSON.stringify(backup));
+    
+    console.log('✅ Automatic backup completed:', backupKey);
+    return { success: true, key: backupKey };
+    
+  } catch (error) {
+    console.error('❌ Automatic backup failed:', error);
+    return { success: false, error: error.message };
+  }
 }
