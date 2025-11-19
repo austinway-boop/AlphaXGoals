@@ -743,6 +743,11 @@ async function updateUserDisplayName(userId, newDisplayName) {
             body: JSON.stringify({ userId, displayName: newDisplayName.trim() })
         });
         
+        if (!response.ok) {
+            console.error('HTTP error:', response.status, response.statusText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         console.log('Display name update response:', data);
         
@@ -755,11 +760,15 @@ async function updateUserDisplayName(userId, newDisplayName) {
                 input.value = newDisplayName;
             });
             
-            loadGoals(); // Refresh to show updated display name
-            // Also refresh users if they're loaded
-            if (adminState.users.length > 0) {
-                loadUsers();
-            }
+            // Force refresh of all data to show updated display name
+            setTimeout(() => {
+                console.log('Refreshing data after display name update...');
+                loadGoals(); // Refresh to show updated display name
+                // Also refresh users if they're loaded
+                if (adminState.users.length > 0) {
+                    loadUsers();
+                }
+            }, 500);
         } else {
             showToast(data.error || 'Failed to update display name', 'error');
         }
@@ -934,6 +943,11 @@ async function saveNameEdit(userId) {
             body: JSON.stringify({ userId, displayName: newDisplayName })
         });
         
+        if (!response.ok) {
+            console.error('HTTP error:', response.status, response.statusText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         console.log('Update response:', data);
         
@@ -981,11 +995,15 @@ async function saveNameEdit(userId) {
             // Reset editing state
             window.editingUser = null;
             
-            // Refresh data in background
-            if (adminState.users.length > 0) {
-                loadUsers();
-            }
-            loadGoals();
+            // Refresh data in background - force fresh data
+            setTimeout(() => {
+                if (adminState.users.length > 0) {
+                    console.log('Refreshing users after name update...');
+                    loadUsers();
+                }
+                console.log('Refreshing goals after name update...');
+                loadGoals();
+            }, 500);
         } else {
             showToast(data.error || 'Failed to update display name', 'error');
         }
