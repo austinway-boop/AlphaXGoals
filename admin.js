@@ -120,7 +120,17 @@ function handleDynamicButtonClicks(e) {
         if (userId) {
             cancelNameEdit(userId);
         }
-    // Old goal editing buttons removed - now using goal creation modal
+    } else if (e.target.matches('.edit-goal-btn') || e.target.matches('.edit-goal-btn-mini')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const goalId = e.target.dataset.goalId;
+        console.log('Edit goal button clicked for goalId:', goalId);
+        
+        if (goalId) {
+            showGoalEditingModal(goalId);
+        } else {
+            console.error('No goalId found on edit button:', e.target);
+        }
     } else if (e.target.matches('.revoke-completion-btn')) {
         e.preventDefault();
         const goalId = e.target.dataset.goalId;
@@ -442,6 +452,8 @@ function displayGoals(goals) {
                 <div class="goal-title-preview">
                     <div class="goal-title-section">
                         <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                        ${canEditGoal(goal.createdAt) ? `<button class="edit-goal-btn-mini" data-goal-id="${escapeHtml(goal.id)}" title="Edit this goal" onclick="event.stopPropagation(); showGoalEditingModal('${escapeHtml(goal.id)}')">✏️ Edit</button>` : 
+                          `<span class="edit-disabled" title="Goals can only be edited on the day they were created">🔒 Edit locked</span>`}
                     </div>
                     ${goal.alphaXProject ? `<p class="alpha-project-preview">🚀 ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                 </div>
@@ -470,7 +482,11 @@ function displayGoals(goals) {
                     <div class="goal-content-simple">
                         <div class="goal-text-section">
                             <div class="goal-display">
-                                <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                                <div class="goal-text-with-edit">
+                                    <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                                    ${canEditGoal(goal.createdAt) ? `<button class="edit-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Edit goal text">✏️ Edit Goal</button>` : 
+                                      `<span class="edit-disabled" title="Goals can only be edited on the day they were created">🔒 Edit locked</span>`}
+                                </div>
                             </div>
                         </div>
                         
@@ -1256,7 +1272,260 @@ function formatDate(dateString) {
     });
 }
 
-// Old goal editing functions removed - replaced with goal creation
+function showGoalEditingModal(goalId) {
+    console.log('Opening goal editing modal for goalId:', goalId);
+    
+    // Check if admin name is provided
+    if (!adminState.adminName || adminState.adminName.trim() === '') {
+        showToast('Please enter your admin name in the header before editing goals', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+            adminNameInput.style.border = '2px solid orange';
+            setTimeout(() => {
+                adminNameInput.style.border = '';
+            }, 3000);
+        }
+        return;
+    }
+    
+    // Find the goal data
+    const goal = adminState.goals.find(g => g.id === goalId);
+    if (!goal) {
+        console.error('Goal not found for goalId:', goalId);
+        showToast('Goal not found', 'error');
+        return;
+    }
+    
+    // Check if goal can be edited (current day only)
+    if (!canEditGoal(goal.createdAt)) {
+        showToast('Goals can only be edited on the day they were created', 'warning');
+        return;
+    }
+    
+    // Create modal HTML for goal editing
+    const modalHTML = `
+        <div id="goalEditingModal" class="goal-editing-modal-overlay">
+            <div class="goal-editing-modal">
+                <div class="goal-editing-header">
+                    <h2>✏️ Edit Student Goal</h2>
+                    <button class="close-modal-btn" onclick="closeGoalEditingModal()">&times;</button>
+                </div>
+                
+                <div class="goal-editing-content">
+                    <div class="goal-meta-info">
+                        <div class="student-info">
+                            <strong>👤 Student:</strong> ${escapeHtml(goal.user.username)}
+                            <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span>
+                        </div>
+                        <div class="goal-dates">
+                            <strong>📅 Created:</strong> ${formatDate(goal.createdAt)}
+                        </div>
+                        <div class="alpha-project-info">
+                            <strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject || 'Not specified')}
+                        </div>
+                    </div>
+                    
+                    <div class="goal-editing-form">
+                        <label for="goalTextEditor" class="form-label">
+                            <strong>🎯 Goal Text:</strong>
+                            <span class="form-help">Edit the goal text below. Changes will be validated by AI and replace the existing goal.</span>
+                        </label>
+                        <textarea 
+                            id="goalTextEditor" 
+                            class="goal-text-editor"
+                            rows="4"
+                            placeholder="Enter the updated goal text..."
+                        >${escapeHtml(goal.goal)}</textarea>
+                        
+                        <div id="goalEditingFeedback" class="validation-feedback-section" style="display: none;"></div>
+                        
+                        <div class="admin-info">
+                            <strong>👨‍💼 Admin:</strong> ${adminState.adminName}
+                        </div>
+                    </div>
+                    
+                    <div class="goal-editing-actions">
+                        <button class="btn btn-secondary" onclick="closeGoalEditingModal()">
+                            ❌ Cancel
+                        </button>
+                        <button class="btn btn-primary" onclick="saveEditedGoal('${goalId}')">
+                            🤖 Validate & Update Goal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing modal
+    const existingModal = document.getElementById('goalEditingModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Focus on the textarea
+    setTimeout(() => {
+        const textarea = document.getElementById('goalTextEditor');
+        if (textarea) {
+            textarea.focus();
+            textarea.select();
+        }
+    }, 100);
+}
+
+function closeGoalEditingModal() {
+    const modal = document.getElementById('goalEditingModal');
+    if (modal) {
+        modal.remove();
+    }
+    editingGoal = null;
+}
+
+async function saveEditedGoal(goalId) {
+    const textarea = document.getElementById('goalTextEditor');
+    if (!textarea) {
+        showToast('Goal editor not found', 'error');
+        return;
+    }
+    
+    const newGoalText = textarea.value.trim();
+    if (!newGoalText) {
+        showToast('Goal text cannot be empty', 'warning');
+        textarea.focus();
+        return;
+    }
+    
+    // Show loading state
+    const saveBtn = document.querySelector('.goal-editing-actions .btn-primary');
+    const originalText = saveBtn.textContent;
+        saveBtn.textContent = '🤖 AI Validating...';
+        saveBtn.disabled = true;
+    
+    try {
+        console.log('Updating existing goal for goalId:', goalId, 'to:', newGoalText);
+        const response = await fetch('/api/update-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                goalId, 
+                newGoalText,
+                adminName: adminState.adminName 
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Goal update response:', data);
+        
+        const feedbackDiv = document.getElementById('goalEditingFeedback');
+        
+        if (data.success) {
+            const goal = adminState.goals.find(g => g.id === goalId);
+            const userName = goal ? goal.user.username : 'Unknown';
+            
+            let validationInfo = '';
+            if (data.validation) {
+                validationInfo = `<br><strong>AI Validation Scores:</strong> Ambition ${data.validation.ambitionScore}/5, Measurable ${data.validation.measurableScore}/10, Relevance ${data.validation.relevanceScore}/10`;
+            }
+                
+            feedbackDiv.innerHTML = `
+                <div class="validation-success">
+                    <h4>🎉 Goal Updated Successfully!</h4>
+                    <p><strong>✅ Student:</strong> ${escapeHtml(userName)}</p>
+                    <p><strong>🎯 Updated Goal:</strong> ${escapeHtml(newGoalText)}</p>
+                    ${validationInfo}
+                    <p><strong>👨‍💼 Updated by:</strong> ${adminState.adminName}</p>
+                    <p><strong>📱 Next:</strong> The student will see the updated goal immediately in their dashboard.</p>
+                </div>
+            `;
+            feedbackDiv.style.display = 'block';
+            
+            await logAdminAction('goal_edit', `Edited goal for student ${userName}: "${newGoalText}"`, { 
+                goalId: goalId, 
+                newGoalText: newGoalText,
+                originalGoal: goal ? goal.goal : 'Unknown'
+            });
+            
+            showToast(`✅ Goal updated successfully for ${userName}!`, 'success');
+            
+            // Update button to show completion
+            saveBtn.textContent = '✅ Goal Updated Successfully!';
+            saveBtn.disabled = true;
+            saveBtn.style.background = '#4caf50';
+            
+            // Auto-close modal after delay
+            setTimeout(() => {
+                closeGoalEditingModal();
+                loadGoals(); // Refresh the goals list to show the updated goal
+            }, 3000);
+            
+        } else {
+            // Handle validation failure or other errors
+            if (data.validation && !data.validation.isValid) {
+                const validationMsg = data.validation.feedback || 'Goal does not meet validation criteria';
+                
+                feedbackDiv.innerHTML = `
+                    <div class="validation-failure">
+                        <h4>❌ AI Validation Failed</h4>
+                        <p><strong>Issue:</strong> ${validationMsg}</p>
+                        <div class="validation-scores">
+                            <div class="score-item ${data.validation.ambitionScore >= 4 ? 'pass' : 'fail'}">
+                                <strong>Ambition:</strong> ${data.validation.ambitionScore}/5 ${data.validation.ambitionScore >= 4 ? '✅' : '❌ (Need 4+)'}
+                            </div>
+                            <div class="score-item ${data.validation.measurableScore >= 8 ? 'pass' : 'fail'}">
+                                <strong>Measurable:</strong> ${data.validation.measurableScore}/10 ${data.validation.measurableScore >= 8 ? '✅' : '❌ (Need 8+)'}
+                            </div>
+                            <div class="score-item ${data.validation.relevanceScore >= 8 ? 'pass' : 'fail'}">
+                                <strong>Relevance:</strong> ${data.validation.relevanceScore}/10 ${data.validation.relevanceScore >= 8 ? '✅' : '❌ (Need 8+)'}
+                            </div>
+                        </div>
+                        ${data.validation.suggestions && data.validation.suggestions.length > 0 ? 
+                            `<div class="ai-suggestions">
+                                <strong>💡 AI Suggestions:</strong>
+                                <ul>
+                                    ${data.validation.suggestions.map(s => `<li>${s}</li>`).join('')}
+                                </ul>
+                            </div>` : ''}
+                        <p><em>Please revise the goal based on the feedback above and try again.</em></p>
+                    </div>
+                `;
+                feedbackDiv.style.display = 'block';
+                showToast(`❌ Goal failed AI validation. Check the feedback and try again.`, 'error', 8000);
+            } else {
+                feedbackDiv.innerHTML = `
+                    <div class="validation-error">
+                        <h4>❌ Error Updating Goal</h4>
+                        <p>${data.error || 'An unknown error occurred'}</p>
+                    </div>
+                `;
+                feedbackDiv.style.display = 'block';
+                showToast(data.error || 'Failed to update goal', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating goal:', error);
+        const feedbackDiv = document.getElementById('goalEditingFeedback');
+        feedbackDiv.innerHTML = `
+            <div class="validation-error">
+                <h4>❌ Network Error</h4>
+                <p>Failed to connect to the server. Please check your internet connection and try again.</p>
+            </div>
+        `;
+        feedbackDiv.style.display = 'block';
+        showToast('Failed to update goal - network error', 'error');
+    } finally {
+        // Only restore button state if it's not the success state
+        if (saveBtn.textContent !== '✅ Goal Updated Successfully!') {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+}
 
 // Old inline goal editing functions removed - replaced with goal creation modal workflow
 

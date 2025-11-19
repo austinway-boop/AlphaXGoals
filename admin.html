@@ -2082,6 +2082,68 @@
             box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
         }
         
+        .goal-text-with-edit {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .goal-text-with-edit h4 {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .edit-goal-btn {
+            background: var(--surface-light);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .edit-goal-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .edit-goal-btn-mini {
+            background: var(--surface-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+        
+        .edit-goal-btn-mini:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            opacity: 1;
+            transform: translateY(-1px);
+        }
+        
+        .edit-disabled {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding: 0.25rem 0.5rem;
+            background: var(--surface-light);
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+        }
+        
         .form-label {
             display: block;
             margin-bottom: 0.75rem;
