@@ -185,9 +185,9 @@ function updateCompletionScreenshotPreview() {
     
     if (!preview || !container || !dropzone) {
         console.error('Missing required elements for completion screenshot preview update');
-        return;
-    }
-    
+                return;
+            }
+            
     if (selectedCompletionScreenshots.length === 0) {
         console.log('No completion screenshots selected, hiding preview');
         preview.classList.add('hidden');
@@ -253,7 +253,7 @@ function updateCompletionScreenshotPreview() {
     if (dropzoneText) {
         dropzoneText.textContent = `✅ ${selectedCompletionScreenshots.length} screenshot${selectedCompletionScreenshots.length > 1 ? 's' : ''} uploaded`;
         console.log('Updated completion dropzone text:', dropzoneText.textContent);
-    } else {
+        } else {
         console.error('Could not find completion dropzone text element');
     }
     
@@ -1361,15 +1361,15 @@ async function handleGoalSubmit(e) {
     showLoading('Submitting your goal...');
     
     try {
-        const requestBody = {
-            goal,
-            alphaXProject,
-            // Include AI questions and answers if they exist
-            aiQuestions: appState.aiQuestions || null,
-            aiAnswers: appState.aiAnswers || null,
-            // Include validation data from AI
-            validationData: appState.validationResult || null
-        };
+    const requestBody = {
+        goal,
+        alphaXProject,
+        // Include AI questions and answers if they exist
+        aiQuestions: appState.aiQuestions || null,
+        aiAnswers: appState.aiAnswers || null,
+        // Include validation data from AI
+        validationData: appState.validationResult || null
+    };
     
         const response = await fetch('/api/submit-goal', {
             method: 'POST',
@@ -1495,13 +1495,18 @@ function displayGoals(goals) {
                         ${completedDate ? `<span class="date-completed">🎉 ${completedDate}</span>` : ''}
                     </div>
                     
+                    <div class="goal-actions-minimal">
                     ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
+                            <button class="btn-edit-minimal" onclick="editUserGoal('${goal.id}')" title="Edit goal">
+                                ✏️ Edit
+                            </button>
                         <button class="btn-complete-minimal" onclick="showCompletionModal('${goal.id}')">
                             Complete
                         </button>
                     ` : goal.status === 'active' ? `
                         <div class="deadline-passed">Deadline passed</div>
                     ` : ''}
+                    </div>
                 </div>
                 
                 ${goal.validationData ? `
@@ -1667,6 +1672,322 @@ function canCompleteGoal(createdAt) {
     const goalCreatedTodayCST = goalCreatedCST.toDateString() === cstNow.toDateString();
     
     return goalCreatedTodayCST;
+}
+
+// User Goal Editing Functions
+let editingUserGoal = null;
+
+function editUserGoal(goalId) {
+    console.log('editUserGoal called for goalId:', goalId);
+    
+    // Find the goal data
+    const goal = appState.goals.find(g => g.id === goalId);
+    if (!goal) {
+        console.error('Goal not found for editing:', goalId);
+        showToast('Goal not found', 'error');
+        return;
+    }
+    
+    // Check if goal can be edited (today only)
+    if (!canCompleteGoal(goal.createdAt)) {
+        showToast('Goals can only be edited on the day they were created', 'warning');
+        return;
+    }
+    
+    editingUserGoal = goal;
+    showUserGoalEditModal(goal);
+}
+
+function showUserGoalEditModal(goal) {
+    // Create edit modal HTML
+    const modalHTML = `
+        <div id="userEditModal" class="modal-overlay" onclick="handleUserEditModalClick(event)">
+            <div class="modal-content user-edit-modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>✏️ Edit Your Goal</h3>
+                    <button class="modal-close" onclick="hideUserEditModal()">&times;</button>
+                </div>
+                
+                <div class="edit-instructions">
+                    <p>Update your goal text below. Your edited goal will need to pass AI validation again before it's saved.</p>
+                </div>
+                
+                <div class="goal-edit-form">
+                    <div class="form-group">
+                        <label for="editGoalInput">Your Goal</label>
+                        <textarea 
+                            id="editGoalInput" 
+                            placeholder="Update your goal text..."
+                            rows="4"
+                            required
+                        >${escapeHtml(goal.goal)}</textarea>
+                        <div class="form-hint">Be specific and measurable. Goals should require at least 3 hours of work.</div>
+                    </div>
+                    
+                    <div class="alpha-x-display">
+                        <label>Alpha X Project</label>
+                        <div class="project-display-readonly">
+                            <span>${escapeHtml(goal.alphaXProject || appState.userAlphaXProject)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="edit-actions">
+                        <button type="button" class="btn btn-secondary" onclick="validateEditedGoal()">
+                            <span class="btn-icon">🤖</span>
+                            Validate with AI
+                        </button>
+                        <button type="button" class="btn btn-primary" id="saveEditedGoalBtn" onclick="saveEditedGoal()" disabled>
+                            <span class="btn-icon">💾</span>
+                            Save Goal
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="hideUserEditModal()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Validation Results for Edited Goal -->
+                <div id="editValidationResults" class="validation-results hidden">
+                    <div class="validation-header">
+                        <h3>AI Validation Results</h3>
+                    </div>
+                    <div id="editValidationContent"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing modal
+    const existingModal = document.getElementById('userEditModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Focus on textarea
+    setTimeout(() => {
+        const textarea = document.getElementById('editGoalInput');
+        if (textarea) {
+            textarea.focus();
+            textarea.select();
+        }
+    }, 100);
+}
+
+function handleUserEditModalClick(event) {
+    // Only close if clicking the modal background, not the content
+    if (event.target === event.currentTarget) {
+        hideUserEditModal();
+    }
+}
+
+function hideUserEditModal() {
+    const modal = document.getElementById('userEditModal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+    
+    // Reset state
+    editingUserGoal = null;
+}
+
+async function validateEditedGoal() {
+    const goalText = document.getElementById('editGoalInput').value.trim();
+    const alphaXProject = appState.userAlphaXProject;
+    
+    if (!goalText) {
+        showToast('Please enter a goal first', 'warning');
+        return;
+    }
+    
+    if (!alphaXProject) {
+        showToast('Alpha X project is required for validation', 'error');
+        return;
+    }
+    
+    showLoading('Validating your edited goal with AI...');
+    
+    try {
+        const response = await fetch('/api/validate-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                goal: goalText,
+                alphaXProject
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            displayEditValidationResults(data.validation);
+            
+            // Enable save button if goal is valid
+            const saveBtn = document.getElementById('saveEditedGoalBtn');
+            if (saveBtn) {
+                saveBtn.disabled = !data.validation.isValid;
+            }
+            
+            if (data.validation.isValid) {
+                showToast('Edited goal validated successfully! You can now save it.', 'success');
+            } else {
+                showToast('Edited goal needs improvement. Check the validation feedback.', 'warning');
+            }
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Validation failed. Please try again.', 'error');
+    }
+}
+
+function displayEditValidationResults(validation) {
+    const resultsContainer = document.getElementById('editValidationResults');
+    const contentContainer = document.getElementById('editValidationContent');
+    
+    if (!resultsContainer || !contentContainer) return;
+    
+    const statusClass = validation.isValid ? 'valid' : 'invalid';
+    const statusIcon = validation.isValid ? '✅' : '❌';
+    const statusText = validation.isValid ? 'Goal Approved' : 'Needs Improvement';
+    
+    const getScoreIcon = (score, isAmbition = false) => {
+        const threshold = isAmbition ? 4 : 8;
+        const maxScore = isAmbition ? 5 : 10;
+        if (score >= threshold) return '🟢';
+        if (score >= (maxScore * 0.6)) return '🟡';
+        return '🔴';
+    };
+    
+    const getScoreColor = (score, isAmbition = false) => {
+        const threshold = isAmbition ? 4 : 8;
+        const maxScore = isAmbition ? 5 : 10;
+        if (score >= threshold) return 'var(--success-color)';
+        if (score >= (maxScore * 0.6)) return 'var(--warning-color)';
+        return 'var(--danger-color)';
+    };
+    
+    contentContainer.innerHTML = `
+        <div class="validation-status ${statusClass}">
+            <span>${statusIcon}</span>
+            ${statusText} (Overall Score: ${validation.overallScore || 0}/10)
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">${getScoreIcon(validation.ambitionScore || 0, true)}</div>
+            <div class="validation-content">
+                <h4>Ambition Score</h4>
+                <p><strong style="color: ${getScoreColor(validation.ambitionScore || 0, true)}">${validation.ambitionScore || 0}/5</strong> - How challenging and growth-oriented is this goal?</p>
+                <p><em>Requirement: 4/5 to pass</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">${getScoreIcon(validation.measurableScore || 0)}</div>
+            <div class="validation-content">
+                <h4>Measurable Score</h4>
+                <p><strong style="color: ${getScoreColor(validation.measurableScore || 0)}">${validation.measurableScore || 0}/10</strong> - How clearly defined and measurable are the success criteria?</p>
+                <p><em>Requirement: 8/10 to pass</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">${getScoreIcon(validation.relevanceScore || 0)}</div>
+            <div class="validation-content">
+                <h4>Relevance Score</h4>
+                <p><strong style="color: ${getScoreColor(validation.relevanceScore || 0)}">${validation.relevanceScore || 0}/10</strong> - How relevant is this goal to your Alpha X project?</p>
+                <p><em>Requirement: 8/10 to pass</em></p>
+            </div>
+        </div>
+        
+        <div class="validation-item">
+            <div class="validation-icon">🤖</div>
+            <div class="validation-content">
+                <h4>AI Feedback</h4>
+                <p>${validation.feedback}</p>
+                ${validation.suggestions && validation.suggestions.length > 0 ? `
+                    <div class="validation-suggestions">
+                        <strong>Suggestions for improvement:</strong>
+                        <ul>
+                            ${validation.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    resultsContainer.classList.remove('hidden');
+    
+    // Store validation result for saving
+    window.currentEditValidation = validation;
+}
+
+async function saveEditedGoal() {
+    if (!editingUserGoal || !window.currentEditValidation) {
+        showToast('Please validate your goal first', 'warning');
+        return;
+    }
+    
+    if (!window.currentEditValidation.isValid) {
+        showToast('Goal must pass validation before saving', 'warning');
+        return;
+    }
+    
+    const goalText = document.getElementById('editGoalInput').value.trim();
+    
+    if (!goalText) {
+        showToast('Goal text cannot be empty', 'warning');
+        return;
+    }
+    
+    showLoading('Saving your updated goal...');
+    
+    try {
+        const response = await fetch('/api/update-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                goalId: editingUserGoal.id,
+                newGoalText: goalText,
+                adminName: appState.currentUser.username + ' (self-edit)',
+                isUserEdit: true
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast('Goal updated successfully! ✅', 'success');
+            hideUserEditModal();
+            loadGoals(); // Refresh the goals list
+        } else {
+            if (data.validation && !data.validation.isValid) {
+                showToast(`Goal validation failed: ${data.validation.feedback}`, 'error');
+            } else {
+                showToast(data.error || 'Failed to update goal', 'error');
+            }
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error saving edited goal:', error);
+        showToast('Failed to save goal. Please try again.', 'error');
+    }
 }
 
 // Utility function

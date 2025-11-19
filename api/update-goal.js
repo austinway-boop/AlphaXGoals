@@ -21,6 +21,25 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  const { goalId, newGoalText, adminName, isUserEdit } = req.body;
+  
+  let isAdminEdit = false;
+  let userId = null;
+  
+  if (isUserEdit) {
+    // Check user authentication for self-edit
+    const sessionCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('session='));
+    if (!sessionCookie) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    
+    try {
+      const sessionData = JSON.parse(sessionCookie.split('=')[1]);
+      userId = sessionData.userId;
+    } catch (e) {
+      return res.status(401).json({ success: false, error: 'Invalid session' });
+    }
+  } else {
   // Check admin authentication
   const adminCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('admin_session='));
   if (!adminCookie) {
@@ -33,11 +52,11 @@ export default async function handler(req, res) {
     if (!adminSession.isAdmin) {
       return res.status(401).json({ success: false, error: 'Admin privileges required' });
     }
+      isAdminEdit = true;
   } catch (e) {
     return res.status(401).json({ success: false, error: 'Invalid admin session' });
   }
-
-  const { goalId, newGoalText, adminName } = req.body;
+  }
   
   if (!goalId) {
     return res.status(400).json({ 
@@ -56,14 +75,14 @@ export default async function handler(req, res) {
   if (!adminName || adminName.trim() === '') {
     return res.status(400).json({ 
       success: false, 
-      error: 'Admin name is required' 
+      error: isUserEdit ? 'User name is required' : 'Admin name is required' 
     });
   }
 
   try {
     const client = await getRedisClient();
     
-    console.log('Updating goal for goalId:', goalId, 'to:', newGoalText, 'by admin:', adminName);
+    console.log(`Updating goal for goalId: ${goalId}, to: ${newGoalText}, by ${isUserEdit ? 'user' : 'admin'}: ${adminName}`);
     
     // Check if goal exists
     const goal = await client.hGetAll(goalId);
@@ -72,6 +91,16 @@ export default async function handler(req, res) {
     if (!goal || Object.keys(goal).length === 0) {
       console.error('Goal not found:', goalId);
       return res.status(404).json({ success: false, error: 'Goal not found' });
+    }
+
+    // For user edits, verify the user owns this goal
+    if (isUserEdit) {
+      if (goal.userId !== userId) {
+        return res.status(403).json({ 
+          success: false, 
+          error: 'You can only edit your own goals' 
+        });
+      }
     }
 
     // Check if goal can be edited (current day only in CST)
@@ -243,23 +272,24 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
       }
 
       // If valid, update the goal with new text, admin tracking, and validation data
-      const updateData = {
-        goal: newGoalText.trim(),
-        lastEditedBy: adminName.trim(),
+    const updateData = {
+      goal: newGoalText.trim(),
+      lastEditedBy: adminName.trim(),
         lastEditedAt: new Date().toISOString(),
         // Update validation data with new validation results
         validationData: validation
-      };
-      
-      const updatedGoal = await updateGoal(goalId, updateData);
+    };
+    
+    const updatedGoal = await updateGoal(goalId, updateData);
       console.log('Successfully updated goal after validation:', goalId);
 
-      res.json({ 
-        success: true, 
-        message: 'Goal updated successfully and passed AI validation',
-        goal: updatedGoal,
+    res.json({ 
+      success: true, 
+        message: `Goal updated successfully and passed AI validation${isUserEdit ? ' by user' : ' by admin'}`,
+      goal: updatedGoal,
         updatedBy: adminName,
-        validation: validation
+        validation: validation,
+        editType: isUserEdit ? 'user' : 'admin'
       });
 
     } catch (validationError) {
