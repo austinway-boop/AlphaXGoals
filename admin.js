@@ -270,6 +270,12 @@ function showAdminPanel() {
 
 // Admin Panel Navigation
 function showAdminSection(sectionName) {
+    // Clear any editing state when switching sections
+    if (window.editingUser) {
+        console.log('Clearing editing state due to section switch');
+        window.editingUser = null;
+    }
+    
     // Hide all sections
     document.querySelectorAll('.admin-section').forEach(section => {
         section.classList.remove('active');
@@ -313,6 +319,12 @@ async function loadAdminData() {
 async function loadGoals() {
     const container = document.getElementById('goalsContainer');
     container.innerHTML = '<div class="loading">Loading goals...</div>';
+    
+    // Clear editing state when refreshing goal data (which includes user names)
+    if (window.editingUser) {
+        console.log('Clearing editing state due to goal data refresh');
+        window.editingUser = null;
+    }
     
     try {
         const params = new URLSearchParams();
@@ -782,11 +794,24 @@ async function updateUserDisplayName(userId, newDisplayName) {
 function showNameEditor(userId) {
     console.log('showNameEditor called for userId:', userId);
     
-    // Prevent multiple calls
+    // Check if we're already editing this user and editor is actually visible
     if (window.editingUser === userId) {
-        console.log('Already editing this user, ignoring duplicate call');
-        return;
+        const currentEditor = document.getElementById(`nameEditor_${userId}`);
+        if (currentEditor && currentEditor.style.display !== 'none' && !currentEditor.classList.contains('hidden')) {
+            console.log('Already editing this user and editor is visible, ignoring duplicate call');
+            return;
+        } else {
+            console.log('Editing state was stuck, clearing it and proceeding');
+            window.editingUser = null;
+        }
     }
+    
+    // Clear any other editing states
+    if (window.editingUser && window.editingUser !== userId) {
+        console.log('Canceling edit for previous user:', window.editingUser);
+        cancelNameEdit(window.editingUser);
+    }
+    
     window.editingUser = userId;
     
     // Find the edit button first to get the correct context
@@ -1966,6 +1991,12 @@ function updateStats(stats) {
 async function loadUsers() {
     const container = document.getElementById('usersContainer');
     container.innerHTML = '<div class="loading">Loading users...</div>';
+    
+    // Clear editing state when refreshing user data
+    if (window.editingUser) {
+        console.log('Clearing editing state due to user data refresh');
+        window.editingUser = null;
+    }
     
     try {
         const response = await fetch('/api/admin-users');
