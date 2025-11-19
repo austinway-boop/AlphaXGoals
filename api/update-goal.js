@@ -147,11 +147,11 @@ Alpha X Project: "${alphaXProject}"
 Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts. 
 
 IMPORTANT BRAINLIFT RULES:
-- BrainLift goals MUST include additional tasks beyond just adding words
-- Even with 500+ words, students must do OTHER activities too (research, analysis, posting, sharing, etc.)
-- Examples of GOOD BrainLift goals: "Add 500 words to BrainLift AND post 4 times on X about findings"
-- Examples of BAD BrainLift goals: "Add 500 words to BrainLift" (missing additional tasks)
-- BrainLift + other activities = good goal. BrainLift alone = insufficient.
+- If doing ONLY BrainLift words: minimum 1000 words required for sufficient ambition
+- If doing BrainLift + other tasks: any amount of words is acceptable (even 80 words) as long as the combination is ambitious
+- Examples of GOOD BrainLift goals: "Add 1000+ words to BrainLift" OR "Add 200 words to BrainLift AND post 5 times on X AND conduct 3 interviews"
+- Examples of BAD BrainLift goals: "Add 500 words to BrainLift" (insufficient if alone, needs 1000+ or additional tasks)
+- BrainLift alone needs 1000+ words. BrainLift + other activities = any word count acceptable.
 
 CRITICAL EVALUATION REQUIREMENTS:
 
@@ -170,10 +170,12 @@ AMBITION STANDARDS (4/5 required):
 - Goals requiring 4+ hours of work should get 5/5
 
 SPECIAL BRAINLIFT SCORING:
-- BrainLift goals with ONLY word addition = 2/5 or 3/5 (insufficient ambition)
-- BrainLift + additional tasks = 4/5 or 5/5 (good ambition)
-- Examples: "Add 300 words to BrainLift AND post 4 times on X" = 4/5+
-- Examples: "Add 500 words to BrainLift" (alone) = 3/5 (needs more tasks)
+- BrainLift ONLY with 1000+ words = 4/5 or 5/5 (sufficient ambition)
+- BrainLift ONLY with less than 1000 words = 2/5 or 3/5 (insufficient ambition)
+- BrainLift + additional tasks = 4/5 or 5/5 (good ambition regardless of word count)
+- Examples: "Add 1200 words to BrainLift" = 4/5+ (sufficient alone)
+- Examples: "Add 300 words to BrainLift AND post 4 times on X AND conduct interviews" = 4/5+
+- Examples: "Add 500 words to BrainLift" (alone) = 3/5 (insufficient, needs 1000+ words or additional tasks)
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
