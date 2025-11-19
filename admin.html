@@ -1919,6 +1919,306 @@
             outline-offset: 2px;
         }
         
+        /* Goal Editing Modal Styles */
+        .goal-editing-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: modalFadeIn 0.3s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .goal-editing-modal {
+            background: var(--background);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--primary-color);
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-50px) scale(0.9);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .goal-editing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 2px solid var(--border-color);
+            background: var(--surface);
+        }
+        
+        .goal-editing-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .close-modal-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .close-modal-btn:hover {
+            background: var(--danger-color);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .goal-editing-content {
+            padding: 2rem;
+        }
+        
+        .goal-meta-info {
+            background: var(--surface-light);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .student-info, .goal-dates, .alpha-project-info {
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+        
+        .student-info:last-child, .goal-dates:last-child, .alpha-project-info:last-child {
+            margin-bottom: 0;
+        }
+        
+        .goal-editing-form {
+            margin-bottom: 2rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+        
+        .form-label strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .form-help {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+        
+        .goal-text-editor {
+            width: 100%;
+            min-height: 120px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+        
+        .goal-text-editor:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+        }
+        
+        .validation-feedback-section {
+            margin: 1.5rem 0;
+            animation: slideDown 0.4s ease;
+        }
+        
+        .validation-success {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            color: #2e7d32;
+        }
+        
+        .validation-success h4 {
+            color: #2e7d32;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .validation-failure {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            color: #c62828;
+        }
+        
+        .validation-failure h4 {
+            color: #c62828;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .validation-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .score-item {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .score-item.pass {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .score-item.fail {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        
+        .ai-suggestions {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(33, 150, 243, 0.1);
+            border-radius: 0.5rem;
+            border: 1px solid var(--primary-color);
+        }
+        
+        .ai-suggestions ul {
+            margin-top: 0.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .ai-suggestions li {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .validation-error {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            color: #c62828;
+        }
+        
+        .validation-error h4 {
+            color: #c62828;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .admin-info {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(var(--primary-color-rgb), 0.1);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .goal-editing-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border-color);
+        }
+        
+        .goal-editing-actions .btn {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            min-width: 150px;
+        }
+        
+        .goal-editing-actions .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .goal-editing-actions .btn-primary:hover:not(:disabled) {
+            background: #1976d2;
+            border-color: #1976d2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        .goal-editing-actions .btn-secondary:hover {
+            background: var(--surface-light);
+            transform: translateY(-1px);
+        }
+        
+        /* Responsive modal design */
+        @media (max-width: 768px) {
+            .goal-editing-modal {
+                width: 95%;
+                margin: 1rem;
+            }
+            
+            .goal-editing-header, .goal-editing-content {
+                padding: 1rem;
+            }
+            
+            .goal-editing-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .goal-editing-actions .btn {
+                width: 100%;
+            }
+        }
+        
         /* Smooth transitions for all interactive elements */
         * {
             box-sizing: border-box;
