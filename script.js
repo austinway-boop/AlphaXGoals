@@ -751,12 +751,23 @@ async function checkSession() {
             appState.currentUser = data.user;
             appState.userAlphaXProject = data.user.alphaXProject;
             
+            console.log('Session data received:', { 
+                user: data.user, 
+                alphaXProject: data.user.alphaXProject,
+                hasAlphaX: !!data.user.alphaXProject 
+            });
+            
             // Check if user needs to set up Alpha X project
-            if (!appState.userAlphaXProject) {
-                showAlphaXModal();
+            if (!appState.userAlphaXProject || appState.userAlphaXProject.trim() === '') {
+                console.log('No Alpha X project found, checking if we can recover from goals...');
+                // Try to recover Alpha X project from user's existing goals
+                await tryRecoverAlphaXProject();
             } else {
+                console.log('Alpha X project exists:', appState.userAlphaXProject);
                 showApp();
                 loadGoals();
+                // Auto-fill BrainLift link from user's last submission
+                autoFillBrainLiftLink();
             }
         } else {
             showAuth();
@@ -967,6 +978,11 @@ function showApp() {
     
     // Clear any completion screenshots from previous sessions
     selectedCompletionScreenshots = [];
+    
+    // Auto-fill BrainLift link after form is visible
+    setTimeout(() => {
+        autoFillBrainLiftLink();
+    }, 100);
 }
 
 function updateProjectDisplay() {
@@ -1400,6 +1416,9 @@ async function handleGoalSubmit(e) {
         
         if (data.success) {
             showToast('Goal submitted successfully!', 'success');
+            
+            // Save the BrainLift link for future auto-fill
+            saveBrainliftLinkToPreferences(brainliftLink);
             
             // Reset form and validation
             document.getElementById('goalForm').reset();
@@ -2003,6 +2022,104 @@ async function saveEditedGoal() {
         hideLoading();
         console.error('Error saving edited goal:', error);
         showToast('Failed to save goal. Please try again.', 'error');
+    }
+}
+
+// Try to recover Alpha X project from user's existing goals
+async function tryRecoverAlphaXProject() {
+    try {
+        const response = await fetch('/api/goals');
+        const data = await response.json();
+        
+        if (data.success && data.goals && data.goals.length > 0) {
+            // Find the most recent goal with an Alpha X project
+            const sortedGoals = data.goals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const goalWithAlphaX = sortedGoals.find(goal => goal.alphaXProject);
+            
+            if (goalWithAlphaX && goalWithAlphaX.alphaXProject) {
+                console.log('Found Alpha X project in existing goals:', goalWithAlphaX.alphaXProject);
+                // Update user record with recovered Alpha X project
+                await updateAlphaXProject(goalWithAlphaX.alphaXProject);
+                // Update app state
+                appState.userAlphaXProject = goalWithAlphaX.alphaXProject;
+                appState.currentUser.alphaXProject = goalWithAlphaX.alphaXProject;
+                showApp();
+                loadGoals();
+                autoFillBrainLiftLink();
+                return;
+            }
+        }
+        
+        // If no Alpha X project found in goals, show the setup modal
+        console.log('No Alpha X project found in goals either, showing modal');
+        showAlphaXModal();
+    } catch (error) {
+        console.error('Failed to recover Alpha X project:', error);
+        // Fallback to showing the setup modal
+        showAlphaXModal();
+    }
+}
+
+// Save BrainLift link to user preferences for auto-fill
+async function saveBrainliftLinkToPreferences(brainliftLink) {
+    try {
+        if (!brainliftLink) return;
+        
+        const response = await fetch('/api/update-user-preferences', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ lastBrainliftLink: brainliftLink })
+        });
+        
+        if (response.ok) {
+            console.log('BrainLift link saved to user preferences');
+        }
+    } catch (error) {
+        console.error('Failed to save BrainLift link to preferences:', error);
+        // Don't show error to user as this is just a convenience feature
+    }
+}
+
+// Auto-fill BrainLift link from user's last submission
+async function autoFillBrainLiftLink() {
+    try {
+        // First try to get from user preferences (faster)
+        if (appState.currentUser && appState.currentUser.lastBrainliftLink) {
+            const brainliftInput = document.getElementById('brainliftLink');
+            if (brainliftInput && !brainliftInput.value.trim()) {
+                brainliftInput.value = appState.currentUser.lastBrainliftLink;
+                console.log('Auto-filled BrainLift link from user preferences:', appState.currentUser.lastBrainliftLink);
+                showToast('✅ Auto-filled BrainLift link from your preferences', 'success');
+                return;
+            }
+        }
+        
+        // Fallback: get from latest goal
+        const response = await fetch('/api/goals');
+        const data = await response.json();
+        
+        if (data.success && data.goals && data.goals.length > 0) {
+            // Find the most recent goal with a BrainLift link
+            const sortedGoals = data.goals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const lastGoalWithBrainLift = sortedGoals.find(goal => goal.brainliftLink);
+            
+            if (lastGoalWithBrainLift && lastGoalWithBrainLift.brainliftLink) {
+                const brainliftInput = document.getElementById('brainliftLink');
+                if (brainliftInput && !brainliftInput.value.trim()) {
+                    brainliftInput.value = lastGoalWithBrainLift.brainliftLink;
+                    console.log('Auto-filled BrainLift link from last goal:', lastGoalWithBrainLift.brainliftLink);
+                    showToast('✅ Auto-filled BrainLift link from your last goal', 'success');
+                    
+                    // Save to preferences for next time
+                    saveBrainliftLinkToPreferences(lastGoalWithBrainLift.brainliftLink);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Failed to auto-fill BrainLift link:', error);
+        // Don't show error to user as this is just a convenience feature
     }
 }
 
