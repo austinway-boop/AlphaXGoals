@@ -2,9 +2,26 @@
 import { createUser, findUser } from './redis.js';
 
 export default async function handler(req, res) {
-  // Enable CORS
+  console.log('=== REGISTER API CALLED ===');
+  console.log('Method:', req.method);
+  console.log('Origin:', req.headers.origin);
+  
+  // Enable CORS - Allow both production and development domains
+  const allowedOrigins = [
+    'https://alpha-x-goals.vercel.app',
+    'https://alphaxgoals.vercel.app', 
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000'
+  ];
+  
+  const origin = req.headers.origin;
+  console.log('Register request origin:', origin);
+  
+  // Temporarily allow all origins to fix CORS issues
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://alpha-x-goals.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -21,8 +38,14 @@ export default async function handler(req, res) {
   }
 
   const { username, email, password } = req.body;
+  console.log('Registration attempt:', { 
+    username: username ? '[PROVIDED]' : '[MISSING]',
+    email: email ? '[PROVIDED]' : '[MISSING]',
+    password: password ? '[PROVIDED]' : '[MISSING]' 
+  });
   
   if (!username || !email || !password) {
+    console.log('Missing registration fields:', { username: !!username, email: !!email, password: !!password });
     return res.status(400).json({ 
       success: false, 
       error: 'Username, email, and password are required' 

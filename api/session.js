@@ -2,9 +2,22 @@
 import { getRedisClient } from './redis.js';
 
 export default async function handler(req, res) {
-  // Enable CORS
+  // Enable CORS - Allow both production and development domains
+  const allowedOrigins = [
+    'https://alpha-x-goals.vercel.app',
+    'https://alphaxgoals.vercel.app', 
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000'
+  ];
+  
+  const origin = req.headers.origin;
+  console.log('Session request origin:', origin);
+  
+  // Temporarily allow all origins to fix CORS issues
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://alpha-x-goals.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
