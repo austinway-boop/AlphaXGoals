@@ -23,6 +23,9 @@ function fileToBase64(file) {
 // Global variable to store selected project screenshots
 let selectedProjectScreenshots = [];
 
+// Global variable to store selected completion screenshots
+let selectedCompletionScreenshots = [];
+
 function resetFileUploadDisplay() {
     const display = document.querySelector('.file-upload-display');
     const text = document.querySelector('.file-upload-text span:last-child');
@@ -321,41 +324,282 @@ window.reinitScreenshots = function() {
 
 // File upload functions for goal completion
 function handleCompletionFileUpload() {
+    console.log('Initializing completion screenshot upload...');
+    
     const fileInput = document.getElementById('completionScreenshot');
-    const display = document.querySelector('#screenshotTab .file-upload-display');
-    const text = display ? display.querySelector('.file-upload-text span:last-child') : null;
-    const preview = document.getElementById('screenshotPreview');
-    const previewImg = document.getElementById('screenshotPreviewImg');
+    const dropzone = document.getElementById('completionDropzone');
     
-    if (!fileInput) return;
+    console.log('Completion file input found:', !!fileInput);
+    console.log('Completion dropzone found:', !!dropzone);
     
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                showToast('Please upload an image file', 'error');
-                fileInput.value = '';
+    if (!fileInput) {
+        console.error('Completion screenshot file input not found!');
                 return;
             }
             
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit for images
-                showToast('Image file size must be less than 2MB', 'error');
-                fileInput.value = '';
+    if (!dropzone) {
+        console.error('Completion screenshot dropzone not found!');
                 return;
             }
             
-            if (display && text) {
-                display.classList.add('file-selected');
-                text.textContent = `✅ ${file.name}`;
-            }
-        } else {
-            if (display && text) {
-                display.classList.remove('file-selected');
-                text.textContent = 'Upload Screenshot';
-            }
-        }
+    // Reset completion screenshots when modal opens
+    selectedCompletionScreenshots = [];
+    
+    // File input change handler
+    fileInput.addEventListener('change', handleCompletionScreenshotSelect);
+    console.log('Added change event listener to completion file input');
+    
+    // Drag and drop handlers for completion
+    dropzone.addEventListener('dragover', handleCompletionDragOver);
+    dropzone.addEventListener('dragenter', handleCompletionDragEnter);
+    dropzone.addEventListener('dragleave', handleCompletionDragLeave);
+    dropzone.addEventListener('drop', handleCompletionDrop);
+    console.log('Added drag and drop event listeners to completion dropzone');
+    
+    // Click handler for completion dropzone
+    dropzone.addEventListener('click', () => {
+        console.log('Completion dropzone clicked, opening file dialog');
+        fileInput.click();
     });
+    
+    console.log('Completion screenshot upload initialized successfully');
 }
+
+function handleCompletionScreenshotSelect(e) {
+    console.log('Completion file input change event triggered');
+    const files = Array.from(e.target.files || []);
+    console.log('Completion files selected:', files.length);
+    addCompletionScreenshots(files);
+}
+
+function handleCompletionDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+}
+
+function handleCompletionDragEnter(e) {
+    e.preventDefault();
+    e.target.classList.add('drag-active');
+}
+
+function handleCompletionDragLeave(e) {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-active');
+    }
+}
+
+function handleCompletionDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-active');
+    
+    console.log('Completion files dropped:', e.dataTransfer.files.length);
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    console.log('Completion image files filtered:', files.length);
+    
+    if (files.length === 0) {
+        showToast('Please drop image files only', 'warning');
+        return;
+    }
+    
+    addCompletionScreenshots(files);
+}
+
+function addCompletionScreenshots(files) {
+    console.log('Adding completion screenshots:', files.length, 'files');
+    
+    if (!files || files.length === 0) {
+        console.log('No files provided to addCompletionScreenshots');
+        return;
+    }
+    
+    const validFiles = [];
+    
+    for (const file of files) {
+        console.log('Processing completion file:', file.name, 'type:', file.type, 'size:', file.size);
+        
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            showToast(`"${file.name}" is not an image file (type: ${file.type})`, 'warning');
+            continue;
+        }
+        
+        // Check file size (2MB limit)
+        if (file.size > 2 * 1024 * 1024) {
+            showToast(`"${file.name}" is too large. Please use images under 2MB`, 'warning');
+            continue;
+        }
+        
+        // Check for duplicates
+        const isDuplicate = selectedCompletionScreenshots.some(existing => 
+            existing.name === file.name && existing.size === file.size
+        );
+        
+        if (isDuplicate) {
+            showToast(`"${file.name}" is already selected`, 'warning');
+            continue;
+        }
+        
+        validFiles.push(file);
+        console.log('Completion file added to valid files:', file.name);
+    }
+    
+    console.log('Valid completion files count:', validFiles.length);
+    
+    if (validFiles.length === 0) {
+        console.log('No valid completion files to add');
+        return;
+    }
+    
+    // Add valid files to completion selection
+    selectedCompletionScreenshots.push(...validFiles);
+    console.log('Total selected completion screenshots:', selectedCompletionScreenshots.length);
+    
+    // Update completion UI
+    updateCompletionScreenshotPreview();
+    showToast(`✅ Added ${validFiles.length} completion image${validFiles.length > 1 ? 's' : ''} successfully!`, 'success');
+}
+
+function removeCompletionScreenshot(index) {
+    selectedCompletionScreenshots.splice(index, 1);
+    updateCompletionScreenshotPreview();
+    showToast('Completion image removed', 'info');
+}
+
+function clearCompletionScreenshots() {
+    selectedCompletionScreenshots = [];
+    updateCompletionScreenshotPreview();
+}
+
+function updateCompletionScreenshotPreview() {
+    console.log('Updating completion screenshot preview, files count:', selectedCompletionScreenshots.length);
+    
+    const preview = document.getElementById('screenshotPreview');
+    const container = document.getElementById('imagePreviewContainer');
+    const dropzone = document.getElementById('completionDropzone');
+    
+    console.log('Completion preview element found:', !!preview);
+    console.log('Completion container element found:', !!container);
+    console.log('Completion dropzone element found:', !!dropzone);
+    
+    if (!preview || !container || !dropzone) {
+        console.error('Missing required elements for completion screenshot preview update');
+        return;
+    }
+    
+    if (selectedCompletionScreenshots.length === 0) {
+        console.log('No completion screenshots selected, hiding preview');
+        preview.classList.add('hidden');
+        dropzone.classList.remove('file-selected');
+        
+        // Reset dropzone text
+        const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
+        if (dropzoneText) {
+            dropzoneText.textContent = 'Drag & Drop Images or Click to Choose';
+        }
+        return;
+    }
+    
+    console.log('Showing completion preview section');
+    // Show preview section
+    preview.classList.remove('hidden');
+    dropzone.classList.add('file-selected');
+    
+    // Clear previous previews
+    container.innerHTML = '';
+    
+    // Create preview for each image
+    selectedCompletionScreenshots.forEach((file, index) => {
+        console.log('Creating completion preview for:', file.name);
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'preview-image-wrapper';
+        
+        const img = document.createElement('img');
+        img.className = 'preview-image';
+        img.alt = file.name;
+        img.title = `${file.name} (${formatFileSize(file.size)})`;
+        
+        // Create object URL for preview
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        
+        // Click to view full size
+        img.addEventListener('click', () => {
+            console.log('Opening completion image modal for:', file.name);
+            openImageModal(objectUrl);
+        });
+        
+        // Remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-image-btn';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remove image';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log('Removing completion image:', file.name);
+            URL.revokeObjectURL(objectUrl);
+            removeCompletionScreenshot(index);
+        });
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+    });
+    
+    // Update dropzone text
+    const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
+    if (dropzoneText) {
+        dropzoneText.textContent = `✅ ${selectedCompletionScreenshots.length} completion image${selectedCompletionScreenshots.length > 1 ? 's' : ''} selected`;
+        console.log('Updated completion dropzone text:', dropzoneText.textContent);
+    } else {
+        console.error('Could not find completion dropzone text element');
+    }
+    
+    console.log('Completion screenshot preview updated successfully');
+}
+
+// Function that confirmCompletion() expects
+window.getSelectedImages = function() {
+    console.log('getSelectedImages called, returning', selectedCompletionScreenshots.length, 'files');
+    return selectedCompletionScreenshots;
+};
+
+// Function to clear completion images 
+window.clearSelectedImages = function() {
+    console.log('Clearing selected completion images');
+    selectedCompletionScreenshots = [];
+    updateCompletionScreenshotPreview();
+};
+
+// Debug function to check completion screenshot upload state
+window.debugCompletionScreenshots = function() {
+    console.log('=== COMPLETION SCREENSHOT UPLOAD DEBUG ===');
+    console.log('Selected completion screenshots count:', selectedCompletionScreenshots.length);
+    console.log('Selected completion screenshots array:', selectedCompletionScreenshots);
+    
+    const fileInput = document.getElementById('completionScreenshot');
+    const dropzone = document.getElementById('completionDropzone');
+    const preview = document.getElementById('screenshotPreview');
+    const container = document.getElementById('imagePreviewContainer');
+    
+    console.log('Completion file input element:', fileInput);
+    console.log('Completion file input files:', fileInput?.files?.length || 0);
+    console.log('Completion dropzone element:', dropzone);
+    console.log('Completion preview element:', preview);
+    console.log('Completion container element:', container);
+    
+    console.log('Completion dropzone classes:', dropzone?.className);
+    console.log('Completion preview classes:', preview?.className);
+    
+    if (dropzone) {
+        const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
+        console.log('Completion dropzone text element:', dropzoneText);
+        console.log('Completion dropzone text content:', dropzoneText?.textContent);
+    }
+    
+    console.log('=== END COMPLETION DEBUG ===');
+};
 
 // Goal completion modal functions  
 let currentCompletionGoal = null;
@@ -398,16 +642,16 @@ function showCompletionModal(goalId) {
                         <p>Upload one or more images showing your completed work:</p>
                         
                         <div class="file-upload-wrapper">
-                            <input type="file" id="completionScreenshot" accept="image/*" multiple required>
-                            <div class="file-upload-display" id="screenshotDropzone">
+                            <input type="file" id="completionScreenshot" accept="image/*" multiple>
+                            <div class="file-upload-display" id="completionDropzone">
                                 <div class="file-upload-text">
                                     <span class="upload-icon">📷</span>
                                     <span>Drag & Drop Images or Click to Choose</span>
                                 </div>
-                                <div class="file-upload-hint">Add multiple images one at a time or all together</div>
+                                <div class="file-upload-hint">Add multiple images showing your completed work</div>
                             </div>
                             <div class="add-more-images">
-                                <button type="button" class="btn-add-more" id="addMoreImages" onclick="document.getElementById('completionScreenshot').click()">+ Add More Images</button>
+                                <button type="button" class="btn-add-more" id="addMoreCompletionImages" onclick="document.getElementById('completionScreenshot').click()">+ Add More Images</button>
                             </div>
                         </div>
                         
@@ -1449,19 +1693,19 @@ async function handleGoalSubmit(e) {
                 }
             }
         }
-        
-        const requestBody = {
-            goal,
-            alphaXProject,
-            // Include AI questions and answers if they exist
-            aiQuestions: appState.aiQuestions || null,
-            aiAnswers: appState.aiAnswers || null,
-            // Include validation data from AI
+    
+    const requestBody = {
+        goal,
+        alphaXProject,
+        // Include AI questions and answers if they exist
+        aiQuestions: appState.aiQuestions || null,
+        aiAnswers: appState.aiAnswers || null,
+        // Include validation data from AI
             validationData: appState.validationResult || null,
             // Include project screenshots
             projectScreenshotDataArray: projectScreenshotDataArray
-        };
-        
+    };
+    
         const response = await fetch('/api/submit-goal', {
             method: 'POST',
             headers: {
