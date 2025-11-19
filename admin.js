@@ -120,7 +120,7 @@ function handleDynamicButtonClicks(e) {
         if (userId) {
             cancelNameEdit(userId);
         }
-    } else if (e.target.matches('.edit-goal-btn')) {
+    } else if (e.target.matches('.edit-goal-btn') || e.target.matches('.edit-goal-btn-mini')) {
         e.preventDefault();
         e.stopPropagation();
         const goalId = e.target.dataset.goalId;
@@ -138,6 +138,16 @@ function handleDynamicButtonClicks(e) {
                 }, 3000);
             }
             return;
+        }
+        
+        // Check if goal can be edited (current day only)
+        const goalCard = e.target.closest('.admin-goal-card');
+        if (goalCard) {
+            const goalData = adminState.goals.find(g => g.id === goalId);
+            if (goalData && !canEditGoal(goalData.createdAt)) {
+                showToast('Goals can only be edited on the day they were created', 'warning');
+                return;
+            }
         }
         
         if (goalId) {
@@ -476,7 +486,10 @@ function displayGoals(goals) {
                 </div>
                 
                 <div class="goal-title-preview">
-                    <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                    <div class="goal-title-section">
+                        <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                        ${canEditGoal(goal.createdAt) ? `<button class="edit-goal-btn-mini" data-goal-id="${escapeHtml(goal.id)}" title="Quick edit goal" onclick="event.stopPropagation(); showGoalEditor('${escapeHtml(goal.id)}')">✏️</button>` : ''}
+                    </div>
                     ${goal.alphaXProject ? `<p class="alpha-project-preview">🚀 ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                 </div>
                 
@@ -504,14 +517,17 @@ function displayGoals(goals) {
                     <div class="goal-content-simple">
                         <div class="goal-text-section">
                             <div class="goal-display" id="goalDisplay_${escapeHtml(goal.id)}">
-                                <h4>🎯 ${escapeHtml(goal.goal)}</h4>
-                                <button class="edit-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Edit goal">✏️</button>
+                                <div class="goal-text-with-edit">
+                                    <h4>🎯 ${escapeHtml(goal.goal)}</h4>
+                                    ${canEditGoal(goal.createdAt) ? `<button class="edit-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Edit goal text">✏️ Edit</button>` : 
+                                      `<span class="edit-disabled" title="Goals can only be edited on the day they were created">🔒 Edit locked</span>`}
+                                </div>
                             </div>
                             <div class="goal-editor hidden" id="goalEditor_${escapeHtml(goal.id)}">
                                 <textarea class="goal-edit-input" data-goal-id="${escapeHtml(goal.id)}" rows="3">${escapeHtml(goal.goal)}</textarea>
                                 <div class="goal-editor-actions">
-                                    <button class="save-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Save">✅</button>
-                                    <button class="cancel-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Cancel">❌</button>
+                                    <button class="save-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Save">✅ Save</button>
+                                    <button class="cancel-goal-btn" data-goal-id="${escapeHtml(goal.id)}" title="Cancel">❌ Cancel</button>
                                 </div>
                             </div>
                         </div>
@@ -1958,4 +1974,17 @@ function toggleGoalDetails(goalId) {
             arrow.style.transform = 'rotate(0deg)';
         }
     }
+}
+
+// Check if goal can be edited (current day only)
+function canEditGoal(createdAt) {
+    const now = new Date();
+    const goalDate = new Date(createdAt);
+    
+    // Convert to CST for consistency
+    const nowCST = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    const goalDateCST = new Date(goalDate.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    
+    // Check if both dates are on the same day in CST
+    return nowCST.toDateString() === goalDateCST.toDateString();
 }

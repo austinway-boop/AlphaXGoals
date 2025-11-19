@@ -73,6 +73,20 @@ export default async function handler(req, res) {
       return res.status(404).json({ success: false, error: 'Goal not found' });
     }
 
+    // Check if goal can be edited (current day only in CST)
+    const now = new Date();
+    const goalCreatedAt = new Date(goal.createdAt);
+    
+    const nowCST = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    const goalDateCST = new Date(goalCreatedAt.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    
+    if (nowCST.toDateString() !== goalDateCST.toDateString()) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Goals can only be edited on the same day they were created (CST timezone)' 
+      });
+    }
+
     // Update the goal with new text and admin tracking
     const updateData = {
       goal: newGoalText.trim(),

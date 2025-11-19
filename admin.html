@@ -854,10 +854,46 @@
             margin-bottom: 1rem;
         }
         
-        .goal-title-preview h4 {
+        .goal-title-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .goal-title-section h4 {
             margin: 0 0 0.5rem 0;
             font-size: 1.1rem;
             color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .edit-goal-btn-mini {
+            background: var(--surface-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+        
+        .edit-goal-btn-mini:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            opacity: 1;
+            transform: translateY(-1px);
+        }
+        
+        .edit-disabled {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding: 0.25rem 0.5rem;
+            background: var(--surface-light);
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
         }
         
         .alpha-project-preview {
@@ -909,15 +945,20 @@
             margin-bottom: 1rem;
         }
         
-        .goal-display {
+        .goal-text-with-edit {
             display: flex;
             align-items: flex-start;
             gap: 0.75rem;
+            justify-content: space-between;
         }
         
-        .goal-display h4 {
+        .goal-text-with-edit h4 {
             flex: 1;
             margin: 0;
+        }
+        
+        .goal-display {
+            margin-bottom: 0.5rem;
         }
         
         .edit-goal-btn {
@@ -940,6 +981,18 @@
             border-color: var(--primary-color);
             color: white;
             transform: translateY(-1px);
+        }
+        
+        .edit-goal-btn {
+            background: var(--surface-light);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
         
         .goal-editor {
