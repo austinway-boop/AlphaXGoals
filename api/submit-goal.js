@@ -163,31 +163,20 @@ export default async function handler(req, res) {
         
         console.log(`Extracted starting word count: ${startingWordCount} words using ${extractionMethod}`);
       } else {
-        console.warn('Document appears to be empty, setting starting word count to 0');
+        // Empty document should also fail
+        throw new Error('Document appears to be empty - no content could be extracted');
       }
       
     } catch (extractionError) {
       console.error('Error extracting word count:', extractionError);
       
-      if (extractionError.code === 'ENOTFOUND' || extractionError.response?.status === 404) {
-        return res.status(400).json({
-          success: false,
-          error: 'Could not access BrainLift document. Please ensure the link is correct and publicly viewable.'
-        });
-      }
+      // If word count extraction fails, fail the goal submission
+      console.error('Word count extraction failed, failing goal submission:', extractionError.message);
       
-      if (extractionError.response?.status === 403) {
-        return res.status(400).json({
-          success: false,
-          error: 'BrainLift document is not publicly accessible. Please set it to "Anyone with the link can view" and try again.'
-        });
-      }
-      
-      // For other extraction errors, warn but don't fail the goal submission
-      console.warn('Word count extraction failed, proceeding with 0 starting count:', extractionError.message);
-      startingWordCount = 0;
-      extractionMethod = 'extraction_failed';
-      contentPreview = 'Word count extraction failed - will retry on completion';
+      return res.status(400).json({
+        success: false,
+        error: 'The BrainLift link provided does not work. Please use a publicly viewable link and try again.'
+      });
     }
     
     // Save goal to Redis

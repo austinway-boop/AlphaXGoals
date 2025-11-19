@@ -538,7 +538,14 @@ function displayGoals(goals) {
                                     ` : ''}
                                 </div>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div class="brainlift-tracking-section" style="background: #fff3cd; border-color: #ffc107;">
+                                <h6>📚 BrainLift Tracking Not Available</h6>
+                                <p style="color: #856404; font-size: 0.9rem; margin: 0;">
+                                    This goal was created before BrainLift tracking was implemented, or no BrainLift link was provided.
+                                </p>
+                            </div>
+                        `}
                         
                         ${(goal.screenshotDataArray || goal.textProof) ? `
                             <div class="goal-proof-section">
