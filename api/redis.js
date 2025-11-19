@@ -61,22 +61,60 @@ export async function findUser(username, email) {
 }
 
 export async function authenticateUser(username, password) {
-  const client = await getRedisClient();
-  const userIds = await client.sMembers('users');
+  console.log('=== AUTHENTICATE USER DEBUG ===');
+  console.log('Input username:', username);
+  console.log('Input password length:', password ? password.length : 0);
   
-  for (const userId of userIds) {
-    const user = await client.hGetAll(userId);
-    if ((user.username === username || user.email === username)) {
-      // Use bcrypt to verify password
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (isValidPassword) {
-        // Return user without password
-        const { password: _, ...userWithoutPassword } = user;
-        return { id: userId, ...userWithoutPassword };
+  try {
+    const client = await getRedisClient();
+    console.log('Redis client obtained successfully');
+    
+    const userIds = await client.sMembers('users');
+    console.log('Found user IDs in database:', userIds.length);
+    console.log('User IDs:', userIds);
+    
+    if (userIds.length === 0) {
+      console.log('❌ NO USERS FOUND IN DATABASE - This is the problem!');
+      return null;
+    }
+    
+    for (const userId of userIds) {
+      console.log(`Checking user ID: ${userId}`);
+      const user = await client.hGetAll(userId);
+      console.log(`User data keys for ${userId}:`, Object.keys(user));
+      console.log(`Username match? ${user.username} === ${username}: ${user.username === username}`);
+      console.log(`Email match? ${user.email} === ${username}: ${user.email === username}`);
+      
+      if ((user.username === username || user.email === username)) {
+        console.log('✅ User found! Checking password...');
+        console.log('Stored password hash length:', user.password ? user.password.length : 0);
+        console.log('Password hash starts with:', user.password ? user.password.substring(0, 10) : 'NO_HASH');
+        
+        try {
+          // Use bcrypt to verify password
+          const isValidPassword = await bcrypt.compare(password, user.password);
+          console.log('Password validation result:', isValidPassword);
+          
+          if (isValidPassword) {
+            console.log('✅ Authentication successful!');
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = user;
+            return { id: userId, ...userWithoutPassword };
+          } else {
+            console.log('❌ Password mismatch');
+          }
+        } catch (bcryptError) {
+          console.error('❌ Bcrypt error:', bcryptError.message);
+        }
       }
     }
+    
+    console.log('❌ No matching user found or password failed');
+    return null;
+  } catch (error) {
+    console.error('❌ authenticateUser error:', error);
+    throw error;
   }
-  return null;
 }
 
 export async function updateUser(userId, updateData) {
