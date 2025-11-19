@@ -218,11 +218,11 @@ SCORING STRATEGY:
 The goal must pass all criteria to be valid. If it has clarifying questions, mark hasQuestions as true.`;
 
     try {
-      // Call Claude API for validation
+      console.log('Calling Claude API...');
+
       const response = await axios.post('https://api.anthropic.com/v1/messages', {
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
-        temperature: 0,
         messages: [
           {
             role: 'user',
@@ -231,43 +231,61 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
         ]
       }, {
         headers: {
-          'Content-Type': 'application/json',
           'x-api-key': CLAUDE_API_KEY,
-          'anthropic-version': '2023-06-01'
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
         },
-        timeout: 30000
+        timeout: 25000
       });
 
       console.log('Claude API response received');
-      
+
+      const responseText = response.data.content[0].text;
       let validation;
+      
       try {
-        const rawValidation = response.data.content[0].text.trim();
-        console.log('Raw validation response:', rawValidation);
-        validation = JSON.parse(rawValidation);
-        console.log('Parsed validation:', validation);
+        // Extract JSON from response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          validation = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found in response');
+        }
       } catch (parseError) {
-        console.error('Error parsing AI validation response:', parseError);
-        return res.status(500).json({ 
-          success: false, 
-          error: 'AI validation service error - could not parse response' 
-        });
+        console.error('Error parsing Claude response:', parseError);
+        validation = {
+          isValid: false,
+          hasQuestions: false,
+          questions: [],
+          ambitionScore: 5,
+          measurableScore: 5,
+          relevanceScore: 5,
+          overallScore: 5,
+          feedback: "Goal needs review. Claude couldn't parse the response properly. Please try submitting again.",
+          estimatedHours: 3,
+          suggestions: ["Please resubmit your goal for proper validation"]
+        };
       }
 
-      // Check if goal passes validation based on scores
-      const passes = validation.isValid && 
-                    validation.ambitionScore >= 4 && 
-                    validation.measurableScore >= 8 && 
-                    validation.relevanceScore >= 8;
+      // Ensure isValid is correctly set based on scoring requirements
+      if (validation.ambitionScore && validation.measurableScore && validation.relevanceScore) {
+        const meetsRequirements = validation.ambitionScore >= 4 && 
+                                 validation.measurableScore >= 8 && 
+                                 validation.relevanceScore >= 8 &&
+                                 validation.overallScore >= 8;
+        validation.isValid = meetsRequirements && !validation.hasQuestions;
+        
+        if (!meetsRequirements && validation.isValid !== false) {
+          validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/5, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10, Overall ${validation.overallScore}/10. Requirements: Ambition 4/5+, Measurable 8/10+, Relevance 8/10+, Overall 8/10+.`;
+        }
+      }
 
-      if (!passes) {
+      // Check if goal passes validation
+      if (!validation.isValid) {
         console.log('Goal failed AI validation:', validation);
         return res.json({
           success: false,
-          validation: {
-            isValid: false,
-            ...validation
-          }
+          validation: validation
         });
       }
 
@@ -293,39 +311,24 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
       });
 
     } catch (validationError) {
-      console.error('AI validation error:', validationError);
-      console.error('Error details:', {
+      console.error('Error in update-goal validation:', {
         message: validationError.message,
-        code: validationError.code,
         status: validationError.response?.status,
-        statusText: validationError.response?.statusText,
         data: validationError.response?.data
       });
       
-      if (validationError.code === 'ECONNABORTED' || validationError.message.includes('timeout')) {
-        return res.status(504).json({ 
-          success: false, 
-          error: 'AI validation service timed out. Please try again.' 
-        });
-      }
-      
+      let errorMessage = 'Failed to validate goal. Please try again.';
       if (validationError.response?.status === 401) {
-        return res.status(500).json({ 
-          success: false, 
-          error: 'AI service authentication failed. Please contact administrator.' 
-        });
+        errorMessage = 'Claude API authentication failed.';
+      } else if (validationError.response?.status === 429) {
+        errorMessage = 'Too many requests. Please try again in a moment.';
+      } else if (validationError.code === 'ETIMEDOUT') {
+        errorMessage = 'Request timed out. Please try again.';
       }
-      
-      if (validationError.response?.status === 429) {
-        return res.status(429).json({ 
-          success: false, 
-          error: 'AI service rate limit exceeded. Please try again in a few minutes.' 
-        });
-      }
-      
+
       return res.status(500).json({ 
         success: false, 
-        error: 'AI validation failed. Please try again.',
+        error: errorMessage,
         details: process.env.NODE_ENV === 'development' ? validationError.message : undefined
       });
     }
