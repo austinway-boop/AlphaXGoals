@@ -130,55 +130,17 @@
                     
                     <div class="goal-form-card">
                         <form id="goalForm" enctype="multipart/form-data">
-                            <!-- Step 1: Writing -->
-                            <div class="process-step">
-                                <div class="step-header">
-                                    <span class="step-number">1</span>
-                                    <h3 class="step-title">Write Your Goal</h3>
-                                </div>
-                                <div class="form-group">
-                                    <label for="goalInput">Your Goal</label>
-                        <textarea 
-                            id="goalInput" 
-                            placeholder="e.g., Send 12 personalized cold emails to potential clients, Write a 2000-word technical blog post, Complete a brainlift with 500+ words of research..."
-                            rows="4"
-                            required
-                        ></textarea>
-                        <div class="form-hint">Be specific and measurable. Goals should require at least 3 hours of work. (Example: 1000 words ≈ 3.5 hours)</div>
-                        <div id="revalidationHint" class="form-hint revalidation-hint hidden" style="color: var(--warning-color); font-weight: 600;">
-                            ⚠️ Goal text changed - validation required before submission
-                        </div>
-                                </div>
-                            </div>
-
-                            <!-- Step 2: Screenshots -->
-                            <div class="process-step">
-                                <div class="step-header">
-                                    <span class="step-number">2</span>
-                                    <h3 class="step-title">Upload Screenshots About Your Project</h3>
-                                </div>
-                                <div class="form-group">
-                                    <label for="projectScreenshots">Project Screenshots</label>
-                                    <div class="file-upload-wrapper">
-                                        <input type="file" id="projectScreenshots" accept="image/*" multiple>
-                                        <div class="file-upload-display" id="screenshotDropzone">
-                                            <div class="file-upload-text">
-                                                <span class="upload-icon">📷</span>
-                                                <span>Drag & Drop Images or Click to Choose</span>
-                                            </div>
-                                            <div class="file-upload-hint">Upload multiple images showing your project work</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div id="screenshotPreview" class="content-preview hidden">
-                                        <h6>📷 Selected Images</h6>
-                                        <div id="imagePreviewContainer" class="image-preview-grid"></div>
-                                        <div class="add-more-images">
-                                            <button type="button" class="btn-add-more" onclick="document.getElementById('projectScreenshots').click()">+ Add More Images</button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-hint">Screenshots help validate your project work. You can add multiple images.</div>
+                            <div class="form-group">
+                                <label for="goalInput">Your Goal</label>
+                                <textarea 
+                                    id="goalInput" 
+                                    placeholder="e.g., Send 12 personalized cold emails to potential clients, Write a 2000-word technical blog post, Complete a brainlift with 500+ words of research..."
+                                    rows="4"
+                                    required
+                                ></textarea>
+                                <div class="form-hint">Be specific and measurable. Goals should require at least 3 hours of work. (Example: 1000 words ≈ 3.5 hours)</div>
+                                <div id="revalidationHint" class="form-hint revalidation-hint hidden" style="color: var(--warning-color); font-weight: 600;">
+                                    ⚠️ Goal text changed - validation required before submission
                                 </div>
                             </div>
                             

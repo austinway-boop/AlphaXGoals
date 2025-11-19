@@ -711,18 +711,66 @@ body {
     color: var(--text-secondary);
 }
 
-.completion-requirement {
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: var(--surface-light);
-    border-radius: 0.5rem;
-    border-left: 3px solid var(--primary-color);
+/* Completion Modal Instructions */
+.completion-instructions {
+    margin-bottom: 1.5rem;
+    text-align: center;
 }
 
-.completion-requirement p {
+.completion-intro {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+    font-style: italic;
+}
+
+/* Example boxes */
+.example-box {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.example-box strong {
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* Tab descriptions */
+.tab-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+/* Requirement box */
+.completion-requirement {
+    margin-bottom: 1.5rem;
+}
+
+.requirement-box {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.requirement-box p {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.requirement-box p:last-child {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
 }
 
 .form-row {

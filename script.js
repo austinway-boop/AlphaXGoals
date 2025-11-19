@@ -20,307 +20,8 @@ function fileToBase64(file) {
     });
 }
 
-// Global variable to store selected project screenshots
-let selectedProjectScreenshots = [];
-
-// Global variable to store selected completion screenshots
+// Global variable to store selected completion screenshots  
 let selectedCompletionScreenshots = [];
-
-function resetFileUploadDisplay() {
-    const display = document.querySelector('.file-upload-display');
-    const text = document.querySelector('.file-upload-text span:last-child');
-    if (display && text) {
-        display.classList.remove('file-selected');
-        text.textContent = 'Upload Screenshot';
-    }
-}
-
-// Project Screenshots Upload Functions
-function initializeProjectScreenshots() {
-    console.log('Initializing project screenshots upload...');
-    
-    const fileInput = document.getElementById('projectScreenshots');
-    const dropzone = document.getElementById('screenshotDropzone');
-    
-    console.log('File input found:', !!fileInput);
-    console.log('Dropzone found:', !!dropzone);
-    
-    if (!fileInput) {
-        console.error('Project screenshots file input not found! Looking for element with id="projectScreenshots"');
-        return;
-    }
-    
-    if (!dropzone) {
-        console.error('Screenshot dropzone not found! Looking for element with id="screenshotDropzone"');
-        return;
-    }
-    
-    // Reset any existing files
-    selectedProjectScreenshots = [];
-    
-    // File input change handler
-    fileInput.addEventListener('change', handleProjectScreenshotSelect);
-    console.log('Added change event listener to file input');
-    
-    // Drag and drop handlers
-    dropzone.addEventListener('dragover', handleDragOver);
-    dropzone.addEventListener('dragenter', handleDragEnter);
-    dropzone.addEventListener('dragleave', handleDragLeave);
-    dropzone.addEventListener('drop', handleDrop);
-    console.log('Added drag and drop event listeners to dropzone');
-    
-    // Click handler for dropzone
-    dropzone.addEventListener('click', () => {
-        console.log('Dropzone clicked, opening file dialog');
-        fileInput.click();
-    });
-    
-    console.log('Project screenshots upload initialized successfully');
-}
-
-function handleProjectScreenshotSelect(e) {
-    console.log('File input change event triggered');
-    const files = Array.from(e.target.files || []);
-    console.log('Files selected:', files.length);
-    addProjectScreenshots(files);
-    
-    // Don't reset the input to allow re-adding the same files if needed
-    // e.target.value = '';
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-}
-
-function handleDragEnter(e) {
-    e.preventDefault();
-    e.target.classList.add('drag-active');
-}
-
-function handleDragLeave(e) {
-    e.preventDefault();
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-        e.currentTarget.classList.remove('drag-active');
-    }
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('drag-active');
-    
-    console.log('Files dropped:', e.dataTransfer.files.length);
-    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-    console.log('Image files filtered:', files.length);
-    
-    if (files.length === 0) {
-        showToast('Please drop image files only', 'warning');
-        return;
-    }
-    
-    addProjectScreenshots(files);
-    
-    // Also update the file input to reflect the dropped files
-    const fileInput = document.getElementById('projectScreenshots');
-    if (fileInput) {
-        // We can't directly set files on input, but we can trigger the visual update
-        console.log('File input updated via drag and drop');
-    }
-}
-
-function addProjectScreenshots(files) {
-    console.log('Adding project screenshots:', files.length, 'files');
-    
-    if (!files || files.length === 0) {
-        console.log('No files provided to addProjectScreenshots');
-        return;
-    }
-    
-    const validFiles = [];
-    
-    for (const file of files) {
-        console.log('Processing file:', file.name, 'type:', file.type, 'size:', file.size);
-        
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-            showToast(`"${file.name}" is not an image file (type: ${file.type})`, 'warning');
-            continue;
-        }
-        
-        // Check file size (2MB limit)
-        if (file.size > 2 * 1024 * 1024) {
-            showToast(`"${file.name}" is too large. Please use images under 2MB`, 'warning');
-            continue;
-        }
-        
-        // Check for duplicates
-        const isDuplicate = selectedProjectScreenshots.some(existing => 
-            existing.name === file.name && existing.size === file.size
-        );
-        
-        if (isDuplicate) {
-            showToast(`"${file.name}" is already selected`, 'warning');
-            continue;
-        }
-        
-        validFiles.push(file);
-        console.log('File added to valid files:', file.name);
-    }
-    
-    console.log('Valid files count:', validFiles.length);
-    
-    if (validFiles.length === 0) {
-        console.log('No valid files to add');
-        return;
-    }
-    
-    // Add valid files to selection
-    selectedProjectScreenshots.push(...validFiles);
-    console.log('Total selected screenshots:', selectedProjectScreenshots.length);
-    
-    // Update UI
-    updateProjectScreenshotPreview();
-    showToast(`✅ Added ${validFiles.length} image${validFiles.length > 1 ? 's' : ''} successfully!`, 'success');
-}
-
-function removeProjectScreenshot(index) {
-    selectedProjectScreenshots.splice(index, 1);
-    updateProjectScreenshotPreview();
-    showToast('Image removed', 'info');
-}
-
-function clearProjectScreenshots() {
-    selectedProjectScreenshots = [];
-    updateProjectScreenshotPreview();
-}
-
-function updateProjectScreenshotPreview() {
-    console.log('Updating project screenshot preview, files count:', selectedProjectScreenshots.length);
-    
-    const preview = document.getElementById('screenshotPreview');
-    const container = document.getElementById('imagePreviewContainer');
-    const dropzone = document.getElementById('screenshotDropzone');
-    
-    console.log('Preview element found:', !!preview);
-    console.log('Container element found:', !!container);
-    console.log('Dropzone element found:', !!dropzone);
-    
-    if (!preview || !container || !dropzone) {
-        console.error('Missing required elements for screenshot preview update');
-        return;
-    }
-    
-    if (selectedProjectScreenshots.length === 0) {
-        console.log('No screenshots selected, hiding preview');
-        preview.classList.add('hidden');
-        dropzone.classList.remove('file-selected');
-        
-        // Reset dropzone text
-        const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
-        if (dropzoneText) {
-            dropzoneText.textContent = 'Drag & Drop Images or Click to Choose';
-        }
-        return;
-    }
-    
-    console.log('Showing preview section');
-    // Show preview section
-    preview.classList.remove('hidden');
-    dropzone.classList.add('file-selected');
-    
-    // Clear previous previews
-    container.innerHTML = '';
-    
-    // Create preview for each image
-    selectedProjectScreenshots.forEach((file, index) => {
-        console.log('Creating preview for:', file.name);
-        
-        const wrapper = document.createElement('div');
-        wrapper.className = 'preview-image-wrapper';
-        
-        const img = document.createElement('img');
-        img.className = 'preview-image';
-        img.alt = file.name;
-        img.title = `${file.name} (${formatFileSize(file.size)})`;
-        
-        // Create object URL for preview
-        const objectUrl = URL.createObjectURL(file);
-        img.src = objectUrl;
-        
-        // Click to view full size
-        img.addEventListener('click', () => {
-            console.log('Opening image modal for:', file.name);
-            openImageModal(objectUrl);
-        });
-        
-        // Remove button
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-image-btn';
-        removeBtn.textContent = '×';
-        removeBtn.title = 'Remove image';
-        removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.log('Removing image:', file.name);
-            URL.revokeObjectURL(objectUrl);
-            removeProjectScreenshot(index);
-        });
-        
-        wrapper.appendChild(img);
-        wrapper.appendChild(removeBtn);
-        container.appendChild(wrapper);
-    });
-    
-    // Update dropzone text
-    const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
-    if (dropzoneText) {
-        dropzoneText.textContent = `✅ ${selectedProjectScreenshots.length} image${selectedProjectScreenshots.length > 1 ? 's' : ''} selected`;
-        console.log('Updated dropzone text:', dropzoneText.textContent);
-    } else {
-        console.error('Could not find dropzone text element');
-    }
-    
-    console.log('Screenshot preview updated successfully');
-}
-
-function getSelectedProjectScreenshots() {
-    return selectedProjectScreenshots;
-}
-
-// Debug function to check screenshot upload state
-window.debugScreenshots = function() {
-    console.log('=== SCREENSHOT UPLOAD DEBUG ===');
-    console.log('Selected screenshots count:', selectedProjectScreenshots.length);
-    console.log('Selected screenshots array:', selectedProjectScreenshots);
-    
-    const fileInput = document.getElementById('projectScreenshots');
-    const dropzone = document.getElementById('screenshotDropzone');
-    const preview = document.getElementById('screenshotPreview');
-    const container = document.getElementById('imagePreviewContainer');
-    
-    console.log('File input element:', fileInput);
-    console.log('File input files:', fileInput?.files?.length || 0);
-    console.log('Dropzone element:', dropzone);
-    console.log('Preview element:', preview);
-    console.log('Container element:', container);
-    
-    console.log('Dropzone classes:', dropzone?.className);
-    console.log('Preview classes:', preview?.className);
-    
-    if (dropzone) {
-        const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
-        console.log('Dropzone text element:', dropzoneText);
-        console.log('Dropzone text content:', dropzoneText?.textContent);
-    }
-    
-    console.log('=== END DEBUG ===');
-};
-
-// Force reinitialize screenshot upload (for debugging)
-window.reinitScreenshots = function() {
-    console.log('Force reinitializing screenshot upload...');
-    selectedProjectScreenshots = [];
-    initializeProjectScreenshots();
-};
 
 // File upload functions for goal completion
 function handleCompletionFileUpload() {
@@ -419,7 +120,7 @@ function addCompletionScreenshots(files) {
         console.log('Processing completion file:', file.name, 'type:', file.type, 'size:', file.size);
         
         // Check file type
-        if (!file.type.startsWith('image/')) {
+            if (!file.type.startsWith('image/')) {
             showToast(`"${file.name}" is not an image file (type: ${file.type})`, 'warning');
             continue;
         }
@@ -448,9 +149,9 @@ function addCompletionScreenshots(files) {
     
     if (validFiles.length === 0) {
         console.log('No valid completion files to add');
-        return;
-    }
-    
+                return;
+            }
+            
     // Add valid files to completion selection
     selectedCompletionScreenshots.push(...validFiles);
     console.log('Total selected completion screenshots:', selectedCompletionScreenshots.length);
@@ -495,7 +196,7 @@ function updateCompletionScreenshotPreview() {
         // Reset dropzone text
         const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
         if (dropzoneText) {
-            dropzoneText.textContent = 'Drag & Drop Images or Click to Choose';
+            dropzoneText.textContent = 'Click here or drag & drop your screenshots';
         }
         return;
     }
@@ -550,7 +251,7 @@ function updateCompletionScreenshotPreview() {
     // Update dropzone text
     const dropzoneText = dropzone.querySelector('.file-upload-text span:last-child');
     if (dropzoneText) {
-        dropzoneText.textContent = `✅ ${selectedCompletionScreenshots.length} completion image${selectedCompletionScreenshots.length > 1 ? 's' : ''} selected`;
+        dropzoneText.textContent = `✅ ${selectedCompletionScreenshots.length} screenshot${selectedCompletionScreenshots.length > 1 ? 's' : ''} uploaded`;
         console.log('Updated completion dropzone text:', dropzoneText.textContent);
     } else {
         console.error('Could not find completion dropzone text element');
@@ -630,42 +331,24 @@ function showCompletionModal(goalId) {
                     ${goal.alphaXProject ? `<p class="alpha-project">🚀 Project: ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                 </div>
                 
+                <div class="completion-instructions">
+                    <p class="completion-intro">Show us what you accomplished today! Both sections below are required to complete your goal.</p>
+                </div>
+                
                 <div class="proof-tabs">
                     <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 1. Screenshots</button>
-                        <button class="tab-btn" data-tab="text" onclick="switchProofTab('text')">📝 2. Description</button>
+                        <button class="tab-btn active" data-tab="text" onclick="switchProofTab('text')">📝 1. Write What You Did Today</button>
+                        <button class="tab-btn" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 2. Upload Screenshots</button>
                     </div>
                     
-                    <!-- Screenshot Tab -->
-                    <div id="screenshotTab" class="proof-tab active">
-                        <h5>📷 Step 1: Upload Completion Screenshots</h5>
-                        <p>Upload one or more images showing your completed work:</p>
-                        
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="completionScreenshot" accept="image/*" multiple>
-                            <div class="file-upload-display" id="completionDropzone">
-                                <div class="file-upload-text">
-                                    <span class="upload-icon">📷</span>
-                                    <span>Drag & Drop Images or Click to Choose</span>
-                                </div>
-                                <div class="file-upload-hint">Add multiple images showing your completed work</div>
-                            </div>
-                            <div class="add-more-images">
-                                <button type="button" class="btn-add-more" id="addMoreCompletionImages" onclick="document.getElementById('completionScreenshot').click()">+ Add More Images</button>
-                            </div>
+                    <!-- Text Proof Tab (now first) -->
+                    <div id="textTab" class="proof-tab active">
+                        <h5>📝 Write What You Did Today</h5>
+                        <p class="tab-description">Describe your accomplishments and what you completed:</p>
+                        <div class="example-box">
+                            <strong>Example:</strong> "I completed 15 coding challenges on LeetCode, focusing on array manipulation and sorting algorithms. I solved problems #283, #349, and #26, taking detailed notes on time complexity. I also wrote a 500-word blog post about my learning process and published it on Medium."
                         </div>
-                        
-                        <div id="screenshotPreview" class="content-preview hidden">
-                            <h6>📷 Selected Images</h6>
-                            <div id="imagePreviewContainer" class="image-preview-grid"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Text Proof Tab -->
-                    <div id="textTab" class="proof-tab hidden">
-                        <h5>📝 Step 2: Write Your Completion Description</h5>
-                        <p>Describe how you completed this goal and what you accomplished:</p>
-                        <textarea id="completionText" rows="4" placeholder="Describe what you accomplished and how you completed this goal..." class="completion-textarea" required></textarea>
+                        <textarea id="completionText" rows="6" placeholder="Write about what you accomplished today, what you learned, and how you completed your goal..." class="completion-textarea" required></textarea>
                         <div class="character-count">
                             <span id="textCount">0</span> characters
                         </div>
@@ -673,20 +356,51 @@ function showCompletionModal(goalId) {
                         <div id="textPreview" class="content-preview">
                             <h6>Preview</h6>
                             <div class="text-preview-container">
-                                <p id="textPreviewContent" class="preview-text">Start typing...</p>
+                                <p id="textPreviewContent" class="preview-text">Start writing to see your preview...</p>
                             </div>
                         </div>
                     </div>
                     
-                </div>
-                
+                    <!-- Screenshot Tab (now second) -->
+                    <div id="screenshotTab" class="proof-tab hidden">
+                        <h5>📷 Upload Screenshots to Prove What You Did Today</h5>
+                        <p class="tab-description">Upload images that show your completed work:</p>
+                        <div class="example-box">
+                            <strong>Examples of good screenshots:</strong> Progress dashboards, completed assignments, code submissions, published content, finished projects, learning progress, certificates earned, or any visual proof of your work.
+                        </div>
+                        
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="completionScreenshot" accept="image/*" multiple>
+                            <div class="file-upload-display" id="completionDropzone">
+                                <div class="file-upload-text">
+                                    <span class="upload-icon">📷</span>
+                                    <span>Click here or drag & drop your screenshots</span>
+                                </div>
+                                <div class="file-upload-hint">Support for multiple images - show us your progress!</div>
+                            </div>
+                            <div class="add-more-images">
+                                <button type="button" class="btn-add-more" id="addMoreCompletionImages" onclick="document.getElementById('completionScreenshot').click()">+ Add More Screenshots</button>
+                            </div>
+                        </div>
+                        
+                        <div id="screenshotPreview" class="content-preview hidden">
+                            <h6>📷 Your Screenshots</h6>
+                            <div id="imagePreviewContainer" class="image-preview-grid"></div>
+                        </div>
+                    </div>
+                    
+                        </div>
+                        
                 <div class="completion-requirement">
-                    <p><strong>Both screenshots and description are required to complete this goal.</strong></p>
+                    <div class="requirement-box">
+                        <p><strong>📝 Ready to Complete Your Goal?</strong></p>
+                        <p>Make sure you've filled out both sections above - tell us what you did today AND upload your screenshots!</p>
+                        </div>
                 </div>
                 
                 <div class="modal-actions">
                     <button class="btn btn-success" onclick="confirmCompletion()">
-                        ✅ Complete Goal
+                        🎉 Complete My Goal
                     </button>
                     <button class="btn btn-secondary" onclick="hideCompletionModal()">
                         Cancel
@@ -790,7 +504,7 @@ function initializeCompletionModal() {
                     textPreview.textContent = text;
                     textPreview.classList.remove('empty');
                 } else {
-                    textPreview.textContent = 'Start typing...';
+                    textPreview.textContent = 'Start writing to see your preview...';
                     textPreview.classList.add('empty');
                 }
             }
@@ -868,16 +582,16 @@ async function confirmCompletion() {
     const screenshotFiles = window.getSelectedImages ? window.getSelectedImages() : [];
     const textProof = document.getElementById('completionText')?.value.trim();
     
-    // Both screenshots and text are required
-    if (!screenshotFiles || screenshotFiles.length === 0) {
-        showErrorOutsideModal('Screenshots are required - please upload at least one image');
-        switchProofTab('screenshot');
+    // Both text description and screenshots are required
+    if (!textProof || textProof.length === 0) {
+        showErrorOutsideModal('Please write what you did today - describe how you completed this goal');
+        switchProofTab('text');
         return;
     }
     
-    if (!textProof || textProof.length === 0) {
-        showErrorOutsideModal('Description is required - please describe how you completed this goal');
-        switchProofTab('text');
+    if (!screenshotFiles || screenshotFiles.length === 0) {
+        showErrorOutsideModal('Please upload screenshots to prove what you did today - at least one image is required');
+        switchProofTab('screenshot');
         return;
     }
     
@@ -1017,10 +731,9 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Goal Tracker initialized');
     checkSession();
     
-    // Initialize file upload after DOM is ready
+    // Initialize monitoring after DOM is ready
     setTimeout(() => {
         setupGoalTextMonitoring();
-        initializeProjectScreenshots();
     }, 100);
     setupEventListeners();
 });
@@ -1252,11 +965,8 @@ function showApp() {
     document.getElementById('submitGoalBtn').disabled = true;
     appState.validationResult = null;
     
-    // Reset and reinitialize screenshot upload
-    selectedProjectScreenshots = [];
-    setTimeout(() => {
-        initializeProjectScreenshots();
-    }, 200);
+    // Clear any completion screenshots from previous sessions
+    selectedCompletionScreenshots = [];
 }
 
 function updateProjectDisplay() {
@@ -1651,60 +1361,15 @@ async function handleGoalSubmit(e) {
     showLoading('Submitting your goal...');
     
     try {
-        // Process project screenshots to base64 if any
-        let projectScreenshotDataArray = [];
-        
-        console.log('Goal submission: Checking screenshots...');
-        console.log('Selected screenshots count:', selectedProjectScreenshots.length);
-        console.log('Screenshots array:', selectedProjectScreenshots);
-        
-        if (selectedProjectScreenshots.length > 0) {
-            console.log('Processing', selectedProjectScreenshots.length, 'screenshots for submission');
-            // Calculate total file size
-            let totalSize = 0;
-            for (let i = 0; i < selectedProjectScreenshots.length; i++) {
-                totalSize += selectedProjectScreenshots[i].size;
-            }
-            
-            // Check size limits
-            const estimatedBase64Size = totalSize * 1.33;
-            const maxPayloadSize = 5 * 1024 * 1024; // 5MB
-            
-            if (estimatedBase64Size > maxPayloadSize) {
-                hideLoading();
-                showToast('Total image size too large. Please use smaller images or fewer images.', 'error');
-                return;
-            }
-            
-            // Convert images to base64
-            for (let i = 0; i < selectedProjectScreenshots.length; i++) {
-                try {
-                    const screenshotData = await fileToBase64(selectedProjectScreenshots[i]);
-                    projectScreenshotDataArray.push({
-                        data: screenshotData,
-                        filename: selectedProjectScreenshots[i].name,
-                        size: selectedProjectScreenshots[i].size
-                    });
-                } catch (error) {
-                    console.error(`Failed to process screenshot ${i+1}:`, error);
-                    hideLoading();
-                    showToast(`Failed to process image "${selectedProjectScreenshots[i].name}". Try a smaller image.`, 'error');
-                    return;
-                }
-            }
-        }
-    
-    const requestBody = {
-        goal,
-        alphaXProject,
-        // Include AI questions and answers if they exist
-        aiQuestions: appState.aiQuestions || null,
-        aiAnswers: appState.aiAnswers || null,
-        // Include validation data from AI
-            validationData: appState.validationResult || null,
-            // Include project screenshots
-            projectScreenshotDataArray: projectScreenshotDataArray
-    };
+        const requestBody = {
+            goal,
+            alphaXProject,
+            // Include AI questions and answers if they exist
+            aiQuestions: appState.aiQuestions || null,
+            aiAnswers: appState.aiAnswers || null,
+            // Include validation data from AI
+            validationData: appState.validationResult || null
+        };
     
         const response = await fetch('/api/submit-goal', {
             method: 'POST',
@@ -1729,8 +1394,6 @@ async function handleGoalSubmit(e) {
             appState.aiQuestions = null;
             appState.aiAnswers = null;
             
-            // Clear project screenshots
-            clearProjectScreenshots();
             
             // Reload goals
             loadGoals();
@@ -1846,23 +1509,6 @@ function displayGoals(goals) {
                         <span class="score-mini ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}" title="Ambition: ${goal.validationData.ambitionScore || 0}/5">${goal.validationData.ambitionScore || 0}</span>
                         <span class="score-mini ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}" title="Measurable: ${goal.validationData.measurableScore || 0}/10">${goal.validationData.measurableScore || 0}</span>
                         <span class="score-mini ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}" title="Relevance: ${goal.validationData.relevanceScore || 0}/10">${goal.validationData.relevanceScore || 0}</span>
-                    </div>
-                ` : ''}
-                
-                ${goal.projectScreenshots && goal.projectScreenshots.length > 0 ? `
-                    <div class="goal-screenshots">
-                        <h6>📷 Project Screenshots (${goal.projectScreenshots.length})</h6>
-                        <div class="screenshot-gallery">
-                            ${goal.projectScreenshots.map((screenshot, index) => `
-                                <img 
-                                    src="${screenshot.data}" 
-                                    alt="${screenshot.filename || `Screenshot ${index + 1}`}"
-                                    class="screenshot-thumbnail"
-                                    title="${screenshot.filename || `Screenshot ${index + 1}`} (${formatFileSize(screenshot.size || 0)})"
-                                    onclick="openImageModal('${screenshot.data}')"
-                                />
-                            `).join('')}
-                        </div>
                     </div>
                 ` : ''}
             </div>
