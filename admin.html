@@ -2025,6 +2025,63 @@
             margin-bottom: 2rem;
         }
         
+        .goal-creation-form {
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+        }
+        
+        .student-selector, .alpha-x-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .student-selector:focus, .alpha-x-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+        }
+        
+        .admin-actions {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--surface-light);
+            border-radius: 0.75rem;
+            border: 2px solid var(--primary-color);
+            text-align: center;
+        }
+        
+        .create-goal-btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: var(--primary-color);
+            color: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .create-goal-btn:hover {
+            background: #1976d2;
+            border-color: #1976d2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        
         .form-label {
             display: block;
             margin-bottom: 0.75rem;
@@ -2301,6 +2358,12 @@
                     <div class="view-tab active" onclick="setTimeView('daily')">📅 Daily</div>
                     <div class="view-tab" onclick="setTimeView('weekly')">📊 Weekly</div>
                     <div class="view-tab" onclick="setTimeView('monthly')">📈 Monthly</div>
+                </div>
+                
+                <div class="admin-actions">
+                    <button onclick="showGoalCreationModal()" class="btn btn-primary create-goal-btn">
+                        ➕ Create New Goal for Student
+                    </button>
                 </div>
                 
                 <div class="filters">
