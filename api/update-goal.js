@@ -40,22 +40,22 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: 'Invalid session' });
     }
   } else {
-  // Check admin authentication
-  const adminCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('admin_session='));
-  if (!adminCookie) {
-    return res.status(401).json({ success: false, error: 'Admin authentication required' });
-  }
-
-  let adminSession;
-  try {
-    adminSession = JSON.parse(adminCookie.split('=')[1]);
-    if (!adminSession.isAdmin) {
-      return res.status(401).json({ success: false, error: 'Admin privileges required' });
+    // Check admin authentication
+    const adminCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('admin_session='));
+    if (!adminCookie) {
+      return res.status(401).json({ success: false, error: 'Admin authentication required' });
     }
+
+    let adminSession;
+    try {
+      adminSession = JSON.parse(adminCookie.split('=')[1]);
+      if (!adminSession.isAdmin) {
+        return res.status(401).json({ success: false, error: 'Admin privileges required' });
+      }
       isAdminEdit = true;
-  } catch (e) {
-    return res.status(401).json({ success: false, error: 'Invalid admin session' });
-  }
+    } catch (e) {
+      return res.status(401).json({ success: false, error: 'Invalid admin session' });
+    }
   }
   
   if (!goalId) {
@@ -220,8 +220,9 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
     try {
       // Call Claude API for validation
       const response = await axios.post('https://api.anthropic.com/v1/messages', {
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 2000,
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 1000,
+        temperature: 0,
         messages: [
           {
             role: 'user',
@@ -230,8 +231,8 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
         ]
       }, {
         headers: {
-          'x-api-key': CLAUDE_API_KEY,
           'Content-Type': 'application/json',
+          'x-api-key': CLAUDE_API_KEY,
           'anthropic-version': '2023-06-01'
         },
         timeout: 30000
@@ -239,54 +240,53 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
 
       console.log('Claude API response received');
       
-      if (!response.data || !response.data.content || !response.data.content[0]) {
-        throw new Error('Invalid response from Claude API');
-      }
-
       let validation;
       try {
-        const responseText = response.data.content[0].text.trim();
-        console.log('Raw Claude response:', responseText);
-        
-        // Extract JSON from the response
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error('No JSON found in Claude response');
-        }
-        
-        validation = JSON.parse(jsonMatch[0]);
+        const rawValidation = response.data.content[0].text.trim();
+        console.log('Raw validation response:', rawValidation);
+        validation = JSON.parse(rawValidation);
         console.log('Parsed validation:', validation);
       } catch (parseError) {
-        console.error('Failed to parse Claude response as JSON:', parseError);
-        throw new Error('Invalid JSON response from AI validation service');
+        console.error('Error parsing AI validation response:', parseError);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'AI validation service error - could not parse response' 
+        });
       }
 
-      // Check if the edited goal is valid
-      if (!validation.isValid) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Edited goal does not meet validation criteria',
-          validation: validation,
-          reason: 'The edited goal must pass the same AI validation as new goals'
+      // Check if goal passes validation based on scores
+      const passes = validation.isValid && 
+                    validation.ambitionScore >= 4 && 
+                    validation.measurableScore >= 8 && 
+                    validation.relevanceScore >= 8;
+
+      if (!passes) {
+        console.log('Goal failed AI validation:', validation);
+        return res.json({
+          success: false,
+          validation: {
+            isValid: false,
+            ...validation
+          }
         });
       }
 
       // If valid, update the goal with new text, admin tracking, and validation data
-    const updateData = {
-      goal: newGoalText.trim(),
-      lastEditedBy: adminName.trim(),
+      const updateData = {
+        goal: newGoalText.trim(),
+        lastEditedBy: adminName.trim(),
         lastEditedAt: new Date().toISOString(),
         // Update validation data with new validation results
         validationData: validation
-    };
-    
-    const updatedGoal = await updateGoal(goalId, updateData);
+      };
+      
+      const updatedGoal = await updateGoal(goalId, updateData);
       console.log('Successfully updated goal after validation:', goalId);
 
-    res.json({ 
-      success: true, 
+      res.json({ 
+        success: true, 
         message: `Goal updated successfully and passed AI validation${isUserEdit ? ' by user' : ' by admin'}`,
-      goal: updatedGoal,
+        goal: updatedGoal,
         updatedBy: adminName,
         validation: validation,
         editType: isUserEdit ? 'user' : 'admin'
@@ -294,11 +294,32 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
 
     } catch (validationError) {
       console.error('AI validation error:', validationError);
+      console.error('Error details:', {
+        message: validationError.message,
+        code: validationError.code,
+        status: validationError.response?.status,
+        statusText: validationError.response?.statusText,
+        data: validationError.response?.data
+      });
       
       if (validationError.code === 'ECONNABORTED' || validationError.message.includes('timeout')) {
         return res.status(504).json({ 
           success: false, 
           error: 'AI validation service timed out. Please try again.' 
+        });
+      }
+      
+      if (validationError.response?.status === 401) {
+        return res.status(500).json({ 
+          success: false, 
+          error: 'AI service authentication failed. Please contact administrator.' 
+        });
+      }
+      
+      if (validationError.response?.status === 429) {
+        return res.status(429).json({ 
+          success: false, 
+          error: 'AI service rate limit exceeded. Please try again in a few minutes.' 
         });
       }
       
