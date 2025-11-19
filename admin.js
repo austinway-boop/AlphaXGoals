@@ -1004,11 +1004,32 @@ function showGoalEditor(goalId) {
     }
     editingGoal = goalId;
     
+    // First, ensure the goal details section is expanded
+    const detailsSection = document.getElementById(`details-${goalId}`);
+    if (detailsSection && detailsSection.classList.contains('hidden')) {
+        console.log('Expanding goal details section first...');
+        toggleGoalDetails(goalId);
+        
+        // Small delay to ensure the DOM is updated after expansion
+        setTimeout(() => {
+            continueShowingEditor(goalId);
+        }, 100);
+    } else {
+        continueShowingEditor(goalId);
+    }
+}
+
+function continueShowingEditor(goalId) {
     const goalDisplay = document.getElementById(`goalDisplay_${goalId}`);
     const goalEditor = document.getElementById(`goalEditor_${goalId}`);
     
     if (!goalDisplay || !goalEditor) {
         console.error('Goal display or editor elements not found for goalId:', goalId);
+        console.log('Available elements:', {
+            goalDisplay: !!goalDisplay,
+            goalEditor: !!goalEditor,
+            detailsSection: !!document.getElementById(`details-${goalId}`)
+        });
         editingGoal = null;
         return;
     }
