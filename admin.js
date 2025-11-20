@@ -465,10 +465,15 @@ function displayGoals(goals) {
                     <div class="user-info-simple">
                         <strong>👤 ${escapeHtml(goal.user.username)}</strong>
                         <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span>
+                        ${goal.estimatedHours && goal.estimatedHours < 2.5 ? `
+                            <span class="no-hp-warning" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; border: 2px solid #ef4444;">
+                                ⚠️ NO HOUSE POINTS
+                            </span>
+                        ` : ''}
                         <div class="goal-status ${goal.status}">${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}</div>
                         ${goal.estimatedHours ? `
                             <div class="goal-time-badge" style="background: ${goal.estimatedHours < 2.5 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; border: 2px solid ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'}; color: ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'}; font-weight: 700;">
-                                ⏱️ ${goal.estimatedHours}h ${goal.estimatedHours < 2.5 ? '(No HP)' : ''}
+                                ⏱️ ${goal.estimatedHours}h
                             </div>
                         ` : ''}
                     </div>
