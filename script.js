@@ -552,12 +552,12 @@ function showCompletionModal(goalId) {
                     <!-- Brain Lift Tab (third) -->
                     <div id="brainliftTab" class="proof-tab hidden">
                         <h5>🧠 Upload Your Updated Brain Lift Content</h5>
-                        <p class="tab-description">Upload your current Brain Lift content so we can compare word counts:</p>
+                        <p class="tab-description">Paste your current Brain Lift content so we can compare word counts:</p>
                         <div class="example-box">
                             <strong>Important:</strong> This should be your complete, current Brain Lift with all today's additions and updates. We'll compare the word count with your starting Brain Lift to measure your progress.
                         </div>
                         
-                        <textarea id="completionBrainLift" rows="8" placeholder="Paste your complete, updated Brain Lift content here..." class="completion-textarea" required></textarea>
+                        <textarea id="completionBrainLift" rows="8" placeholder="Paste your complete, updated Brain Lift content here..." class="completion-textarea"></textarea>
                         <div class="word-count-info">
                             <div class="word-count-display">
                                 <span id="brainliftCompletionWordCount">0 words</span>
@@ -573,7 +573,12 @@ function showCompletionModal(goalId) {
                 <div class="completion-requirement">
                     <div class="requirement-box">
                         <p><strong>📝 Ready to Complete Your Goal?</strong></p>
-                        <p>Make sure you've filled out ALL THREE sections above - tell us what you did, upload your screenshots, AND upload your updated Brain Lift!</p>
+                        <p>Make sure you've completed all three sections above:</p>
+                        <ul style="text-align: left; margin-top: 0.5rem;">
+                            <li>✍️ Written description of what you did</li>
+                            <li>📷 Screenshots of your work</li>
+                            <li>🧠 Updated Brain Lift content</li>
+                        </ul>
                         </div>
                 </div>
                 
@@ -1643,7 +1648,7 @@ async function handleGoalSubmit(e) {
     
     // Validate Brain Lift content
     if (!brainliftContent || brainliftContent.trim().length === 0) {
-        showToast('Please provide your current Brain Lift content', 'warning');
+        showToast('Please provide your current Brain Lift content (paste text OR upload a file)', 'warning');
         return;
     }
     

@@ -1,0 +1,255 @@
+Austin
+Welcome To Austin Way's Masterpiece!
+Austin Way - Brian Lift
+<b>One-Liner: </b>I am creating an A.I. platform to match gamers based on compatibility, helping them build relationships that go beyond the screen; my mission is to create the ultimate multiplayer experience for 100 million teens, fostering lifelong friendships through gaming. (to-do: turn into 1 sentence)
+<b>Previous One-Liner:</b> I'm going to build a community of 100 million teen gamers who love the site because my innovative AI algorithms naturally match them with complimentary team members, leading to the favorite gaming experiences of their lives.
+<b>Expertise Topic: </b>Team Dynamics
+<b>Spiky POVs:</b>
+<b>Stage 3 Reqs:</b>
+<b>Stage 4 Reqs:</b>
+<b>Sprints:</b>
+<b>Product: </b><a href="https://game-circuit.com/home">https://game-circuit.com/home</a>
+<b>Assignment Archive:</b>
+Shielding teens from social friction is the BIGGEST mistake parents make.
+Letting AI choose your friends will make your life MORE enjoyable than if you were to choose them yourself.
+Every team needs an argumentative devil's advocate that the rest of the team can't stand.
+Parents should give kids unrestricted access to age-appropriate online spaces.
+Traditional Team-building exercises are useless. Teams should be playing video games to get to know each other, not doing trust falls.
+<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2396566/">https://pmc.ncbi.nlm.nih.gov/articles/PMC2396566/</a>
+<a href="https://pubmed.ncbi.nlm.nih.gov/32797550/">https://pubmed.ncbi.nlm.nih.gov/32797550/</a>
+<a href="https://www.frontiersin.org/journals/integrative-neuroscience/articles/10.3389/fnint.2022.827097/full">https://www.frontiersin.org/journals/integrative-neuroscience/articles/10.3389/fnint.2022.827097/full</a>
+<a href="https://www.aacap.org/AACAP/Families_and_Youth/Facts_for_Families/FFF-Guide/The-Teen-Brain-Behavior-Problem-Solving-and-Decision-Making-095.aspx">https://www.aacap.org/AACAP/Families_and_Youth/Facts_for_Families/FFF-Guide/The-Teen-Brain-Behavior-Problem-Solving-and-Decision-Making-095.aspx</a>
+"The Science of Making Friends" - Journal of Social and Personal Relationships <a href="https://journals.sagepub.com/doi/10.1177/0265407509346422">https://journals.sagepub.com/doi/10.1177/0265407509346422</a>
+"Network formation in complex social spaces" https://www.nature.com/articles/s41598-019-45576-3
+"AI in Social Connection" <a href="https://www.frontiersin.org/articles/10.3389/fpsyg.2021.642234/full">https://www.frontiersin.org/articles/10.3389/fpsyg.2021.642234/full</a>
+<a href="https://cavemaninasuit.com/silence-does-not-equal-agreement-how-teams-fall-into-the-trap-of-groupthink/">https://cavemaninasuit.com/silence-does-not-equal-agreement-how-teams-fall-into-the-trap-of-groupthink/</a>
+https://www.iseoblue.com/post/the-groupthink-trap-how-conformity-can-break-your-business
+<a href="https://www.entrepreneur.com/leadership/how-groupthink-can-cost-your-business-and-3-corporate/311864">https://www.entrepreneur.com/leadership/how-groupthink-can-cost-your-business-and-3-corporate/311864</a>
+https://www.productthinking.cc/p/groupthink-understanding-and-avoiding
+https://www.advantageperformance.com/6-traps/
+https://www.rand.org/content/dam/rand/pubs/working_papers/2009/RAND_WR580.pdf
+<a href="https://lsaglobal.com/decision-making-traps-for-teams-to-avoid/">https://lsaglobal.com/decision-making-traps-for-teams-to-avoid/</a>
+"Impact of Parental Over-involvement on Adolescent Development" <a href="https://pubmed.ncbi.nlm.nih.gov/31974591/">https://pubmed.ncbi.nlm.nih.gov/31974591/</a>
+"Helicopter Parenting and Youth Resilience" https://link.springer.com/article/10.1007/s10826-019-01551-0
+"Teen Social Autonomy and Mental Health Outcomes" <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6551425/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6551425/</a>
+<a href="https://www.integrus.org/unlocking-the-secret-to-high-performing-teams-the-power-of-team-chemistry">https://www.integrus.org/unlocking-the-secret-to-high-performing-teams-the-power-of-team-chemistry</a>
+https://www.mccormick.northwestern.edu/magazine/spring-2019/in-team-sports-chemistry-is-a-game-changer.html
+<a href="https://coachad.com/articles/four-stages-team-chemistry/">https://coachad.com/articles/four-stages-team-chemistry/</a>
+Second Brain:  <a href="https://docs.google.com/document/d/1EEpb_l0lJ69iU85tw-BlJrg2MtnfNL35CokapkZQLkI/edit?usp=sharing">https://docs.google.com/document/d/1rUl7o1sbGyHrKWBo4tkU92P1gBuucseLzDjy60gvGbA/edit?usp=sharing</a>
+Research Plan 
+1k fans: 
+3 members on your Board of Advisors:
+10K fans <b>or</b> 10K of revenue <b>or</b> 100 paying customers
+Audience-building bootcamp
+Conduct User Research on your MVP
+if you've done your T2P, link to your ChatBot that beats Google N/A
+Twitter List of Experts shareable link: <a href="https://x.com/i/lists/1824543241368375341">https://x.com/i/lists/1824543241368375341</a>
+<mention id="3838218" by="3836077" ts="71264151"> </mention> please add this : )
+Thursday Sep 26: Metrics | User Retention
+Friday Sep 27: User Onboarding  | User Retention
+Monday Sep 30: Personalization  | User Retention
+Tuesday Oct 1: Value Proposition  | User Retention
+Wednessday Oct 2: Engagement loops  | User Retention
+Thursday Oct 3: Foundations of Team Dynamics
+<a href="https://www.youtube.com/@Austin_Way">https://www.youtube.com/@Austin_Way</a>
+<mention id="3838218" by="3836077" ts="71264198"> </mention> please add your socials
+name1, social
+name2, social
+name3, social
+Continue Second Brain
+Update Presentations
+10k fans
+6 members on your Board of Advisors
+10K of revenue/funding <b>or</b> 1 M documentary views
+Pitch
+<time startYear="2024" startMonth="8" startDay="26">Mon, Aug 26, 2024</time> to <time startYear="2024" startMonth="9" startDay="8">Sun, Sep 8, 2024</time> 
+<time startYear="2024" startMonth="9" startDay="9">Mon, Sep 9, 2024</time> to <time startYear="2024" startMonth="9" startDay="15">Sun, Sep 15, 2024</time>  Get 30k views on audience-building posts this week combined (Got 19k!)
+<time startYear="2024" startMonth="9" startDay="16">Mon, Sep 16, 2024</time> to <time startYear="2024" startMonth="9" startDay="29">Sun, Sep 29, 2024</time> Get 100 more subscribers on Youtube + get 20k views on one video + get 100 members in the Discord server for my Minecraft mini-game (Audience Building (1 every 3 days)
+<time startYear="2024" startMonth="9" startDay="30">Mon, Sep 30, 2024</time> to <time startYear="2024" startMonth="10" startDay="20">Sun, Oct 20, 2024</time> Pass a rigorous test based upon completed research plan 
+Research plan: <a href="https://docs.google.com/document/d/1EEpb_l0lJ69iU85tw-BlJrg2MtnfNL35CokapkZQLkI/edit?usp=sharing">https://docs.google.com/document/d/1rUl7o1sbGyHrKWBo4tkU92P1gBuucseLzDjy60gvGbA/edit?usp=sharing</a>
+
+<time startYear="2024" startMonth="10" startDay="21">Mon, Oct 21, 2024</time> to <time startYear="2024" startMonth="11" startDay="3">Sun, Nov 3, 2024</time> 
+placeholder:
+<time startYear="2024" startMonth="8" startDay="26">Mon, Aug 26, 2024</time> to <time startYear="2024" startMonth="9" startDay="8">Sun, Sep 8, 2024</time> 
+Goals
+Audience-Building
+Check-ins &amp; Squad Mtgs
+MON: I will xyz by end of sprint
+TUES: post twice
+WED
+THURS
+FRI
+MON
+TUES
+WED
+THURS
+FRI
+MON: 3 posts
+TUES: 3 posts
+WED
+THURS
+FRI
+MON
+TUES
+WED
+THURS
+FRI
+1st Tues: 
+<b>working on the hero characters
+
+got final 1st piece back
+
+asked for batch discount for 10 characters
+
+ppl like the videos that talk about game recommendations, 1 experimental 2  legit tested</b>
+
+<b>#obstacle follower count dropping and don't know why</b>
+
+<b>#solution xyz
+
+Plan for next few days: 1 post a day, 1 scene a day</b>
+
+#success 
+
+
+1st Fri: we did xyz
+Goals
+Checkins
+MON: Post short
+TUES: post twice
+WED
+Tues: Come up with idea for video and record voiceover
+Wed: Edit video 
+Thursday: Post video 
+Friday: Come up with idea for video and record voiceover
+Sat: Edit
+Sun: edit and post
+FRI
+1st Tues: we ldksdjf 
+1st Thurs: we sldkjf sdkf
+Goals
+Checkins
+MON: Work on audince building.
+TUES: post twice
+WED
+THURS
+FRI
+MON (Week 2) - Work on audience building.
+TUES - Create another minigame
+WED - Create another minigame / work on audience building
+THURS - Create another minigame
+FRI - Create another minigame
+Sept 15: Discussed new plan for launching product with Minecraft servers instead of new game, set sprint goal 
+Sept 23: Updated Emma? Thats all.
+Goals
+Checkins
+Monday Sep 30: Customer Feedback  | User Retention
+TUES: post twice
+WED
+Tuesday Sep 31: Personalization  | User Retention
+Wednesday Oct 1: Value Proposition  | User Retention
+Thursday Oct 2: Engagement loops  | User Retention
+Friday Oct 3: Foundations of Team Dynamics
+Monday: Team Formation and Development
+Tuesday Oct: Communication in Teams
+Wednesday Oct: Leadership and Team Dynamics
+Thursday Oct: Conflict Management in Teams
+Friday Oct: Trust and Psychological Safety
+Monday 9/30: Shared links with new second brain and set sprint goal
+Goals
+Checkins
+MON: I will xyz by end of sprint
+TUES: post twice
+WED
+THURS
+FRI
+MON
+TUES
+WED
+THURS
+FRI
+1st Tues: we ldksdjf 
+1st Thurs: we sldkjf sdkf
+Goals
+Checkins
+MON: I will xyz by end of sprint
+TUES: post twice
+WED
+THURS
+FRI
+MON
+TUES
+WED
+THURS
+FRI
+1st Tues: we ldksdjf 
+1st Thurs: we sldkjf sdkf
+Stage 2: 
+Stage 1:
+Memo: <a href="https://docs.google.com/document/d/1Zi9UnwaITdnQTS4V35HebykXrpcj9NSl78LFtJkqMEQ/edit">https://docs.google.com/document/d/1Zi9UnwaITdnQTS4V35HebykXrpcj9NSl78LFtJkqMEQ/edit</a>
+Rabbitholeathon:
+Hackathon:
+Link to actual hackathon product: 
+<b>One-Liner:</b> 
+<b>Stage 3 Reqs:</b>
+Purpose
+Experts
+Spiky POVs
+Knowledge Tree/Categories
+Insights 
+This document focuses on: 
+This is what this document does not focus on:
+Thing 1
+Thing 1
+Andrew Huberman
+Celia Hodent
+Who: Professor of Neurobiology &amp; Ophthalmology at Stanford Medicine • Host of the Huberman Lab podcast • Focused on science &amp; health research &amp; public education.
+Focus: Dopimine &amp; it's effects.
+Why Follow: They are a top researcher in dopamine and how it affects their brain. They consistently post insights into the field. 
+Where: Twitter/X handle: <a href="https://x.com/hubermanlab">@hubermanlab</a>
+Who: Cognitive scientist, game user experience researcher.
+Focus: Discusses game design, user experience, and related psychological aspects.
+Why Follow: Top in their field, worked for large gaming brands. (Ubisoft, LucasArts, Epic Games)
+Where: <a href="https://www.linkedin.com/in/celiahodent/">Linkedin</a>
+Truths
+Myths
+Shielding teens from social friction is the BIGGEST mistake parents make.
+Letting AI choose your friends will make your life MORE enjoyable than if you were to choose them yourself.
+Every team needs an argumentative devil's advocate that the rest of the team can't stand. 
+Parents should give kids unrestricted access to age-appropriate online spaces. 
+Traditional Team-building exercises are useless. Teams should be playing video games to get to know each other, not doing trust falls.
+Spikey POV Myth 1
+Category 1: Dopamine. Specifically in the context of gaming.  
+Summary: This section will inform about what Dopamine is, why it is important in gaming, how it occors in gaming, how to harness it effectively. 
+Sources
+Eisenberger
+To do: Research Immediate vs delayed vs slowly introduced social interaction on retention. 
+Dev
+Frontiers in Human Neuroscience. 
+Pubmed
+Source 1: <a href="https://www.nature.com/articles/s41593-018-0152-y">Link</a>
+Source 2: <a href="https://pubmed.ncbi.nlm.nih.gov/26109341/">Link</a>
+Source 3: <a href="https://www.nature.com/articles/npp2009129">Link</a>
+Source 4: <a href="https://pubmed.ncbi.nlm.nih.gov/20822437/">Link</a>
+Source 5: <a href="https://www.nature.com/articles/35094560">Link</a>
+Summary: 
+Link:
+1. Dopamine is a chemical released in your brain when you experience something rewarding. This means that when you receive a reward in the game you most likely will receive a release of dopamine. Think of dopamine as the addictive drug that makes you keep playing. This is why progression systems work. 
+Source: <a href="https://dev.to/nayetwolf/how-intense-gaming-sessions-can-affect-your-brain-and-how-to-regain-balance-d07">Link</a>
+Summary: 
+Link:
+1. Dopamine happens in real life, from eating, exercising, and MOST importantly social connection. 
+2. Dopamine can occur in gaming, it is most commonly shown to occur when the player is anticipating or receiving a reward. But it can also occur when social interaction occurs. (AKA my algorithm selling point)
+Source: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5438999/">Link</a>
+Summary:
+Link:
+1. Your brain can distinguish between different types of dopamine. Meaning if you receive a reward your brain would know it was dopamine caused by the reward. If you receive dopamine for social interaction your brain would know. 
+2. What is more crazy than the above is that dopamine goes to different places. Dopamine earned from a reward can travel different neural pathways than dopamine earned through social interaction. 
+3. That is insane. You can build a tolerance to reward-based dopamine and social dopamine separately. This again is insane. That means that if you only offer reward-based dopamine in the beginning, then switch to social dopamine you could completely remove the tolerance to the reward-based dopamine and then just swap it back. This is the solution to games getting boring.  (In theory)
+To explain a bit more: We have 2 types of dopamine, first (food/survival related) and secondary (social interaction) to that end, they can be distinguished. 
+(In theory) 
+Summary:
+Link: <a href="https://www.annualreviews.org/content/journals/10.1146/annurev-psych-010213-115146">Scholarly</a> 
+Social dopamine can be released from positive social interactions such as your friend praising you. It can also be released in anticipation of good social interaction, and from positive person interactions such as garnering likes on youtube. 
+1. Current matchmaking systems have it all wrong. The initial action of playing a video game generates enough dopamine that it is unnecessary to give them the perfect match, at least right away. Instead, if these systems prioritized quality over speed it would make the player enjoy the game over a longer period of time. That is because we as humans can become accustomed to the dopamine release that games provide making it less effective at keeping us addicted. (It's similar to how you can build up a drug tolerance.) By gradually increasing the quality of the social connection you can effectively generate more engagement. 
+2. Social Interaction is more addicting than Rewards / The anticipation of rewards. Social interaction releases a more volatile flow of dopamine creating a similar dopamine release to social media. Your brain makes you continue to attempt to recreate reactions that generate large amounts of dopamine. This makes you want to keep going back to have the social interaction as much as you can and, at some point, if you have the same dopamine reaction you will just want more. 

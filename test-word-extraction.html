@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainLift Word Count Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2196f3;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        button {
+            background: #2196f3;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background: #1976d2;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        
+        .word-count {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .word-count h3 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+        
+        .extraction-details {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .content-preview {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #9c27b0;
+        }
+        
+        .full-content {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4caf50;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f44336;
+        }
+        
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 BrainLift Word Count Extraction Test</h1>
+        <p>Test word count extraction from your WorkFlowy/BrainLift document to debug what's happening.</p>
+        
+        <div class="form-group">
+            <label for="testLink">BrainLift Document Link:</label>
+            <input 
+                type="url" 
+                id="testLink" 
+                placeholder="https://workflowy.com/s/... or https://docs.google.com/document/d/..."
+                required
+            />
+        </div>
+        
+        <button onclick="testExtraction()">🔍 Test Word Count Extraction</button>
+        <button onclick="testMultipleMethods()">🔧 Test All Methods</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+        
+        <div id="results" class="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function testExtraction() {
+            const link = document.getElementById('testLink').value.trim();
+            if (!link) {
+                alert('Please enter a link first');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="loading">🤖 Testing word count extraction...</div>';
+            
+            try {
+                const response = await fetch('/test-word-extraction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ link: link })
+                });
+                
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Test Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testMultipleMethods() {
+            const link = document.getElementById('testLink').value.trim();
+            if (!link) {
+                alert('Please enter a link first');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="loading">🔧 Testing all extraction methods...</div>';
+            
+            try {
+                const response = await fetch('/test-all-methods', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ link: link })
+                });
+                
+                const data = await response.json();
+                displayMultipleResults(data);
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Test Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (data.success) {
+                resultsDiv.innerHTML = `
+                    <div class="word-count">
+                        <h3>📊 Word Count Results</h3>
+                        <p><strong>Total Words:</strong> ${data.wordCount}</p>
+                        <p><strong>Extraction Method:</strong> ${data.extractionMethod}</p>
+                        <p><strong>Content Length:</strong> ${data.contentLength} characters</p>
+                        <p><strong>Document URL:</strong> <a href="${data.documentUrl}" target="_blank">Open Document</a></p>
+                    </div>
+                    
+                    <div class="content-preview">
+                        <h3>📝 Content Preview (First 500 chars)</h3>
+                        <pre>${data.contentPreview}</pre>
+                    </div>
+                    
+                    <div class="extraction-details">
+                        <h3>🔧 Cleaned Text for Word Counting</h3>
+                        <p><strong>Total Characters:</strong> ${data.cleanText ? data.cleanText.length : 'N/A'}</p>
+                        <p><strong>First 300 chars of cleaned text:</strong></p>
+                        <pre style="max-height: 200px; overflow: auto;">${data.cleanText ? data.cleanText.substring(0, 300) + '...' : 'No cleaned text available'}</pre>
+                    </div>
+                    
+                    <div class="full-content">
+                        <h3>📄 ALL Extracted Text (What We're Counting)</h3>
+                        <p><strong>This is exactly what text we extracted from your WorkFlowy:</strong></p>
+                        <pre style="max-height: 600px; overflow: auto; border: 2px solid #4caf50;">${data.fullContent}</pre>
+                    </div>
+                    
+                    ${data.rawWords ? `
+                        <div class="word-count">
+                            <h3>🔤 Individual Words Found (First 50)</h3>
+                            <p><strong>Total Words:</strong> ${data.rawWords.length}</p>
+                            <pre style="max-height: 200px; overflow: auto;">${data.rawWords.slice(0, 50).join(', ')}${data.rawWords.length > 50 ? '... and ' + (data.rawWords.length - 50) + ' more words' : ''}</pre>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Extraction Failed</h3>
+                        <p><strong>Error:</strong> ${data.error}</p>
+                        ${data.details ? `<p><strong>Details:</strong> ${data.details}</p>` : ''}
+                    </div>
+                `;
+            }
+        }
+        
+        function displayMultipleResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<h2>🔧 All Method Test Results</h2>';
+            
+            for (const [method, result] of Object.entries(data.results)) {
+                if (result.success) {
+                    html += `
+                        <div class="word-count">
+                            <h3>✅ ${method.toUpperCase()}</h3>
+                            <p><strong>Words:</strong> ${result.wordCount}</p>
+                            <p><strong>Content Length:</strong> ${result.contentLength} chars</p>
+                            <div style="margin-top: 10px;">
+                                <strong>Preview:</strong>
+                                <pre style="max-height: 100px; overflow: auto; font-size: 12px;">${result.contentPreview}</pre>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="error">
+                            <h3>❌ ${method.toUpperCase()}</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
