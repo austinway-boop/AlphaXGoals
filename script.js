@@ -1500,6 +1500,7 @@ function displayGoals(goals) {
     }
     
     // Sort goals: today's goals first, then by creation date (newest first)
+    const today = new Date().toDateString();
     const sortedGoals = [...goals].sort((a, b) => {
         const aIsToday = new Date(a.createdAt).toDateString() === today;
         const bIsToday = new Date(b.createdAt).toDateString() === today;
