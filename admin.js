@@ -503,13 +503,10 @@ function displayGoals(goals) {
                         
                         ${goal.alphaXProject ? `<p class="alpha-project-simple"><strong>🚀 Project:</strong> ${escapeHtml(goal.alphaXProject)}</p>` : ''}
                         
-                        ${goal.brainliftLink ? `
+                        ${(goal.brainliftEntryId || goal.startingWordCount !== null) ? `
                             <div class="brainlift-tracking-section">
                                 <h6>📚 BrainLift Word Count Tracking</h6>
                                 <div class="brainlift-info">
-                                    <div class="brainlift-link">
-                                        <strong>📄 Document:</strong> <a href="${escapeHtml(goal.brainliftLink)}" target="_blank" rel="noopener">View BrainLift</a>
-                                    </div>
                                     <div class="word-count-display">
                                         <div class="word-count-item start">
                                             <strong>🔢 Starting Words:</strong> 
@@ -553,7 +550,7 @@ function displayGoals(goals) {
                             <div class="brainlift-tracking-section" style="background: #fff3cd; border-color: #ffc107;">
                                 <h6>📚 BrainLift Tracking Not Available</h6>
                                 <p style="color: #856404; font-size: 0.9rem; margin: 0;">
-                                    This goal was created before BrainLift tracking was implemented, or no BrainLift link was provided.
+                                    This goal was created before the Brain Lift content tracking system was implemented.
                                 </p>
                             </div>
                         `}
