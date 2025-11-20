@@ -944,6 +944,41 @@ body {
 /* Goal Form */
 .goal-form-section {
     animation: fadeInUp 0.6s ease 0.1s both;
+    transition: all 0.3s ease;
+}
+
+.goal-form-section .section-header {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.goal-form-section .section-header:hover {
+    opacity: 0.8;
+}
+
+.section-title-with-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.toggle-arrow {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+    color: var(--primary);
+}
+
+.goal-form-section.collapsed .toggle-arrow {
+    transform: rotate(-90deg);
+}
+
+.goal-form-section.collapsed .goal-form-card {
+    display: none;
+}
+
+.goal-form-section.collapsed .section-description {
+    display: none;
 }
 
 .goal-form-card {
