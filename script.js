@@ -157,9 +157,9 @@ function addCompletionScreenshots(files) {
             continue;
         }
         
-        // Check file size (2MB limit)
-        if (file.size > 2 * 1024 * 1024) {
-            showToast(`"${file.name}" is too large. Please use images under 2MB`, 'warning');
+        // Check file size (30KB limit to save storage)
+        if (file.size > 30 * 1024) {
+            showToast(`"${file.name}" is too large. Please use images under 30KB (compress your images first)`, 'warning');
             continue;
         }
         
@@ -693,13 +693,14 @@ async function confirmCompletion() {
             totalSize += screenshotFiles[i].size;
         }
         
-        // Base64 encoding increases size by ~33%, so check if it will exceed limits
+        // With 30KB per image limit, total should be reasonable
+        // But still check to be safe
         const estimatedBase64Size = totalSize * 1.33;
-        const maxPayloadSize = 5 * 1024 * 1024; // 5MB estimated max for Vercel
+        const maxPayloadSize = 500 * 1024; // 500KB max total (with 30KB per image, max ~16 images)
         
         if (estimatedBase64Size > maxPayloadSize) {
             hideLoading();
-            showErrorOutsideModal('Total image size too large. Please use smaller images or fewer images.');
+            showErrorOutsideModal('Total image size too large. Please use fewer images or compress them further.');
             return;
         }
         

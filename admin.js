@@ -568,21 +568,10 @@ function displayGoals(goals) {
                                     </div>
                                 ` : ''}
                                 
-                                ${goal.screenshotDataArray ? `
+                                ${goal.hasScreenshots ? `
                                     <div class="proof-item">
-                                        <h7>📷 Screenshots (${getScreenshotCount(goal.screenshotDataArray)} images)</h7>
-                                        <div class="admin-screenshots-grid">
-                                            ${renderScreenshots(goal.screenshotDataArray)}
-                                        </div>
-                                    </div>
-                                ` : goal.screenshotData ? `
-                                    <div class="proof-item">
-                                        <h7>📷 Screenshot</h7>
-                                        <div class="admin-screenshots-grid">
-                                            <img src="${goal.screenshotData}" alt="Completion proof" 
-                                                 onclick="openImageModal('${goal.screenshotData}')" 
-                                                 class="admin-screenshot">
-                                        </div>
+                                        <h7>📷 Screenshots Provided</h7>
+                                        <p class="info-message">✅ ${goal.screenshotCount || 'Multiple'} screenshot(s) were uploaded (not stored to save space)</p>
                                     </div>
                                 ` : ''}
                             </div>
@@ -2507,53 +2496,8 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function getScreenshotCount(screenshotDataArray) {
-    try {
-        if (typeof screenshotDataArray === 'string') {
-            const parsed = JSON.parse(screenshotDataArray);
-            return Array.isArray(parsed) ? parsed.length : 1;
-        }
-        return Array.isArray(screenshotDataArray) ? screenshotDataArray.length : 1;
-    } catch (e) {
-        return 1;
-    }
-}
-
-function renderScreenshots(screenshotDataArray) {
-    try {
-        let screenshots;
-        if (typeof screenshotDataArray === 'string') {
-            screenshots = JSON.parse(screenshotDataArray);
-        } else if (Array.isArray(screenshotDataArray)) {
-            screenshots = screenshotDataArray;
-        } else {
-            return '<p class="error-message">Invalid screenshot data</p>';
-        }
-        
-        if (!Array.isArray(screenshots)) {
-            return '<p class="error-message">Screenshot data is not an array</p>';
-        }
-        
-        return screenshots.map((screenshot, index) => {
-            const imageData = screenshot.data || screenshot;
-            const filename = screenshot.filename || `Image ${index + 1}`;
-            
-            return `
-                <div class="screenshot-item">
-                    <img src="${imageData}" alt="Completion proof ${index + 1}" 
-                         onclick="openImageModal('${imageData}')" 
-                         class="admin-screenshot"
-                         title="${escapeHtml(filename)}">
-                    <p class="screenshot-label">${escapeHtml(filename)}</p>
-                </div>
-            `;
-        }).join('');
-        
-    } catch (error) {
-        console.error('Error parsing screenshots:', error);
-        return '<p class="error-message">Error loading screenshots</p>';
-    }
-}
+// Screenshot rendering functions removed - screenshots no longer stored in Redis to save space
+// Goals now only track hasScreenshots (boolean) and screenshotCount (number)
 
 // Goal expand/collapse functionality
 function toggleGoalDetails(goalId) {

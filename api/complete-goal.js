@@ -139,10 +139,12 @@ export default async function handler(req, res) {
     console.log('Ending Brain Lift entry saved:', endingBrainliftEntry.id);
 
     // Update goal status to completed with proof
+    // NOTE: Screenshots are NOT stored in Redis to save storage space
+    // We only store that screenshots were provided and the count
     const updateData = {
       status: 'completed',
       completedAt: new Date().toISOString(),
-      screenshotDataArray: JSON.stringify(screenshotDataArray),
+      // screenshotDataArray: REMOVED - not storing base64 data to save storage
       textProof: textProof.trim(),
       hasScreenshots: true,
       hasTextProof: true,
