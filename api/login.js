@@ -71,7 +71,12 @@ export default async function handler(req, res) {
     console.log('Login successful for user:', user.username);
     res.json({ 
       success: true, 
-      user: { id: user.id, username: user.username, email: user.email } 
+      user: { 
+        id: user.id, 
+        username: user.username, 
+        email: user.email,
+        alphaXProject: user.alphaXProject || '' 
+      } 
     });
   } catch (error) {
     console.error('Login error details:', {

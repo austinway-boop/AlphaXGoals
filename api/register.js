@@ -75,7 +75,12 @@ export default async function handler(req, res) {
     
     res.json({
       success: true,
-      user: { id: newUser.id, username: newUser.username, email: newUser.email } 
+      user: { 
+        id: newUser.id, 
+        username: newUser.username, 
+        email: newUser.email,
+        alphaXProject: newUser.alphaXProject || ''
+      } 
     });
   } catch (error) {
     console.error('Registration error:', error);

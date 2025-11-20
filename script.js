@@ -1488,20 +1488,6 @@ async function loadGoals() {
 function displayGoals(goals) {
     const goalsList = document.getElementById('goalsList');
     
-    // Check if user has already submitted a goal today
-    const today = new Date().toDateString();
-    const hasTodayGoal = goals && goals.some(goal => 
-        new Date(goal.createdAt).toDateString() === today
-    );
-    
-    // Auto-collapse the goal form if user has already submitted today's goal
-    const goalFormSection = document.querySelector('.goal-form-section');
-    if (hasTodayGoal && goalFormSection) {
-        goalFormSection.classList.add('collapsed');
-    } else if (goalFormSection) {
-        goalFormSection.classList.remove('collapsed');
-    }
-    
     if (!goals || goals.length === 0) {
         goalsList.innerHTML = `
             <div class="no-data-message">
