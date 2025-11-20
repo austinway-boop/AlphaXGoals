@@ -862,13 +862,9 @@ async function handleLogin(e) {
             appState.userAlphaXProject = data.user.alphaXProject;
             showToast('Welcome back!', 'success');
             
-            // Check if user needs to set up Alpha X project
-            if (!appState.userAlphaXProject) {
-                showAlphaXModal();
-            } else {
-                showApp();
-                loadGoals();
-            }
+            // Show app directly without Alpha X modal
+            showApp();
+            loadGoals();
         } else {
             showToast(data.error, 'error');
         }
@@ -903,8 +899,9 @@ async function handleRegister(e) {
             appState.userAlphaXProject = data.user.alphaXProject;
             showToast('Account created successfully!', 'success');
             
-            // New users always need to set up Alpha X project
-            showAlphaXModal();
+            // Show app directly without Alpha X modal
+            showApp();
+            loadGoals();
         } else {
             showToast(data.error, 'error');
         }
@@ -2072,13 +2069,17 @@ async function tryRecoverAlphaXProject() {
             }
         }
         
-        // If no Alpha X project found in goals, show the setup modal
-        console.log('No Alpha X project found in goals either, showing modal');
-        showAlphaXModal();
+        // Show app regardless - no modal needed
+        console.log('No Alpha X project found, but showing app anyway');
+        showApp();
+        loadGoals();
+        autoFillBrainLiftLink();
     } catch (error) {
         console.error('Failed to recover Alpha X project:', error);
-        // Fallback to showing the setup modal
-        showAlphaXModal();
+        // Show app anyway - no modal needed
+        showApp();
+        loadGoals();
+        autoFillBrainLiftLink();
     }
 }
 
