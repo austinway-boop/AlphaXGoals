@@ -33,10 +33,10 @@ export async function getRedisClient() {
   isConnecting = true;
   connectionPromise = (async () => {
     try {
-      const redisUrl = process.env.REDIS_URL || process.env.Afterschool_REDIS_URL;
+      const redisUrl = process.env.REDIS_URL || 'redis://default:tHWIuD0crPdmJOvADACb10xca5ScQrCb@redis-10172.c11.us-east-1-3.ec2.cloud.redislabs.com:10172';
       
       if (!redisUrl) {
-        throw new Error('Redis URL not configured. Please set REDIS_URL or Afterschool_REDIS_URL environment variable.');
+        throw new Error('Redis URL not configured. Please set REDIS_URL environment variable.');
       }
       
       redis = createClient({ 

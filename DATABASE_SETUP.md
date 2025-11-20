@@ -13,7 +13,8 @@ To run AlphaXGoals, you need to configure the following environment variables:
 ### **2. REDIS_URL** (Required)
 - **Description**: Redis database connection string for storing user data and goals
 - **Format**: `redis://user:password@host:port` or `rediss://user:password@host:port` (for SSL)
-- **Example**: `REDIS_URL=rediss://default:password@your-redis-host.com:6379`
+- **Current Instance**: `redis-indigo-village`
+- **Example**: `REDIS_URL=redis://default:tHWIuD0crPdmJOvADACb10xca5ScQrCb@redis-10172.c11.us-east-1-3.ec2.cloud.redislabs.com:10172`
 
 #### **Redis Provider Options:**
 - **Upstash** (Recommended): https://upstash.com/
@@ -64,7 +65,7 @@ cp env.example .env
 ```env
 # REQUIRED
 CLAUDE_API_KEY=sk-ant-api03-your-actual-key-here
-REDIS_URL=rediss://default:password@your-redis-host.com:6379
+REDIS_URL=redis://default:tHWIuD0crPdmJOvADACb10xca5ScQrCb@redis-10172.c11.us-east-1-3.ec2.cloud.redislabs.com:10172
 
 # OPTIONAL
 SESSION_SECRET=your-random-secret-here
@@ -78,7 +79,7 @@ The application will automatically test your database connection on startup. Che
 ## Troubleshooting
 
 ### "Redis URL not configured" Error
-- Make sure you've set either `REDIS_URL` or `Afterschool_REDIS_URL` in your environment
+- Make sure you've set `REDIS_URL` in your environment (or the application will use the default redis-indigo-village instance)
 - Verify the connection string format is correct
 - Test your Redis connection using a Redis client
 

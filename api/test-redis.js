@@ -38,8 +38,7 @@ export default async function handler(req, res) {
       success: false, 
       error: `Redis connection failed: ${error.message}`,
       details: {
-        redisUrl: process.env.REDIS_URL ? 'SET' : 'NOT_SET',
-        afterschoolRedisUrl: process.env.Afterschool_REDIS_URL ? 'SET' : 'NOT_SET',
+        redisUrl: process.env.REDIS_URL ? 'SET' : 'USING_FALLBACK',
         errorType: error.constructor.name,
         timestamp: new Date().toISOString()
       }
