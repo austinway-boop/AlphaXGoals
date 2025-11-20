@@ -67,6 +67,7 @@ export default async function handler(req, res) {
     
     // Calculate starting word count from uploaded Brain Lift content
     console.log('Calculating starting word count from Brain Lift content');
+    // Calculate starting word count from Brain Lift content (content not stored)
     const startingWordCount = countWords(brainliftContent);
     
     if (startingWordCount === 0) {
@@ -77,13 +78,11 @@ export default async function handler(req, res) {
     }
     
     // Get a preview of the content (first 200 characters)
-    const contentPreview = brainliftContent.trim().substring(0, 200) + (brainliftContent.length > 200 ? '...' : '');
+    console.log(`Starting word count: ${startingWordCount} words (content not stored for privacy)`);
     
-    console.log(`Starting word count: ${startingWordCount} words`);
-    
-    // Save Brain Lift entry for today
+    // Save Brain Lift entry for today (only word count, not content)
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const brainliftEntry = await saveBrainLiftEntry(userId, brainliftContent, startingWordCount, today);
+    const brainliftEntry = await saveBrainLiftEntry(userId, startingWordCount, today);
     console.log('Brain Lift entry saved:', brainliftEntry.id);
     
     // Save goal to Redis

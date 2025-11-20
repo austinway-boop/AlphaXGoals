@@ -643,14 +643,13 @@ Since the user provided clarifying answers, you should approve the goal unless i
 }
 
 // Brain Lift tracking functions
-export async function saveBrainLiftEntry(userId, content, wordCount, date = null) {
+export async function saveBrainLiftEntry(userId, wordCount, date = null) {
   const client = await getRedisClient();
   const entryDate = date || new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
   const entryId = `brainlift:${userId}:${entryDate}:${Date.now()}`;
   
   const entryData = {
     userId,
-    content,
     wordCount: wordCount.toString(),
     date: entryDate,
     createdAt: new Date().toISOString()

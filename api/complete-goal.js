@@ -112,6 +112,7 @@ export default async function handler(req, res) {
 
     // Calculate ending word count from uploaded Brain Lift content
     console.log('Calculating ending word count from Brain Lift content');
+    // Calculate ending word count from Brain Lift content (content not stored)
     const endingWordCount = countWords(brainliftContent);
     
     if (endingWordCount === 0) {
@@ -132,9 +133,9 @@ export default async function handler(req, res) {
     // Determine if goal was met based on word count increase
     const goalMet = wordCountDifference >= 0;
     
-    // Save ending Brain Lift entry for today
+    // Save ending Brain Lift entry for today (only word count, not content)
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const endingBrainliftEntry = await saveBrainLiftEntry(userId, brainliftContent, endingWordCount, today);
+    const endingBrainliftEntry = await saveBrainLiftEntry(userId, endingWordCount, today);
     console.log('Ending Brain Lift entry saved:', endingBrainliftEntry.id);
 
     // Update goal status to completed with proof

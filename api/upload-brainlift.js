@@ -58,32 +58,23 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Handle POST request - upload new Brain Lift content
+  // Handle POST request - upload new Brain Lift word count
   if (req.method === 'POST') {
-    const { content, date } = req.body;
+    const { wordCount, date } = req.body;
     
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    if (!wordCount || typeof wordCount !== 'number' || wordCount <= 0) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Brain Lift content is required' 
+        error: 'Brain Lift word count is required and must be a positive number' 
       });
     }
 
     try {
-      // Calculate word count
-      const wordCount = countWords(content);
-      
-      if (wordCount === 0) {
-        return res.status(400).json({
-          success: false,
-          error: 'Brain Lift content must contain at least one word'
-        });
-      }
 
-      // Save Brain Lift entry
-      const entry = await saveBrainLiftEntry(userId, content, wordCount, date);
+      // Save Brain Lift entry (only word count, not content)
+      const entry = await saveBrainLiftEntry(userId, wordCount, date);
       
-      console.log('Brain Lift entry saved:', {
+      console.log('Brain Lift word count saved:', {
         userId,
         entryId: entry.id,
         wordCount,
@@ -103,7 +94,7 @@ export default async function handler(req, res) {
       console.error('Error saving Brain Lift entry:', error);
       res.status(500).json({ 
         success: false, 
-        error: 'Failed to save Brain Lift content' 
+        error: 'Failed to save Brain Lift word count' 
       });
     }
     return;
