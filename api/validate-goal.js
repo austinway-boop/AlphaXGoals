@@ -63,11 +63,50 @@ export default async function handler(req, res) {
     const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
     
     if (!CLAUDE_API_KEY) {
-      console.error('No Claude API key');
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Claude API key not configured' 
-      });
+      console.error('No Claude API key found - using fallback validation');
+      
+      // Fallback validation logic when API key is not available
+      const goalLower = goal.toLowerCase();
+      const hasNumbers = /\d/.test(goal);
+      const hasTimeWords = /hours?|minutes?|days?|weeks?|months?/.test(goalLower);
+      const hasQuantifiers = /\d+|\bmany\b|\bseveral\b|\bmultiple\b/.test(goalLower);
+      const isBrainLiftGoal = /brain\s?lift|brainlift/i.test(goalLower);
+      const hasWordCount = /\b\d+\s*words?\b/i.test(goal);
+      
+      // Basic scoring logic
+      let ambitionScore = goal.length > 50 ? 4 : 3;
+      let measurableScore = (hasNumbers || hasQuantifiers || hasWordCount) ? 8 : 6;
+      let relevanceScore = 8; // Assume relevant to Alpha X project
+      
+      // Special handling for BrainLift goals
+      if (isBrainLiftGoal) {
+        const wordCountMatch = goal.match(/(\d+)\s*words?/i);
+        if (wordCountMatch) {
+          const wordCount = parseInt(wordCountMatch[1]);
+          ambitionScore = wordCount >= 1000 ? 5 : wordCount >= 500 ? 4 : 3;
+        }
+      }
+      
+      const overallScore = Math.min(10, Math.round((ambitionScore * 2 + measurableScore + relevanceScore) / 4 * 2.5));
+      const isValid = ambitionScore >= 4 && measurableScore >= 8 && relevanceScore >= 8;
+      
+      const fallbackValidation = {
+        isValid,
+        hasQuestions: false,
+        questions: [],
+        ambitionScore,
+        measurableScore,
+        relevanceScore,
+        overallScore,
+        feedback: `⚠️ Using basic validation (AI service unavailable). ${isValid ? 'Your goal appears to meet basic requirements.' : 'Your goal may need improvement.'} For full AI validation, please contact support to configure the AI service.`,
+        estimatedHours: goal.length > 100 ? 4 : 3,
+        timeReasoning: "Estimated based on goal complexity and length",
+        suggestions: isValid ? 
+          ["Goal looks good! Ensure it's challenging and measurable."] :
+          ["Make your goal more specific with numbers or quantities", "Ensure your goal will take 3+ hours", "Add clear success criteria"]
+      };
+      
+      return res.json({ success: true, validation: fallbackValidation });
     }
 
     console.log('API key present, sending to Claude...');
@@ -182,7 +221,7 @@ Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevan
     console.log('Calling Claude API...');
 
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-5',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1000,
       messages: [
         {
