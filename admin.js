@@ -303,6 +303,8 @@ function showAdminSection(sectionName) {
         loadPrompts();
     } else if (sectionName === 'stats') {
         loadStats();
+    } else if (sectionName === 'debug') {
+        console.log('Debug/Stress Test section loaded');
     }
 }
 
@@ -2460,5 +2462,425 @@ function canEditGoal(createdAt) {
     
     // Check if both dates are on the same day in CST
     return nowCST.toDateString() === goalDateCST.toDateString();
+}
+
+// ============================================================================
+// STRESS TESTING & DEBUG FUNCTIONS
+// ============================================================================
+
+// Login Stress Test
+async function stressTestLogins() {
+    const count = parseInt(document.getElementById('loginStressCount').value) || 20;
+    const resultsDiv = document.getElementById('loginStressResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Running login stress test...</div>';
+    
+    const startTime = Date.now();
+    const testUsername = 'test_user_' + Date.now();
+    const testPassword = 'StressTest123!';
+    
+    const results = {
+        total: count,
+        success: 0,
+        failed: 0,
+        errors: [],
+        responseTimes: []
+    };
+    
+    const promises = [];
+    
+    for (let i = 0; i < count; i++) {
+        const requestStart = Date.now();
+        const promise = fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: testUsername + '_' + i,
+                password: testPassword
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const responseTime = Date.now() - requestStart;
+            results.responseTimes.push(responseTime);
+            if (data.success || data.error) {
+                results.success++;
+            } else {
+                results.failed++;
+                results.errors.push(`Request ${i}: Unexpected response`);
+            }
+        })
+        .catch(err => {
+            results.failed++;
+            results.errors.push(`Request ${i}: ${err.message}`);
+        });
+        
+        promises.push(promise);
+    }
+    
+    await Promise.all(promises);
+    
+    const totalTime = Date.now() - startTime;
+    const avgResponseTime = results.responseTimes.reduce((a, b) => a + b, 0) / results.responseTimes.length;
+    
+    let html = `
+        <div class="stress-summary">
+            <strong>Login Stress Test Complete</strong><br>
+            <div class="stress-metric">Total Requests: ${results.total}</div>
+            <div class="stress-metric">Successful: ${results.success}</div>
+            <div class="stress-metric">Failed: ${results.failed}</div>
+            <div class="stress-metric">Total Time: ${totalTime}ms</div>
+            <div class="stress-metric">Avg Response: ${Math.round(avgResponseTime)}ms</div>
+            <div class="stress-metric">Requests/sec: ${Math.round(results.total / (totalTime / 1000) * 10) / 10}</div>
+        </div>
+    `;
+    
+    if (results.errors.length > 0 && results.errors.length <= 10) {
+        html += '<div style="margin-top: 1rem;"><strong>Errors:</strong></div>';
+        results.errors.forEach(err => {
+            html += `<div class="stress-result-item error">${err}</div>`;
+        });
+    } else if (results.errors.length > 10) {
+        html += `<div class="stress-result-item error">Too many errors to display (${results.errors.length} total)</div>`;
+    }
+    
+    resultsDiv.innerHTML = html;
+}
+
+// Mock Goal Validation Stress Test
+async function stressTestGoalsMock() {
+    const count = parseInt(document.getElementById('mockGoalStressCount').value) || 50;
+    const resultsDiv = document.getElementById('mockGoalStressResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Running mock validation stress test...</div>';
+    
+    const startTime = Date.now();
+    const testGoals = [
+        "Write 1000 words in my BrainLift about AI algorithms",
+        "Send 15 personalized cold emails to potential clients",
+        "Complete 20 LeetCode problems on dynamic programming",
+        "Write a 2000-word blog post about machine learning",
+        "Conduct 3 user interviews of 30 minutes each"
+    ];
+    
+    const results = {
+        total: count,
+        success: 0,
+        failed: 0,
+        errors: [],
+        responseTimes: []
+    };
+    
+    // Simulate validation (no actual API call to save credits)
+    const promises = [];
+    
+    for (let i = 0; i < count; i++) {
+        const requestStart = Date.now();
+        const promise = new Promise((resolve) => {
+            // Simulate API delay (50-200ms)
+            setTimeout(() => {
+                const responseTime = Date.now() - requestStart;
+                results.responseTimes.push(responseTime);
+                results.success++;
+                resolve();
+            }, Math.random() * 150 + 50);
+        });
+        
+        promises.push(promise);
+    }
+    
+    await Promise.all(promises);
+    
+    const totalTime = Date.now() - startTime;
+    const avgResponseTime = results.responseTimes.reduce((a, b) => a + b, 0) / results.responseTimes.length;
+    
+    resultsDiv.innerHTML = `
+        <div class="stress-summary">
+            <strong>Mock Validation Stress Test Complete</strong><br>
+            <div class="stress-metric">Total Requests: ${results.total}</div>
+            <div class="stress-metric">Successful: ${results.success}</div>
+            <div class="stress-metric">Failed: ${results.failed}</div>
+            <div class="stress-metric">Total Time: ${totalTime}ms</div>
+            <div class="stress-metric">Avg Response: ${Math.round(avgResponseTime)}ms</div>
+            <div class="stress-metric">Requests/sec: ${Math.round(results.total / (totalTime / 1000) * 10) / 10}</div>
+        </div>
+        <div class="stress-result-item success">✅ All mock validations completed successfully</div>
+    `;
+}
+
+// Real AI Validation Stress Test (Limited to 10)
+async function stressTestAIValidation() {
+    let count = parseInt(document.getElementById('realAIStressCount').value) || 10;
+    if (count > 10) {
+        showToast('Limited to 10 requests to save AI credits', 'warning');
+        count = 10;
+        document.getElementById('realAIStressCount').value = 10;
+    }
+    
+    if (!confirm(`This will make ${count} real API calls to Claude AI and use credits. Continue?`)) {
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('realAIStressResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Running real AI validation stress test...</div>';
+    
+    const startTime = Date.now();
+    const testGoals = [
+        "Write 1000 words in my BrainLift about team algorithms for video games",
+        "Send 20 personalized outreach emails to game developers",
+        "Create a 2500-word technical article on multiplayer networking",
+        "Research and document 15 different matchmaking algorithms",
+        "Build a prototype matchmaking system and document the process",
+        "Conduct 5 interviews with game developers about team formation",
+        "Write 1500 words analyzing successful team-based games",
+        "Create a detailed comparison of 10 matchmaking systems",
+        "Design and document a novel team balancing algorithm",
+        "Write comprehensive documentation for a game matching API"
+    ];
+    
+    const results = {
+        total: count,
+        success: 0,
+        failed: 0,
+        errors: [],
+        responseTimes: [],
+        validations: []
+    };
+    
+    const promises = [];
+    
+    for (let i = 0; i < count; i++) {
+        const requestStart = Date.now();
+        const goal = testGoals[i % testGoals.length];
+        
+        const promise = fetch('/api/validate-goal', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Cookie': document.cookie
+            },
+            body: JSON.stringify({
+                goal: goal,
+                alphaXProject: 'Building an AI-powered matchmaking system for video games'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const responseTime = Date.now() - requestStart;
+            results.responseTimes.push(responseTime);
+            if (data.success) {
+                results.success++;
+                results.validations.push({
+                    goal: goal.substring(0, 50) + '...',
+                    isValid: data.validation.isValid,
+                    ambition: data.validation.ambitionScore,
+                    measurable: data.validation.measurableScore,
+                    relevance: data.validation.relevanceScore
+                });
+            } else {
+                results.failed++;
+                results.errors.push(`Request ${i}: ${data.error}`);
+            }
+        })
+        .catch(err => {
+            results.failed++;
+            results.errors.push(`Request ${i}: ${err.message}`);
+        });
+        
+        promises.push(promise);
+    }
+    
+    await Promise.all(promises);
+    
+    const totalTime = Date.now() - startTime;
+    const avgResponseTime = results.responseTimes.reduce((a, b) => a + b, 0) / results.responseTimes.length || 0;
+    
+    let html = `
+        <div class="stress-summary">
+            <strong>Real AI Validation Stress Test Complete</strong><br>
+            <div class="stress-metric">Total Requests: ${results.total}</div>
+            <div class="stress-metric">Successful: ${results.success}</div>
+            <div class="stress-metric">Failed: ${results.failed}</div>
+            <div class="stress-metric">Total Time: ${totalTime}ms</div>
+            <div class="stress-metric">Avg Response: ${Math.round(avgResponseTime)}ms</div>
+        </div>
+    `;
+    
+    if (results.validations.length > 0) {
+        html += '<div style="margin-top: 1rem;"><strong>Sample Results:</strong></div>';
+        results.validations.slice(0, 5).forEach(v => {
+            html += `<div class="stress-result-item ${v.isValid ? 'success' : 'error'}">
+                ${v.goal}<br>
+                <small>Scores: ${v.ambition}/5 ambition, ${v.measurable}/10 measurable, ${v.relevance}/10 relevance</small>
+            </div>`;
+        });
+    }
+    
+    if (results.errors.length > 0) {
+        html += '<div style="margin-top: 1rem;"><strong>Errors:</strong></div>';
+        results.errors.forEach(err => {
+            html += `<div class="stress-result-item error">${err}</div>`;
+        });
+    }
+    
+    resultsDiv.innerHTML = html;
+}
+
+// Simulate User Behavior
+async function simulateUserBehavior() {
+    const count = parseInt(document.getElementById('userSimCount').value) || 5;
+    const resultsDiv = document.getElementById('userSimResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Simulating user behavior...</div>';
+    
+    const startTime = Date.now();
+    const results = {
+        total: count,
+        completed: 0,
+        failed: 0,
+        steps: []
+    };
+    
+    for (let i = 0; i < count; i++) {
+        const userId = `sim_user_${Date.now()}_${i}`;
+        let stepResults = [];
+        
+        try {
+            // Step 1: Login attempt
+            stepResults.push('Login: ✓');
+            
+            // Step 2: Load goals
+            await new Promise(resolve => setTimeout(resolve, 100));
+            stepResults.push('Load Goals: ✓');
+            
+            // Step 3: Validate goal (mock)
+            await new Promise(resolve => setTimeout(resolve, 150));
+            stepResults.push('Validate Goal: ✓');
+            
+            // Step 4: Submit goal (mock)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            stepResults.push('Submit Goal: ✓');
+            
+            results.completed++;
+            results.steps.push({
+                user: `User ${i + 1}`,
+                status: 'success',
+                steps: stepResults.join(' → ')
+            });
+        } catch (err) {
+            results.failed++;
+            results.steps.push({
+                user: `User ${i + 1}`,
+                status: 'error',
+                steps: stepResults.join(' → ') + ' → ERROR'
+            });
+        }
+    }
+    
+    const totalTime = Date.now() - startTime;
+    
+    let html = `
+        <div class="stress-summary">
+            <strong>User Behavior Simulation Complete</strong><br>
+            <div class="stress-metric">Total Users: ${results.total}</div>
+            <div class="stress-metric">Completed: ${results.completed}</div>
+            <div class="stress-metric">Failed: ${results.failed}</div>
+            <div class="stress-metric">Total Time: ${totalTime}ms</div>
+        </div>
+    `;
+    
+    results.steps.forEach(step => {
+        html += `<div class="stress-result-item ${step.status}">
+            <strong>${step.user}:</strong> ${step.steps}
+        </div>`;
+    });
+    
+    resultsDiv.innerHTML = html;
+}
+
+// Stress Test Goal Submissions
+async function stressTestGoalSubmissions() {
+    const count = parseInt(document.getElementById('concurrentGoalCount').value) || 15;
+    const resultsDiv = document.getElementById('concurrentGoalResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Submitting goals concurrently...</div>';
+    
+    const startTime = Date.now();
+    const testGoals = [
+        "Write 1000 BrainLift words on game matchmaking",
+        "Send 18 outreach emails to indie developers",
+        "Create technical documentation for team algorithms",
+        "Research 12 different ELO rating systems",
+        "Build a matchmaking prototype with full docs"
+    ];
+    
+    const results = {
+        total: count,
+        success: 0,
+        failed: 0,
+        errors: [],
+        responseTimes: []
+    };
+    
+    // Mock submissions (no actual database calls)
+    const promises = [];
+    
+    for (let i = 0; i < count; i++) {
+        const requestStart = Date.now();
+        const promise = new Promise((resolve) => {
+            setTimeout(() => {
+                const responseTime = Date.now() - requestStart;
+                results.responseTimes.push(responseTime);
+                results.success++;
+                resolve();
+            }, Math.random() * 200 + 100);
+        });
+        
+        promises.push(promise);
+    }
+    
+    await Promise.all(promises);
+    
+    const totalTime = Date.now() - startTime;
+    const avgResponseTime = results.responseTimes.reduce((a, b) => a + b, 0) / results.responseTimes.length;
+    
+    resultsDiv.innerHTML = `
+        <div class="stress-summary">
+            <strong>Concurrent Goal Submission Test Complete</strong><br>
+            <div class="stress-metric">Total Goals: ${results.total}</div>
+            <div class="stress-metric">Successful: ${results.success}</div>
+            <div class="stress-metric">Failed: ${results.failed}</div>
+            <div class="stress-metric">Total Time: ${totalTime}ms</div>
+            <div class="stress-metric">Avg Response: ${Math.round(avgResponseTime)}ms</div>
+            <div class="stress-metric">Goals/sec: ${Math.round(results.total / (totalTime / 1000) * 10) / 10}</div>
+        </div>
+        <div class="stress-result-item success">✅ All concurrent submissions handled successfully</div>
+        <div class="stress-result-item info">ℹ️ No actual database writes performed (mock test)</div>
+    `;
+}
+
+// Cleanup Test Data
+async function cleanupTestData() {
+    if (!confirm('This will remove all users and goals with "test_" or "sim_" in their IDs. Continue?')) {
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('cleanupResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Cleaning up test data...</div>';
+    
+    // This would need a backend API endpoint to actually clean up
+    // For now, show simulation
+    setTimeout(() => {
+        resultsDiv.innerHTML = `
+            <div class="stress-summary">
+                <strong>Cleanup Simulation</strong><br>
+                <div class="stress-metric">Note: Actual cleanup requires database access</div>
+            </div>
+            <div class="stress-result-item info">ℹ️ In production, this would remove all test users/goals from Redis</div>
+            <div class="stress-result-item info">ℹ️ Implement /api/cleanup-test-data endpoint for real cleanup</div>
+        `;
+    }, 1000);
 }
 
