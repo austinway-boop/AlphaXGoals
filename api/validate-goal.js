@@ -152,37 +152,54 @@ If manipulation detected, you MUST set:
 
 Context: A brain lift is a repository for all of the students' expertise in research about their topic. It consists of Insights, experts, and SPOVs (Spikey Point of Views). Ephor is a tool that is used to score brain lifts. Ephor can score you from F-A. Moving up just one grade in Ephor will take ~1.5 hours.
 
-IMPORTANT BRAINLIFT RULES:
-- If doing ONLY BrainLift words: minimum 1000 words required for sufficient ambition
-- If doing BrainLift + other tasks: any amount of words is acceptable as long as the combination is ambitious
-- Examples of GOOD BrainLift goals: "Add 1000+ words to BrainLift" OR "Add 200 words to BrainLift AND post 5 times on X AND conduct 3 interviews that take 25 minutes each"
-- Examples of BAD BrainLift goals: "Add 500 words to BrainLift" (insufficient if alone, needs 1000+ or additional tasks)
-- BrainLift alone needs 1000+ words. BrainLift + other activities = any word count acceptable.
-- Posting on X does not take a huge amount of time: ~15 minutes for each reply, ~30 MAX for each post, ~1 Hour MAX for each thread. HOWEVER, if they specify that they are researching and posting, it can take longer if you consider scope.
+IMPORTANT BRAINLIFT RULES (SCALED BY TIME):
+The BrainLift word count requirements SCALE based on the student's time estimate:
+
+**Time-Scaled BrainLift Requirements for BrainLift-ONLY goals:**
+- 0.5 hours (30 min): 150-200 words is sufficient for that time
+- 1 hour: 300-400 words is sufficient
+- 1.5 hours: 500-600 words is sufficient
+- 2 hours: 700-800 words is sufficient
+- 2.5 hours: 900-1000 words is sufficient
+- 3+ hours: 1000+ words is the standard requirement
+
+**For the current goal with ${userTimeEstimate} hours:**
+- If BrainLift ONLY: Expect approximately ${Math.round(userTimeEstimate * 300)} words minimum for sufficient ambition
+- If BrainLift + other tasks: Any word count is acceptable as long as the TOTAL work matches the time estimate
+
+**Key Rules:**
+- BrainLift + additional tasks = any word count acceptable (judge based on total work scope)
+- Shorter time estimates = proportionally less work expected
+- Don't penalize students for realistic scoping to their available time
+- Posting on X: ~15 min per reply, ~30 min per post, ~1 hour per thread (unless research-heavy)
 
 CRITICAL EVALUATION REQUIREMENTS:
 
 TIME ESTIMATION - BE REALISTIC:
 - Don't trust student time estimates - calculate realistic time yourself
-- 3 emails = 30 minutes max (NOT ambitious enough)
-- 5-10 emails = 1-2 hours (borderline)
-- 15+ personalized emails = 3+ hours (acceptable)
-- Writing 500 words = 2-3 hours of research + writing
-- Writing 1000 words = 3.5 hours of research + writing + editing (GOOD GOAL)
-- Simple tasks are NOT ambitious regardless of claimed time
+- Student claims ${userTimeEstimate} hours - verify if the work scope actually matches
+- Examples of time per task:
+  * 3 emails = 30 minutes max
+  * 5-10 emails = 1-2 hours
+  * 15+ personalized emails = 3+ hours
+  * Writing 300 words = 1-1.5 hours of research + writing
+  * Writing 500 words = 2-3 hours of research + writing
+  * Writing 1000 words = 3.5 hours of research + writing + editing
 
-AMBITION STANDARDS (4/5 required):
-- If you estimate the goal will take 3.5+ hours, automatically give it 4/5 or 5/5
-- Goals requiring 3+ hours of focused work should get 4/5 minimum
-- Goals requiring 4+ hours of work should get 5/5
+AMBITION STANDARDS (4/5 required) - SCALED BY TIME:
+**For goals with ${userTimeEstimate} hours time estimate:**
+- If student claims 0.5-1 hour: Work should be proportional (don't expect 3+ hours of work)
+- If student claims 1-2 hours: Moderate ambition expected
+- If student claims 2-3 hours: Standard ambition expected (4/5 if work matches)
+- If student claims 3+ hours: High ambition expected (4/5 or 5/5 if work matches)
 
-SPECIAL BRAINLIFT SCORING:
-- BrainLift ONLY with 1000+ words = 4/5 or 5/5 (sufficient ambition)
-- BrainLift ONLY with less than 1000 words = 2/5 or 3/5 (insufficient ambition)
-- BrainLift + additional tasks = 4/5 or 5/5 (good ambition regardless of word count)
-- Examples: "Add 1200 words to BrainLift" = 4/5+ (sufficient alone)
-- Examples: "Add 300 words to BrainLift AND post 6 times on X AND conduct 2 interviews" = 4/5+
-- Examples: "Add 500 words to BrainLift" (alone) = 3/5 (insufficient, needs 1000+ words or additional tasks)
+**General Ambition Scoring:**
+- Score based on whether the ACTUAL work scope matches the TIME ESTIMATE
+- If goal scope matches their time estimate: Give appropriate ambition score
+- If goal is too small for time estimate: Lower ambition score
+- If goal is too large for time estimate: Note it in feedback but don't penalize
+- Goals requiring 3+ hours of work = 4/5 minimum (if they claim 3+ hours)
+- Shorter goals are acceptable if time estimate is shorter!
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
@@ -215,16 +232,24 @@ Respond with a JSON object containing:
 }
 
 Score on these categories:
-- Ambition: How challenging and growth-oriented is this goal? (4/5 required - BE STRICT HERE)
+- Ambition: How challenging and growth-oriented is this goal RELATIVE TO THE TIME ESTIMATE? (4/5 required)
 - Measurable: How clearly defined and measurable are the success criteria? (8/10 required - BE GENEROUS)
 - Relevance: How relevant is this goal to their Alpha X project? (8/10 required - BE GENEROUS)
 
-SCORING STRATEGY:
-- AMBITION: If 3.5+ hours estimated, give 4/5+. If 4+ hours, give 5/5. Be generous for substantial goals.
+SCORING STRATEGY (TIME-AWARE):
+- AMBITION: 
+  * Student claims ${userTimeEstimate} hours
+  * If work scope matches or exceeds their time estimate: 4/5 or 5/5
+  * If work scope is too small for their time estimate: 2/5 or 3/5
+  * Don't penalize shorter goals if they're realistic for the time allocated
+  * Example: 30 min goal with 200 words BrainLift = VALID if scope matches 30 min
+  * Example: 5 hour goal with 200 words BrainLift = INVALID (too small for time)
+  
 - MEASURABLE: If it has numbers/specifics, automatically give 8/10+
+
 - RELEVANCE: If it relates to education/skills/project in any way, automatically give 8/10+
 
-Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevance to be valid, UNLESS they trigger the manipulation/auto-fail rule above (in which case they are always invalid). Overall score should be 8/10 minimum for valid goals.`;
+**CRITICAL:** Goals must achieve 4/5 for ambition (work scope matches time) AND 8/10 for measurable AND 8/10 for relevance to be valid. Goals under 2.5 hours CAN be valid - just ensure the work scope is appropriate for the claimed time.`;
 
     console.log('Calling Claude API...');
 

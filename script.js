@@ -1479,6 +1479,10 @@ async function submitAnswers() {
     const goal = document.getElementById('goalInput').value.trim();
     const alphaXProject = appState.userAlphaXProject;
     
+    // Get time estimate from slider
+    const timeSlider = document.getElementById('timeEstimate');
+    const userEstimatedHours = timeSlider ? parseFloat(timeSlider.value) : 3;
+    
     showLoading('Processing your answers...');
     
     try {
@@ -1491,7 +1495,8 @@ async function submitAnswers() {
                 goal,
                 alphaXProject,
                 questions,
-                answers
+                answers,
+                userEstimatedHours
             })
         });
         

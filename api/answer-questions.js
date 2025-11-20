@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goal, alphaXProject, questions, answers } = req.body;
+  const { goal, alphaXProject, questions, answers, userEstimatedHours } = req.body;
   
   if (!goal || !alphaXProject || !questions || !answers) {
     return res.status(400).json({ 
@@ -76,19 +76,34 @@ export default async function handler(req, res) {
     const contextInfo = userContext.map(ctx => `- ${ctx.term}: ${ctx.explanation}`).join('\n');
     
     // Use the same STRICT scoring prompt as validate-goal for consistency
+    const userTimeEstimate = userEstimatedHours || 3;
     const prompt = `You are a STRICT goal validation assistant for Alpha X students. Based on the clarifying answers provided, analyze the goal with rigorous standards and respond with JSON only.
 
 Goal: "${goal}"
 Alpha X Project: "${alphaXProject}"
+Student's Time Estimate: ${userTimeEstimate} hours
 
 Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts.
 
-IMPORTANT BRAINLIFT RULES:
-- If doing ONLY BrainLift words: minimum 1000 words required for sufficient ambition
-- If doing BrainLift + other tasks: any amount of words is acceptable (even 80 words) as long as the combination is ambitious
-- Examples of GOOD BrainLift goals: "Add 1000+ words to BrainLift" OR "Add 200 words to BrainLift AND post 5 times on X AND conduct 3 interviews"
-- Examples of BAD BrainLift goals: "Add 500 words to BrainLift" (insufficient if alone, needs 1000+ or additional tasks)
-- BrainLift alone needs 1000+ words. BrainLift + other activities = any word count acceptable.
+IMPORTANT BRAINLIFT RULES (SCALED BY TIME):
+The BrainLift word count requirements SCALE based on the student's time estimate of ${userTimeEstimate} hours:
+
+**Time-Scaled BrainLift Requirements for BrainLift-ONLY goals:**
+- 0.5 hours (30 min): 150-200 words is sufficient for that time
+- 1 hour: 300-400 words is sufficient
+- 1.5 hours: 500-600 words is sufficient
+- 2 hours: 700-800 words is sufficient
+- 2.5 hours: 900-1000 words is sufficient
+- 3+ hours: 1000+ words is the standard requirement
+
+**For this goal with ${userTimeEstimate} hours:**
+- If BrainLift ONLY: Expect approximately ${Math.round(userTimeEstimate * 300)} words minimum for sufficient ambition
+- If BrainLift + other tasks: Any word count is acceptable as long as the TOTAL work matches the time estimate
+
+**Key Rules:**
+- BrainLift + additional tasks = any word count acceptable (judge based on total work scope)
+- Shorter time estimates = proportionally less work expected
+- Don't penalize students for realistic scoping to their available time
 
 USER'S LEARNED CONTEXT:
 ${contextInfo || '(No previous context learned yet)'}
@@ -99,26 +114,24 @@ ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || 'No answer provided'}`).j
 CRITICAL EVALUATION REQUIREMENTS:
 
 TIME ESTIMATION - BE REALISTIC:
-- Don't trust student time estimates - calculate realistic time yourself based on their answers
-- 3 emails = 30 minutes max (NOT ambitious enough)
-- 5-10 emails = 1-2 hours (borderline)
-- 15+ personalized emails = 3+ hours (acceptable)
-- Writing 500 words = 2-3 hours of research + writing
-- Writing 1000 words = 3.5 hours of research + writing + editing (GOOD GOAL)
-- Simple tasks are NOT ambitious regardless of claimed time
+- Student claims ${userTimeEstimate} hours - verify if the work scope actually matches
+- Don't trust student time estimates blindly - calculate realistic time yourself based on their answers
+- Examples of time per task:
+  * 3 emails = 30 minutes max
+  * 5-10 emails = 1-2 hours
+  * 15+ personalized emails = 3+ hours
+  * Writing 300 words = 1-1.5 hours of research + writing
+  * Writing 500 words = 2-3 hours of research + writing
+  * Writing 1000 words = 3.5 hours of research + writing + editing
 
-AMBITION STANDARDS (4/5 required):
-- If you estimate the goal will take 3.5+ hours, automatically give it 4/5 or 5/5
-- Goals requiring 3+ hours of focused work should get 4/5 minimum
-- Goals requiring 4+ hours of work should get 5/5
-
-SPECIAL BRAINLIFT SCORING:
-- BrainLift ONLY with 1000+ words = 4/5 or 5/5 (sufficient ambition)
-- BrainLift ONLY with less than 1000 words = 2/5 or 3/5 (insufficient ambition)
-- BrainLift + additional tasks = 4/5 or 5/5 (good ambition regardless of word count)
-- Examples: "Add 1200 words to BrainLift" = 4/5+ (sufficient alone)
-- Examples: "Add 300 words to BrainLift AND post 4 times on X AND conduct interviews" = 4/5+
-- Examples: "Add 500 words to BrainLift" (alone) = 3/5 (insufficient, needs 1000+ words or additional tasks)
+AMBITION STANDARDS (4/5 required) - SCALED BY TIME:
+**For goals with ${userTimeEstimate} hours time estimate:**
+- Score based on whether the ACTUAL work scope matches the TIME ESTIMATE
+- If goal scope matches their time estimate: Give appropriate ambition score (4/5 or 5/5)
+- If goal is too small for time estimate: Lower ambition score
+- Shorter goals (0.5-2 hours) CAN be valid - just ensure work matches time allocated
+- Goals requiring 3+ hours of work = 4/5 minimum (if they claim 3+ hours)
+- Don't penalize realistic scoping!
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
