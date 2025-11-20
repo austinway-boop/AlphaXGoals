@@ -1774,93 +1774,6 @@
             margin-top: 0.5rem;
         }
         
-        /* Debug Panel Styles */
-        .debug-panel {
-            background: var(--background);
-            border: 2px solid var(--border-color);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .debug-panel h3 {
-            color: var(--text-primary);
-            margin-bottom: 0.75rem;
-            font-size: 1.25rem;
-        }
-
-        .debug-panel p {
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-            line-height: 1.5;
-        }
-
-        .debug-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-
-        .stress-results {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: var(--surface-light);
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-            max-height: 400px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .stress-results.show {
-            display: block;
-        }
-
-        .stress-result-item {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid;
-        }
-
-        .stress-result-item.success {
-            background: rgba(76, 175, 80, 0.1);
-            border-color: #4caf50;
-        }
-
-        .stress-result-item.error {
-            background: rgba(244, 67, 54, 0.1);
-            border-color: #f44336;
-        }
-
-        .stress-result-item.info {
-            background: rgba(33, 150, 243, 0.1);
-            border-color: #2196f3;
-        }
-
-        .stress-summary {
-            background: var(--surface);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            border: 2px solid var(--primary-color);
-        }
-
-        .stress-summary strong {
-            color: var(--text-primary);
-        }
-
-        .stress-metric {
-            display: inline-block;
-            margin-right: 1.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--background);
-            border-radius: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
         .btn-danger-confirm {
             background: var(--danger-color);
             color: white;
@@ -2660,7 +2573,6 @@
                 <button class="nav-btn active" onclick="showAdminSection('goals')">📋 Student Goals</button>
                 <button class="nav-btn" onclick="showAdminSection('users')">👥 User Management</button>
                 <button class="nav-btn" onclick="showAdminSection('logs')">📜 Admin Logs</button>
-                <button class="nav-btn" onclick="showAdminSection('stress')">🔧 Stress Test</button>
                 <div class="admin-name-input-wrapper">
                     <label for="adminNameInput">Admin Name:</label>
                     <input type="text" id="adminNameInput" placeholder="Enter your name" class="admin-name-field">
@@ -2752,100 +2664,6 @@
                 </div>
             </div>
 
-            <!-- Stress Test Section -->
-            <div id="stressSection" class="admin-section">
-                <h2>🔧 Real User Account Stress Test</h2>
-                <p style="margin-bottom: 2rem; color: var(--text-secondary);">Test the platform by simulating all real user accounts simultaneously</p>
-
-                <!-- Real Account Full Simulation -->
-                <div class="debug-panel" style="border: 3px solid var(--primary-color); background: rgba(33, 150, 243, 0.05);">
-                    <h3 style="color: var(--primary-color);">👥 Simulate All Real User Accounts (Complete Flow)</h3>
-                    <p><strong>What this does:</strong></p>
-                    <ul style="margin: 0.5rem 0 1rem 1.5rem; line-height: 1.8;">
-                        <li>Fetches ALL real user accounts from your database</li>
-                        <li>Simulates each user logging in simultaneously</li>
-                        <li>Each simulated user: Checks session → Loads goals → Validates a goal → Views interface</li>
-                        <li>Tests concurrent database reads, session handling, and API endpoints</li>
-                        <li>Reports success/failure for each user</li>
-                    </ul>
-                    <p style="color: var(--warning-color); font-weight: 600; margin-bottom: 1rem;">
-                        ⚠️ This will simulate real user activity for ALL accounts in the database concurrently!
-                    </p>
-                    
-                    <div class="debug-controls">
-                        <button onclick="stressTestRealAccounts()" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem; background: var(--primary-color);">
-                            🚀 Run Full Real Account Stress Test
-                        </button>
-                    </div>
-                    
-                    <div id="realAccountStressResults" class="stress-results"></div>
-                </div>
-
-                <!-- Login Stress Test -->
-                <div class="debug-panel">
-                    <h3>🔐 Login Stress Test</h3>
-                    <p>Test multiple concurrent login attempts to ensure authentication handles load</p>
-                    <div class="debug-controls">
-                        <input type="number" id="loginStressCount" value="20" min="1" max="100" placeholder="Number of requests" class="filter-input" style="width: 150px;">
-                        <button onclick="stressTestLogins()" class="btn btn-primary">Run Login Stress Test</button>
-                    </div>
-                    <div id="loginStressResults" class="stress-results"></div>
-                </div>
-
-                <!-- Goal Validation Stress Test (Mock) -->
-                <div class="debug-panel">
-                    <h3>🎯 Goal Validation Stress Test (Mock - No AI Calls)</h3>
-                    <p>Simulate goal validation requests without actually calling AI to test infrastructure</p>
-                    <div class="debug-controls">
-                        <input type="number" id="mockGoalStressCount" value="50" min="1" max="200" placeholder="Number of requests" class="filter-input" style="width: 150px;">
-                        <button onclick="stressTestGoalsMock()" class="btn btn-primary">Run Mock Validation Test</button>
-                    </div>
-                    <div id="mockGoalStressResults" class="stress-results"></div>
-                </div>
-
-                <!-- Real AI Validation Stress Test (Limited) -->
-                <div class="debug-panel">
-                    <h3>🤖 Real AI Validation Stress Test (Uses Credits)</h3>
-                    <p style="color: var(--warning-color);">⚠️ This will use actual AI credits. Limited to 10 requests maximum.</p>
-                    <div class="debug-controls">
-                        <input type="number" id="realAIStressCount" value="10" min="1" max="10" placeholder="Max 10 requests" class="filter-input" style="width: 150px;">
-                        <button onclick="stressTestAIValidation()" class="btn btn-danger-confirm" style="background: var(--warning-color);">Run Real AI Stress Test</button>
-                    </div>
-                    <div id="realAIStressResults" class="stress-results"></div>
-                </div>
-
-                <!-- User Behavior Simulation -->
-                <div class="debug-panel">
-                    <h3>👤 Simulate Complete User Journey</h3>
-                    <p>Simulates a real user: login → load goals → validate goal → submit goal (mock)</p>
-                    <div class="debug-controls">
-                        <input type="number" id="userSimCount" value="5" min="1" max="20" placeholder="Number of users" class="filter-input" style="width: 150px;">
-                        <button onclick="simulateUserBehavior()" class="btn btn-primary">Simulate User Behavior</button>
-                    </div>
-                    <div id="userSimResults" class="stress-results"></div>
-                </div>
-
-                <!-- Concurrent Goal Submissions -->
-                <div class="debug-panel">
-                    <h3>⚡ Concurrent Goal Submissions</h3>
-                    <p>Test multiple users submitting goals simultaneously</p>
-                    <div class="debug-controls">
-                        <input type="number" id="concurrentGoalCount" value="15" min="1" max="50" placeholder="Number of goals" class="filter-input" style="width: 150px;">
-                        <button onclick="stressTestGoalSubmissions()" class="btn btn-primary">Submit Goals Concurrently</button>
-                    </div>
-                    <div id="concurrentGoalResults" class="stress-results"></div>
-                </div>
-
-                <!-- Clear All Test Data -->
-                <div class="debug-panel" style="border: 2px solid var(--danger-color); background: rgba(244, 67, 54, 0.05);">
-                    <h3 style="color: var(--danger-color);">🗑️ Cleanup Test Data</h3>
-                    <p>Remove all test users and goals created during stress testing</p>
-                    <div class="debug-controls">
-                        <button onclick="cleanupTestData()" class="btn btn-danger-confirm">Clean Up Test Data</button>
-                    </div>
-                    <div id="cleanupResults" class="stress-results"></div>
-                </div>
-            </div>
         </div>
     </section>
 
