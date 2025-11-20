@@ -1,5 +1,5 @@
 // Vercel serverless function for answering AI questions about goals
-import axios from 'axios';
+import Anthropic from '@anthropic-ai/sdk';
 import { getUserContext, saveUserContext, getSystemPrompt } from './redis.js';
 
 export default async function handler(req, res) {
@@ -162,24 +162,23 @@ SCORING STRATEGY:
 
 Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevance to be valid. Overall score should be 8/10 minimum.`;
 
-    const response = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-3-5-sonnet-20240620',
+    const anthropic = new Anthropic({
+      apiKey: CLAUDE_API_KEY,
+    });
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1200,
+      temperature: 0,
       messages: [
         {
           role: 'user',
           content: prompt
         }
       ]
-    }, {
-      headers: {
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
-      }
     });
 
-    const responseText = response.data.content[0].text;
+    const responseText = response.content[0].text;
     let validation;
     
     try {

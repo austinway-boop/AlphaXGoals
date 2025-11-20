@@ -1,6 +1,6 @@
 // Vercel serverless function for updating goals with AI validation
 import { getRedisClient, updateGoal } from './redis.js';
-import axios from 'axios';
+import Anthropic from '@anthropic-ai/sdk';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -222,27 +222,25 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
     try {
       console.log('Calling Claude API...');
 
-      const response = await axios.post('https://api.anthropic.com/v1/messages', {
-        model: 'claude-3-5-sonnet-20240620',
+      const anthropic = new Anthropic({
+        apiKey: CLAUDE_API_KEY,
+      });
+
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
+        temperature: 0,
         messages: [
           {
             role: 'user',
             content: prompt
           }
         ]
-      }, {
-        headers: {
-          'x-api-key': CLAUDE_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        },
-        timeout: 25000
       });
 
       console.log('Claude API response received');
 
-      const responseText = response.data.content[0].text;
+      const responseText = response.content[0].text;
       let validation;
       
       try {
