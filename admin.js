@@ -1928,20 +1928,30 @@ function calculateStats(goals) {
 function updateStats(stats) {
     adminState.stats = { ...adminState.stats, ...stats };
     
-    if (stats.totalGoals !== undefined) {
-        document.getElementById('totalGoals').textContent = stats.totalGoals;
+    // Safely update stats elements if they exist (stats section may be removed)
+    const totalGoalsEl = document.getElementById('totalGoals');
+    if (totalGoalsEl && stats.totalGoals !== undefined) {
+        totalGoalsEl.textContent = stats.totalGoals;
     }
-    if (stats.activeGoals !== undefined) {
-        document.getElementById('activeGoals').textContent = stats.activeGoals;
+    
+    const activeGoalsEl = document.getElementById('activeGoals');
+    if (activeGoalsEl && stats.activeGoals !== undefined) {
+        activeGoalsEl.textContent = stats.activeGoals;
     }
-    if (stats.completedGoals !== undefined) {
-        document.getElementById('completedGoals').textContent = stats.completedGoals;
+    
+    const completedGoalsEl = document.getElementById('completedGoals');
+    if (completedGoalsEl && stats.completedGoals !== undefined) {
+        completedGoalsEl.textContent = stats.completedGoals;
     }
-    if (stats.invalidatedGoals !== undefined) {
-        document.getElementById('invalidatedGoals').textContent = stats.invalidatedGoals;
+    
+    const invalidatedGoalsEl = document.getElementById('invalidatedGoals');
+    if (invalidatedGoalsEl && stats.invalidatedGoals !== undefined) {
+        invalidatedGoalsEl.textContent = stats.invalidatedGoals;
     }
-    if (stats.totalUsers !== undefined) {
-        document.getElementById('totalUsers').textContent = stats.totalUsers;
+    
+    const totalUsersEl = document.getElementById('totalUsers');
+    if (totalUsersEl && stats.totalUsers !== undefined) {
+        totalUsersEl.textContent = stats.totalUsers;
     }
 }
 
