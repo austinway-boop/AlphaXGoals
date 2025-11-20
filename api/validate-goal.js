@@ -255,7 +255,7 @@ SCORING STRATEGY (TIME-AWARE):
 
 - RELEVANCE: If it relates to education/skills/project in any way, automatically give 8/10+
 
-**CRITICAL:** Goals must achieve 4/5 for ambition (work scope matches time) AND 8/10 for measurable AND 8/10 for relevance to be valid. Goals under 2.5 hours CAN be valid - just ensure the work scope is appropriate for the claimed time.`;
+**CRITICAL:** Goals must achieve 4/5 for ambition (work scope matches time) AND 8/10 for measurable AND 8/10 for relevance to be valid. The overall score is just for reference - ONLY the three individual scores matter for pass/fail. Goals under 2.5 hours CAN be valid - just ensure the work scope is appropriate for the claimed time.`;
 
     console.log('Calling Claude API...');
 
@@ -305,15 +305,15 @@ SCORING STRATEGY (TIME-AWARE):
     }
 
     // Ensure isValid is correctly set based on scoring requirements
+    // ONLY the three category scores matter - overall score is just for reference
     if (validation.ambitionScore && validation.measurableScore && validation.relevanceScore) {
       const meetsRequirements = validation.ambitionScore >= 4 && 
                                validation.measurableScore >= 8 && 
-                               validation.relevanceScore >= 8 &&
-                               validation.overallScore >= 8;
+                               validation.relevanceScore >= 8;
       validation.isValid = meetsRequirements && !validation.hasQuestions;
       
       if (!meetsRequirements && validation.isValid !== false) {
-        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/5, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10, Overall ${validation.overallScore}/10. Requirements: Ambition 4/5+, Measurable 8/10+, Relevance 8/10+, Overall 8/10+.`;
+        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/5, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10. Requirements: Ambition 4/5+, Measurable 8/10+, Relevance 8/10+.`;
       }
     }
 
