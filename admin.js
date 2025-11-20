@@ -299,22 +299,12 @@ function showAdminSection(sectionName) {
         loadUsers();
     } else if (sectionName === 'logs') {
         loadLogs();
-    } else if (sectionName === 'prompts') {
-        loadPrompts();
-    } else if (sectionName === 'stats') {
-        loadStats();
-    } else if (sectionName === 'debug') {
-        console.log('Debug/Stress Test section loaded');
     }
 }
 
 // Load initial admin data
 async function loadAdminData() {
-    await Promise.all([
-        loadGoals(),
-        loadPrompts(),
-        loadStats()
-    ]);
+    await loadGoals();
 }
 
 // Goals Management Functions

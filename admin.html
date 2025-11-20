@@ -49,6 +49,38 @@
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .admin-name-input-wrapper {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .admin-name-input-wrapper label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .admin-name-field {
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--background);
+            color: var(--text-primary);
+            min-width: 200px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-name-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
         }
         
         .nav-btn {
@@ -2617,16 +2649,10 @@
                         <h1>📊 Admin Dashboard</h1>
                         <p>Welcome, <span id="adminEmail"></span></p>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                            <label for="adminNameInput" style="font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--text-secondary);">Admin Name (required for invalidation):</label>
-                            <input type="text" id="adminNameInput" placeholder="Enter your admin name" style="padding: 0.5rem; border: 2px solid var(--border-color); border-radius: 0.5rem; background: var(--background); color: var(--text-primary); min-width: 200px;">
-                        </div>
-                        <button onclick="adminLogout()" class="btn btn-secondary">
-                            <span class="btn-icon">🚪</span>
-                            Logout
-                        </button>
-                    </div>
+                    <button onclick="adminLogout()" class="btn btn-secondary">
+                        <span class="btn-icon">🚪</span>
+                        Logout
+                    </button>
                 </div>
             </div>
 
@@ -2634,9 +2660,10 @@
                 <button class="nav-btn active" onclick="showAdminSection('goals')">📋 Student Goals</button>
                 <button class="nav-btn" onclick="showAdminSection('users')">👥 User Management</button>
                 <button class="nav-btn" onclick="showAdminSection('logs')">📜 Admin Logs</button>
-                <button class="nav-btn" onclick="showAdminSection('prompts')">🤖 AI Prompts</button>
-                <button class="nav-btn" onclick="showAdminSection('stats')">📈 Statistics</button>
-                <button class="nav-btn" onclick="showAdminSection('debug')">🔧 Stress Test</button>
+                <div class="admin-name-input-wrapper">
+                    <label for="adminNameInput">Admin Name:</label>
+                    <input type="text" id="adminNameInput" placeholder="Enter your name" class="admin-name-field">
+                </div>
             </nav>
 
             <!-- Goals Management Section -->
@@ -2678,58 +2705,6 @@
 
                 <div id="goalsContainer">
                     <div class="loading">Loading goals...</div>
-                </div>
-            </div>
-
-            <!-- AI Prompts Section -->
-            <div id="promptsSection" class="admin-section">
-                <h2>🤖 AI System Prompts</h2>
-                <p>Customize the AI validation prompts used throughout the system.</p>
-                
-                <div class="prompt-editor">
-                    <h3>Goal Validation Prompt</h3>
-                    <div class="prompt-info">
-                        <strong>Available Variables:</strong> {contextInfo}, {goal}, {xpInfo}, {screenshotInfo}
-                    </div>
-                    <textarea id="validationPrompt" class="prompt-textarea" placeholder="Loading validation prompt..."></textarea>
-                    <button onclick="savePrompt('validation')" class="btn btn-primary">Save Validation Prompt</button>
-                </div>
-                
-                <div class="prompt-editor">
-                    <h3>Answer Questions Prompt</h3>
-                    <div class="prompt-info">
-                        <strong>Available Variables:</strong> {contextInfo}, {goal}, {xpInfo}, {screenshotInfo}, {questionsAndAnswers}
-                    </div>
-                    <textarea id="answerQuestionsPrompt" class="prompt-textarea" placeholder="Loading answer questions prompt..."></textarea>
-                    <button onclick="savePrompt('answerQuestions')" class="btn btn-primary">Save Answer Questions Prompt</button>
-                </div>
-            </div>
-
-            <!-- Statistics Section -->
-            <div id="statsSection" class="admin-section">
-                <h2>📈 System Statistics</h2>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalGoals">-</div>
-                        <div>Total Goals</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="activeGoals">-</div>
-                        <div>Active Goals</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="completedGoals">-</div>
-                        <div>Completed Goals</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="invalidatedGoals">-</div>
-                        <div>Invalidated Goals</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalUsers">-</div>
-                        <div>Total Users</div>
-                    </div>
                 </div>
             </div>
 
