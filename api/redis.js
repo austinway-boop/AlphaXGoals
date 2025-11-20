@@ -2,48 +2,95 @@ import { createClient } from 'redis';
 import bcrypt from 'bcryptjs';
 
 let redis = null;
+let isConnecting = false;
+let connectionPromise = null;
 
 export async function getRedisClient() {
-  if (!redis) {
-    const redisUrl = process.env.REDIS_URL || process.env.Afterschool_REDIS_URL;
-    
-    if (!redisUrl) {
-      throw new Error('Redis URL not configured. Please set REDIS_URL or Afterschool_REDIS_URL environment variable.');
-    }
-    
-    redis = createClient({ 
-      url: redisUrl
-    });
-    
-    redis.on('error', (err) => {
-      console.error('⚠️ Redis Client Error - but NOT resetting connection:', err);
-      // DON'T reset to null - keep connection alive for recovery
-      // redis = null; // REMOVED: This was causing data loss
-    });
-    
-    redis.on('disconnect', () => {
-      console.error('⚠️ Redis disconnected - attempting to reconnect...');
-    });
-    
-    redis.on('reconnecting', () => {
-      console.log('🔄 Redis reconnecting...');
-    });
-    
-    redis.on('connect', () => {
-      console.log('✅ Redis connected successfully');
-    });
-    
+  // If already connected and ready, return immediately
+  if (redis && redis.isReady) {
+    return redis;
+  }
+  
+  // If connection is in progress, wait for it
+  if (isConnecting && connectionPromise) {
+    return await connectionPromise;
+  }
+  
+  // If connection exists but not ready, try to reconnect
+  if (redis && !redis.isReady) {
     try {
+      if (!redis.isOpen) {
+        await redis.connect();
+      }
+      return redis;
+    } catch (error) {
+      console.error('Redis reconnection failed, creating new client:', error);
+      redis = null;
+    }
+  }
+  
+  // Create new connection
+  isConnecting = true;
+  connectionPromise = (async () => {
+    try {
+      const redisUrl = process.env.REDIS_URL || process.env.Afterschool_REDIS_URL;
+      
+      if (!redisUrl) {
+        throw new Error('Redis URL not configured. Please set REDIS_URL or Afterschool_REDIS_URL environment variable.');
+      }
+      
+      redis = createClient({ 
+        url: redisUrl,
+        socket: {
+          reconnectStrategy: (retries) => {
+            // Exponential backoff with max 3000ms
+            return Math.min(retries * 100, 3000);
+          },
+          connectTimeout: 10000
+        },
+        // Enable connection pooling for better concurrent handling
+        isolationPoolOptions: {
+          min: 2,
+          max: 10
+        }
+      });
+      
+      redis.on('error', (err) => {
+        console.error('⚠️ Redis Client Error:', err.message);
+        // Don't reset connection immediately - let reconnect handle it
+      });
+      
+      redis.on('disconnect', () => {
+        console.error('⚠️ Redis disconnected - will attempt auto-reconnect');
+      });
+      
+      redis.on('reconnecting', () => {
+        console.log('🔄 Redis reconnecting...');
+      });
+      
+      redis.on('connect', () => {
+        console.log('✅ Redis connected successfully');
+      });
+      
+      redis.on('ready', () => {
+        console.log('✅ Redis ready for commands');
+      });
+      
       await redis.connect();
       console.log('Redis connected successfully');
+      
+      return redis;
     } catch (error) {
       console.error('Failed to connect to Redis:', error);
       redis = null;
       throw new Error(`Redis connection failed: ${error.message}`);
+    } finally {
+      isConnecting = false;
+      connectionPromise = null;
     }
-  }
+  })();
   
-  return redis;
+  return await connectionPromise;
 }
 
 // Helper functions for user management

@@ -1540,8 +1540,17 @@ function displayGoals(goals) {
                     <div class="goal-status-minimal ${goal.status}">
                         ${goal.status === 'completed' ? '✅' : goal.status === 'active' ? '🎯' : '❌'}
                     </div>
-                    <div class="goal-title">
-                        ${escapeHtml(goal.goal)}
+                    <div class="goal-content-wrapper">
+                        <div class="goal-title">
+                            ${escapeHtml(goal.goal)}
+                        </div>
+                        ${goal.validationData ? `
+                            <div class="scores-minimal">
+                                <span class="score-mini ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}" title="Ambition: ${goal.validationData.ambitionScore || 0}/5">💪 ${goal.validationData.ambitionScore || 0}</span>
+                                <span class="score-mini ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}" title="Measurable: ${goal.validationData.measurableScore || 0}/10">📏 ${goal.validationData.measurableScore || 0}</span>
+                                <span class="score-mini ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}" title="Relevance: ${goal.validationData.relevanceScore || 0}/10">🎯 ${goal.validationData.relevanceScore || 0}</span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
                 
@@ -1564,14 +1573,6 @@ function displayGoals(goals) {
                     ` : ''}
                     </div>
                 </div>
-                
-                ${goal.validationData ? `
-                    <div class="scores-minimal">
-                        <span class="score-mini ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}" title="Ambition: ${goal.validationData.ambitionScore || 0}/5">${goal.validationData.ambitionScore || 0}</span>
-                        <span class="score-mini ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}" title="Measurable: ${goal.validationData.measurableScore || 0}/10">${goal.validationData.measurableScore || 0}</span>
-                        <span class="score-mini ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}" title="Relevance: ${goal.validationData.relevanceScore || 0}/10">${goal.validationData.relevanceScore || 0}</span>
-                    </div>
-                ` : ''}
             </div>
         `;
     }).join('');
