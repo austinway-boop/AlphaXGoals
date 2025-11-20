@@ -820,7 +820,7 @@ function toggleGoalForm() {
     }
 }
 
-// AI Loading Animation
+// AI Loading Animation - Wave Bars
 function showAILoadingAnimation() {
     // Remove any existing AI loader
     const existingLoader = document.getElementById('aiLoadingAnimation');
@@ -830,20 +830,22 @@ function showAILoadingAnimation() {
     
     const loader = document.createElement('div');
     loader.id = 'aiLoadingAnimation';
-    loader.className = 'ai-loading-container';
+    loader.className = 'ai-loading-overlay';
     loader.innerHTML = `
-        <div class="ai-loading-content">
-            <div class="ai-brain-animation">
-                <div class="brain-pulse"></div>
-                <div class="brain-waves">
-                    <div class="wave"></div>
-                    <div class="wave"></div>
-                    <div class="wave"></div>
-                </div>
+        <div class="ai-loading-card">
+            <div class="wave-bars-container">
+                <div class="wave-bar bar-1"></div>
+                <div class="wave-bar bar-2"></div>
+                <div class="wave-bar bar-3"></div>
+                <div class="wave-bar bar-4"></div>
+                <div class="wave-bar bar-5"></div>
+                <div class="wave-bar bar-6"></div>
+                <div class="wave-bar bar-7"></div>
+                <div class="wave-bar bar-8"></div>
             </div>
             <div class="ai-loading-text">
                 <h3>AI is analyzing your goal...</h3>
-                <p class="loading-subtext">Evaluating ambition, measurability, and relevance</p>
+                <p class="loading-subtext">This will only take a moment</p>
             </div>
         </div>
     `;
@@ -859,10 +861,10 @@ function showAILoadingAnimation() {
 function hideAILoadingAnimation() {
     const loader = document.getElementById('aiLoadingAnimation');
     if (loader) {
-        loader.classList.remove('active');
+        loader.classList.add('hiding');
         setTimeout(() => {
             loader.remove();
-        }, 300);
+        }, 400);
     }
 }
 
@@ -1218,73 +1220,67 @@ function displayValidationResults(validation) {
     }
     
     const statusClass = validation.isValid ? 'valid' : 'invalid';
-    const statusIcon = validation.isValid ? '✅' : '❌';
     const statusText = validation.isValid ? 'Goal Approved' : 'Needs Improvement';
     
-    const getScoreIcon = (score, isAmbition = false) => {
-        const threshold = isAmbition ? 4 : 8;
-        const maxScore = isAmbition ? 5 : 10;
-        if (score >= threshold) return '🟢';
-        if (score >= (maxScore * 0.6)) return '🟡';
-        return '🔴';
-    };
+    // Get the current goal text to display
+    const currentGoal = document.getElementById('goalInput').value.trim();
     
     const getScoreColor = (score, isAmbition = false) => {
         const threshold = isAmbition ? 4 : 8;
         const maxScore = isAmbition ? 5 : 10;
-        if (score >= threshold) return 'var(--success-color)';
-        if (score >= (maxScore * 0.6)) return 'var(--warning-color)';
-        return 'var(--danger-color)';
+        if (score >= threshold) return '#10b981';
+        if (score >= (maxScore * 0.6)) return '#f59e0b';
+        return '#ef4444';
     };
     
     contentContainer.innerHTML = `
-        <div class="validation-status ${statusClass}">
-            <span>${statusIcon}</span>
-            ${statusText} (Overall Score: ${validation.overallScore || 0}/10)
+        <div class="validation-goal-display">
+            <h4>Your Goal:</h4>
+            <p class="goal-text">${escapeHtml(currentGoal)}</p>
         </div>
         
-        <div class="validation-item">
-            <div class="validation-icon">${getScoreIcon(validation.ambitionScore || 0, true)}</div>
-            <div class="validation-content">
-                <h4>Ambition Score</h4>
-                <p><strong style="color: ${getScoreColor(validation.ambitionScore || 0, true)}">${validation.ambitionScore || 0}/5</strong> - How challenging and growth-oriented is this goal?</p>
-                <p><em>Requirement: 4/5 to pass</em></p>
+        <div class="validation-status-clean ${statusClass}">
+            <strong>${statusText}</strong>
+            <span class="overall-score">Overall Score: ${validation.overallScore || 0}/10</span>
+        </div>
+        
+        <div class="validation-scores-grid">
+            <div class="score-item">
+                <div class="score-label">Ambition</div>
+                <div class="score-value" style="color: ${getScoreColor(validation.ambitionScore || 0, true)}">
+                    ${validation.ambitionScore || 0}/5
+                </div>
+                <div class="score-requirement">Need 4/5</div>
+            </div>
+            
+            <div class="score-item">
+                <div class="score-label">Measurable</div>
+                <div class="score-value" style="color: ${getScoreColor(validation.measurableScore || 0)}">
+                    ${validation.measurableScore || 0}/10
+                </div>
+                <div class="score-requirement">Need 8/10</div>
+            </div>
+            
+            <div class="score-item">
+                <div class="score-label">Relevance</div>
+                <div class="score-value" style="color: ${getScoreColor(validation.relevanceScore || 0)}">
+                    ${validation.relevanceScore || 0}/10
+                </div>
+                <div class="score-requirement">Need 8/10</div>
             </div>
         </div>
         
-        <div class="validation-item">
-            <div class="validation-icon">${getScoreIcon(validation.measurableScore || 0)}</div>
-            <div class="validation-content">
-                <h4>Measurable Score</h4>
-                <p><strong style="color: ${getScoreColor(validation.measurableScore || 0)}">${validation.measurableScore || 0}/10</strong> - How clearly defined and measurable are the success criteria?</p>
-                <p><em>Requirement: 8/10 to pass</em></p>
-            </div>
-        </div>
-        
-        <div class="validation-item">
-            <div class="validation-icon">${getScoreIcon(validation.relevanceScore || 0)}</div>
-            <div class="validation-content">
-                <h4>Relevance Score</h4>
-                <p><strong style="color: ${getScoreColor(validation.relevanceScore || 0)}">${validation.relevanceScore || 0}/10</strong> - How relevant is this goal to your Alpha X project?</p>
-                <p><em>Requirement: 8/10 to pass</em></p>
-            </div>
-        </div>
-        
-        
-        <div class="validation-item">
-            <div class="validation-icon">🤖</div>
-            <div class="validation-content">
-                <h4>AI Feedback</h4>
-                <p>${validation.feedback}</p>
-                ${validation.suggestions && validation.suggestions.length > 0 ? `
-                    <div class="validation-suggestions">
-                        <strong>Suggestions for improvement:</strong>
-                        <ul>
-                            ${validation.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-            </div>
+        <div class="validation-feedback-section">
+            <h4>AI Feedback</h4>
+            <p>${validation.feedback}</p>
+            ${validation.suggestions && validation.suggestions.length > 0 ? `
+                <div class="validation-suggestions">
+                    <strong>Suggestions:</strong>
+                    <ul>
+                        ${validation.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
         </div>
     `;
     
