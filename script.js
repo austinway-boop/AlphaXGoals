@@ -1699,6 +1699,11 @@ function displayGoals(goals) {
                     <div class="goal-status-badge ${goal.status}">
                         ${goal.status === 'completed' ? 'Completed' : goal.status === 'active' ? 'Active' : 'Inactive'}
                     </div>
+                    ${goal.estimatedHours ? `
+                        <div class="goal-time-badge" style="background: ${goal.estimatedHours < 2.5 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; border: 2px solid ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'}; color: ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'};">
+                            ⏱️ ${goal.estimatedHours}h
+                        </div>
+                    ` : ''}
                 </div>
                 
                 <div class="goal-content-wrapper">
