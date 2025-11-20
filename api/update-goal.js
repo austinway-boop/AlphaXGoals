@@ -223,7 +223,7 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
       console.log('Calling Claude API...');
 
       const response = await axios.post('https://api.anthropic.com/v1/messages', {
-        model: 'claude-sonnet-4-5',
+        model: 'claude-3-5-sonnet-20240620',
         max_tokens: 1000,
         messages: [
           {
