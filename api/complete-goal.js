@@ -1,6 +1,16 @@
 // Vercel serverless function for completing goals with BrainLift word count extraction
-import { updateGoal, getGoalById } from './redis.js';
-import axios from 'axios';
+import { updateGoal, getGoalById, saveBrainLiftEntry } from './redis.js';
+
+// Word count utility function
+function countWords(text) {
+  if (!text || typeof text !== 'string') return 0;
+  const cleanText = text
+    .replace(/\s+/g, ' ')
+    .replace(/[^\w\s]/g, ' ')
+    .trim();
+  const words = cleanText.split(/\s+/).filter(word => word.length > 0);
+  return words.length;
+}
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -37,19 +47,23 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goalId, screenshotDataArray, textProof } = req.body;
+  const { goalId, screenshotDataArray, textProof, brainliftContent } = req.body;
   
   if (!goalId) {
     return res.status(400).json({ success: false, error: 'Goal ID is required' });
   }
   
-  // Require both screenshots and text proof
+  // Require screenshots, text proof, and Brain Lift content
   if (!screenshotDataArray || !Array.isArray(screenshotDataArray) || screenshotDataArray.length === 0) {
     return res.status(400).json({ success: false, error: 'Screenshots are required to complete a goal' });
   }
   
   if (!textProof || textProof.trim().length === 0) {
     return res.status(400).json({ success: false, error: 'Text description is required to complete a goal' });
+  }
+  
+  if (!brainliftContent || typeof brainliftContent !== 'string' || brainliftContent.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'Updated Brain Lift content is required to complete a goal. Please upload your current Brain Lift content.' });
   }
 
   try {
@@ -96,148 +110,32 @@ export default async function handler(req, res) {
       });
     }
 
-    // Extract ending word count from BrainLift if goal has a BrainLift link
-    let endingWordCount = null;
-    let endingExtractionMethod = 'none';
+    // Calculate ending word count from uploaded Brain Lift content
+    console.log('Calculating ending word count from Brain Lift content');
+    const endingWordCount = countWords(brainliftContent);
     
-    if (goal.brainliftLink) {
-      console.log('Extracting ending word count from BrainLift...');
-      
-      try {
-        let documentContent = '';
-        const url = new URL(goal.brainliftLink);
-
-        // Handle Google Docs
-        if (url.hostname === 'docs.google.com' && goal.brainliftLink.includes('/document/d/')) {
-          console.log('Processing Google Doc for ending word count...');
-          
-          const docId = goal.brainliftLink.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
-          if (docId) {
-            // Try the plain text export URL
-            const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
-            
-            try {
-              const docResponse = await axios.get(exportUrl, { 
-                timeout: 15000,
-                headers: {
-                  'User-Agent': 'AlphaXGoals-WordCounter/1.0'
-                }
-              });
-              documentContent = docResponse.data;
-              endingExtractionMethod = 'google_docs_export';
-              console.log('Successfully extracted Google Doc as plain text');
-            } catch (exportError) {
-              console.log('Plain text export failed, trying HTML scraping...');
-              
-              // Try multiple Google Docs public access methods
-              const baseUrl = `https://docs.google.com/document/d/${docId}`;
-              const publishUrls = [
-                `${baseUrl}/pub`,
-                `${baseUrl}/edit?usp=sharing`,
-                goal.brainliftLink.includes('/edit') ? goal.brainliftLink : `${baseUrl}/edit`
-              ];
-              
-              let htmlResponse = null;
-              for (const testUrl of publishUrls) {
-                try {
-                  htmlResponse = await axios.get(testUrl, { 
-                    timeout: 10000,
-                    headers: {
-                      'User-Agent': 'Mozilla/5.0 (compatible; AlphaXGoals/1.0)'
-                    }
-                  });
-                  console.log(`Successfully accessed Google Doc via: ${testUrl}`);
-                  break;
-                } catch (urlError) {
-                  console.log(`Failed to access ${testUrl}:`, urlError.response?.status);
-                  continue;
-                }
-              }
-              
-              if (!htmlResponse) {
-                throw new Error('Could not access Google Doc via any method');
-              }
-              
-              // Simple regex-based HTML text extraction (no JSDOM needed)
-              let htmlContent = htmlResponse.data;
-              
-              // Remove script and style tags
-              htmlContent = htmlContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-              htmlContent = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-              htmlContent = htmlContent.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
-              
-              // Extract text content by removing all HTML tags
-              documentContent = htmlContent.replace(/<[^>]*>/g, ' ')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-                .replace(/&quot;/g, '"');
-              endingExtractionMethod = 'google_docs_html';
-              console.log('Successfully extracted Google Doc as HTML');
-            }
-          }
-        } 
-        // Handle other document types
-        else {
-          console.log('Processing generic document for ending word count...');
-          
-          const response = await axios.get(goal.brainliftLink, { 
-            timeout: 15000,
-            headers: {
-              'User-Agent': 'AlphaXGoals-WordCounter/1.0'
-            }
-          });
-          
-          // Simple regex-based HTML text extraction (no JSDOM needed)
-          let htmlContent = response.data;
-          
-          // Remove script and style tags
-          htmlContent = htmlContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-          htmlContent = htmlContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-          htmlContent = htmlContent.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
-          
-          // Extract text content by removing all HTML tags
-          documentContent = htmlContent.replace(/<[^>]*>/g, ' ')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"');
-          endingExtractionMethod = 'html_scraping';
-          console.log('Successfully extracted document as HTML');
-        }
-
-        // Clean and count words
-        console.log('Ending document content extracted, length:', documentContent.length);
-        
-        if (documentContent && documentContent.trim().length > 0) {
-          const cleanText = documentContent
-            .replace(/\s+/g, ' ') // Normalize whitespace
-            .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
-            .trim();
-          
-          const words = cleanText.split(/\s+/).filter(word => word.length > 0);
-          endingWordCount = words.length;
-          
-          console.log(`Extracted ending word count: ${endingWordCount} words using ${endingExtractionMethod}`);
-          
-          if (endingWordCount === 0) {
-            console.warn('Document contains no readable words at completion');
-            endingWordCount = 0;
-          }
-        } else {
-          console.warn('Document appears to be empty at completion');
-          endingWordCount = 0;
-        }
-        
-      } catch (extractionError) {
-        console.error('Error extracting ending word count:', extractionError);
-        // Don't fail goal completion if word count extraction fails
-        endingWordCount = null;
-        endingExtractionMethod = 'extraction_failed';
-      }
+    if (endingWordCount === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Brain Lift content must contain at least one word'
+      });
     }
+    
+    console.log(`Ending word count: ${endingWordCount} words`);
+    
+    // Calculate word count difference
+    const startingWordCount = parseInt(goal.startingWordCount) || 0;
+    const wordCountDifference = endingWordCount - startingWordCount;
+    
+    console.log(`Word count difference: ${wordCountDifference} words (starting: ${startingWordCount}, ending: ${endingWordCount})`);
+    
+    // Determine if goal was met based on word count increase
+    const goalMet = wordCountDifference >= 0;
+    
+    // Save ending Brain Lift entry for today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const endingBrainliftEntry = await saveBrainLiftEntry(userId, brainliftContent, endingWordCount, today);
+    console.log('Ending Brain Lift entry saved:', endingBrainliftEntry.id);
 
     // Update goal status to completed with proof
     const updateData = {
@@ -248,15 +146,29 @@ export default async function handler(req, res) {
       hasScreenshots: true,
       hasTextProof: true,
       screenshotCount: screenshotDataArray.length,
-      // Add ending word count data
+      // Add ending Brain Lift data
+      endingBrainLiftEntryId: endingBrainliftEntry.id,
       endingWordCount: endingWordCount,
-      endingExtractionMethod: endingExtractionMethod,
-      endingWordCountExtractedAt: endingWordCount !== null ? new Date().toISOString() : null
+      endingBrainLiftDate: today,
+      wordCountDifference: wordCountDifference,
+      wordCountIncreased: wordCountDifference > 0,
+      goalMetByWordCount: goalMet,
+      wordCountCalculatedAt: new Date().toISOString()
     };
     
     const updatedGoal = await updateGoal(goalId, updateData);
     
-    res.json({ success: true, goal: updatedGoal });
+    res.json({ 
+      success: true, 
+      goal: updatedGoal,
+      wordCountComparison: {
+        starting: startingWordCount,
+        ending: endingWordCount,
+        difference: wordCountDifference,
+        increased: wordCountDifference > 0,
+        goalMet: goalMet
+      }
+    });
   } catch (error) {
     console.error('Error completing goal:', error);
     res.status(500).json({ 

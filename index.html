@@ -147,19 +147,50 @@
                                 </div>
                             </div>
 
-                            <!-- BrainLift Link Field -->
+                            <!-- Brain Lift Content Upload -->
                             <div class="form-group">
-                                <label for="brainliftLink">BrainLift Document Link <span class="required">*</span></label>
-                                <input 
-                                    type="url" 
-                                    id="brainliftLink" 
-                                    placeholder="https://docs.google.com/document/d/... (must be publicly viewable)"
-                                    required
-                                />
+                                <label for="brainliftContent">Your Current Brain Lift Content <span class="required">*</span></label>
+                                <div class="brainlift-upload-options">
+                                    <div class="upload-tabs">
+                                        <button type="button" class="upload-tab active" onclick="switchBrainLiftTab('text')">📝 Paste Text</button>
+                                        <button type="button" class="upload-tab" onclick="switchBrainLiftTab('file')">📁 Upload File</button>
+                                    </div>
+                                    
+                                    <div id="brainliftTextTab" class="brainlift-upload-content active">
+                                        <textarea 
+                                            id="brainliftContent" 
+                                            rows="8"
+                                            placeholder="Paste your current Brain Lift content here... (all your notes, research, ideas, etc.)"
+                                            required
+                                        ></textarea>
+                                        <div class="word-count-display">
+                                            <span id="brainliftWordCount">0 words</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="brainliftFileTab" class="brainlift-upload-content hidden">
+                                        <input type="file" id="brainliftFile" accept=".txt,.doc,.docx" style="display:none;">
+                                        <div class="file-upload-zone" id="brainliftDropzone">
+                                            <div class="file-upload-icon">📁</div>
+                                            <div class="file-upload-text">
+                                                <p><strong>Click to upload</strong> or drag and drop</p>
+                                                <p class="file-hint">Supported: TXT, DOC, DOCX files</p>
+                                            </div>
+                                        </div>
+                                        <div id="brainliftFilePreview" class="file-preview hidden">
+                                            <div class="file-info">
+                                                <span id="brainliftFileName"></span>
+                                                <button type="button" class="remove-file-btn" onclick="removeBrainLiftFile()">×</button>
+                                            </div>
+                                            <div class="word-count-display">
+                                                <span id="brainliftFileWordCount">0 words</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="form-hint">
-                                    <strong>Required:</strong> Provide a publicly viewable link to your BrainLift document. 
-                                    We'll track your starting word count and ending word count when you complete your goal.
-                                    Make sure the document is set to "Anyone with the link can view".
+                                    <strong>Required:</strong> Upload your current Brain Lift content. We'll track your word count 
+                                    today and compare it when you complete your goal to see your progress.
                                 </div>
                             </div>
                             

@@ -20,6 +20,165 @@ function fileToBase64(file) {
     });
 }
 
+// Brain Lift content handling functions
+function getBrainLiftContent() {
+    // Check which tab is active
+    const textTab = document.getElementById('brainliftTextTab');
+    const fileTab = document.getElementById('brainliftFileTab');
+    
+    if (textTab && textTab.classList.contains('active')) {
+        const textarea = document.getElementById('brainliftContent');
+        return textarea ? textarea.value.trim() : '';
+    } else if (fileTab && fileTab.classList.contains('active')) {
+        // Return stored file content
+        return window.brainliftFileContent || '';
+    }
+    
+    return '';
+}
+
+function switchBrainLiftTab(tabType) {
+    const textTab = document.getElementById('brainliftTextTab');
+    const fileTab = document.getElementById('brainliftFileTab');
+    const textBtn = document.querySelector('.upload-tab[onclick*="text"]');
+    const fileBtn = document.querySelector('.upload-tab[onclick*="file"]');
+    
+    if (tabType === 'text') {
+        textTab?.classList.add('active');
+        textTab?.classList.remove('hidden');
+        fileTab?.classList.remove('active');
+        fileTab?.classList.add('hidden');
+        textBtn?.classList.add('active');
+        fileBtn?.classList.remove('active');
+    } else if (tabType === 'file') {
+        fileTab?.classList.add('active');
+        fileTab?.classList.remove('hidden');
+        textTab?.classList.remove('active');
+        textTab?.classList.add('hidden');
+        fileBtn?.classList.add('active');
+        textBtn?.classList.remove('active');
+    }
+}
+
+function countWords(text) {
+    if (!text || typeof text !== 'string') return 0;
+    const cleanText = text
+        .replace(/\s+/g, ' ')
+        .replace(/[^\w\s]/g, ' ')
+        .trim();
+    const words = cleanText.split(/\s+/).filter(word => word.length > 0);
+    return words.length;
+}
+
+// Initialize Brain Lift text area word counter
+function initializeBrainLiftWordCounter() {
+    const textarea = document.getElementById('brainliftContent');
+    const wordCountDisplay = document.getElementById('brainliftWordCount');
+    
+    if (textarea && wordCountDisplay) {
+        textarea.addEventListener('input', () => {
+            const text = textarea.value;
+            const wordCount = countWords(text);
+            wordCountDisplay.textContent = `${wordCount} words`;
+        });
+    }
+}
+
+// Initialize Brain Lift file upload
+function initializeBrainLiftFileUpload() {
+    const fileInput = document.getElementById('brainliftFile');
+    const dropzone = document.getElementById('brainliftDropzone');
+    
+    if (!fileInput || !dropzone) return;
+    
+    // Click to upload
+    dropzone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // File selected
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            await processBrainLiftFile(file);
+        }
+    });
+    
+    // Drag and drop
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('drag-active');
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('drag-active');
+    });
+    
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-active');
+        
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            await processBrainLiftFile(file);
+        }
+    });
+}
+
+async function processBrainLiftFile(file) {
+    // Check file type
+    const validTypes = ['.txt', '.doc', '.docx'];
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(fileExt)) {
+        showToast('Please upload a TXT, DOC, or DOCX file', 'warning');
+        return;
+    }
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File is too large. Please use a file under 5MB', 'warning');
+        return;
+    }
+    
+    showLoading('Reading file...');
+    
+    try {
+        const text = await readFileAsText(file);
+        window.brainliftFileContent = text;
+        
+        const wordCount = countWords(text);
+        
+        // Show file preview
+        document.getElementById('brainliftFileName').textContent = file.name;
+        document.getElementById('brainliftFileWordCount').textContent = `${wordCount} words`;
+        document.getElementById('brainliftFilePreview').classList.remove('hidden');
+        
+        hideLoading();
+        showToast(`File loaded: ${wordCount} words`, 'success');
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to read file. Please try again.', 'error');
+        console.error('File reading error:', error);
+    }
+}
+
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(e);
+        reader.readAsText(file);
+    });
+}
+
+function removeBrainLiftFile() {
+    window.brainliftFileContent = '';
+    document.getElementById('brainliftFile').value = '';
+    document.getElementById('brainliftFilePreview').classList.add('hidden');
+    showToast('File removed', 'info');
+}
+
 // Global variable to store selected completion screenshots  
 let selectedCompletionScreenshots = [];
 
@@ -332,13 +491,14 @@ function showCompletionModal(goalId) {
                 </div>
                 
                 <div class="completion-instructions">
-                    <p class="completion-intro">Show us what you accomplished today! Both sections below are required to complete your goal.</p>
+                    <p class="completion-intro">Show us what you accomplished today! All three sections below are required to complete your goal.</p>
                 </div>
                 
                 <div class="proof-tabs">
                     <div class="tab-navigation">
                         <button class="tab-btn active" data-tab="text" onclick="switchProofTab('text')">📝 1. Write What You Did Today</button>
                         <button class="tab-btn" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 2. Upload Screenshots</button>
+                        <button class="tab-btn" data-tab="brainlift" onclick="switchProofTab('brainlift')">🧠 3. Upload Updated Brain Lift</button>
                     </div>
                     
                     <!-- Text Proof Tab (now first) -->
@@ -389,12 +549,31 @@ function showCompletionModal(goalId) {
                         </div>
                     </div>
                     
+                    <!-- Brain Lift Tab (third) -->
+                    <div id="brainliftTab" class="proof-tab hidden">
+                        <h5>🧠 Upload Your Updated Brain Lift Content</h5>
+                        <p class="tab-description">Upload your current Brain Lift content so we can compare word counts:</p>
+                        <div class="example-box">
+                            <strong>Important:</strong> This should be your complete, current Brain Lift with all today's additions and updates. We'll compare the word count with your starting Brain Lift to measure your progress.
+                        </div>
+                        
+                        <textarea id="completionBrainLift" rows="8" placeholder="Paste your complete, updated Brain Lift content here..." class="completion-textarea" required></textarea>
+                        <div class="word-count-info">
+                            <div class="word-count-display">
+                                <span id="brainliftCompletionWordCount">0 words</span>
+                            </div>
+                            <div class="starting-word-display">
+                                Starting word count: <strong>${goal.startingWordCount || 0} words</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
                         </div>
                         
                 <div class="completion-requirement">
                     <div class="requirement-box">
                         <p><strong>📝 Ready to Complete Your Goal?</strong></p>
-                        <p>Make sure you've filled out both sections above - tell us what you did today AND upload your screenshots!</p>
+                        <p>Make sure you've filled out ALL THREE sections above - tell us what you did, upload your screenshots, AND upload your updated Brain Lift!</p>
                         </div>
                 </div>
                 
@@ -523,6 +702,29 @@ function initializeCompletionModal() {
     } else {
         console.error('Text elements not found for initialization');
     }
+    
+    // Initialize Brain Lift word counter
+    const brainliftTextarea = document.getElementById('completionBrainLift');
+    const brainliftWordCount = document.getElementById('brainliftCompletionWordCount');
+    
+    if (brainliftTextarea && brainliftWordCount) {
+        const handleBrainLiftInput = () => {
+            const text = brainliftTextarea.value;
+            const wordCount = countWords(text);
+            brainliftWordCount.textContent = `${wordCount} words`;
+        };
+        
+        brainliftTextarea.addEventListener('input', handleBrainLiftInput);
+        brainliftTextarea.addEventListener('keyup', handleBrainLiftInput);
+        brainliftTextarea.addEventListener('paste', () => {
+            setTimeout(handleBrainLiftInput, 10);
+        });
+        
+        // Trigger initial count
+        handleBrainLiftInput();
+        
+        console.log('Brain Lift word counter initialized');
+    }
 }
 
 // Error display function that shows outside modal
@@ -581,8 +783,9 @@ async function confirmCompletion() {
     // Check what proof methods are filled
     const screenshotFiles = window.getSelectedImages ? window.getSelectedImages() : [];
     const textProof = document.getElementById('completionText')?.value.trim();
+    const brainliftContent = document.getElementById('completionBrainLift')?.value.trim();
     
-    // Both text description and screenshots are required
+    // All three sections are required
     if (!textProof || textProof.length === 0) {
         showErrorOutsideModal('Please write what you did today - describe how you completed this goal');
         switchProofTab('text');
@@ -592,6 +795,12 @@ async function confirmCompletion() {
     if (!screenshotFiles || screenshotFiles.length === 0) {
         showErrorOutsideModal('Please upload screenshots to prove what you did today - at least one image is required');
         switchProofTab('screenshot');
+        return;
+    }
+    
+    if (!brainliftContent || brainliftContent.length === 0) {
+        showErrorOutsideModal('Please upload your updated Brain Lift content - we need to compare word counts to verify your progress');
+        switchProofTab('brainlift');
         return;
     }
     
@@ -645,7 +854,8 @@ async function confirmCompletion() {
             body: JSON.stringify({ 
                 goalId, 
                 screenshotDataArray,
-                textProof
+                textProof,
+                brainliftContent
             })
         });
         
@@ -734,6 +944,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize monitoring after DOM is ready
     setTimeout(() => {
         setupGoalTextMonitoring();
+        initializeBrainLiftWordCounter();
+        initializeBrainLiftFileUpload();
     }, 100);
     setupEventListeners();
 });
@@ -764,10 +976,8 @@ async function checkSession() {
                 await tryRecoverAlphaXProject();
             } else {
                 console.log('Alpha X project exists:', appState.userAlphaXProject);
-                showApp();
-                loadGoals();
-                // Auto-fill BrainLift link from user's last submission
-                autoFillBrainLiftLink();
+            showApp();
+            loadGoals();
             }
         } else {
             showAuth();
@@ -1031,11 +1241,6 @@ function showApp() {
     
     // Clear any completion screenshots from previous sessions
     selectedCompletionScreenshots = [];
-    
-    // Auto-fill BrainLift link after form is visible
-    setTimeout(() => {
-        autoFillBrainLiftLink();
-    }, 100);
 }
 
 function updateProjectDisplay() {
@@ -1433,29 +1638,21 @@ async function handleGoalSubmit(e) {
     }
     
     const goal = document.getElementById('goalInput').value;
-    const brainliftLink = document.getElementById('brainliftLink').value.trim();
+    const brainliftContent = getBrainLiftContent();
     const alphaXProject = appState.userAlphaXProject;
     
-    // Validate BrainLift link
-    if (!brainliftLink) {
-        showToast('Please provide your BrainLift document link', 'warning');
+    // Validate Brain Lift content
+    if (!brainliftContent || brainliftContent.trim().length === 0) {
+        showToast('Please provide your current Brain Lift content', 'warning');
         return;
     }
     
-    // Basic URL validation
-    try {
-        new URL(brainliftLink);
-    } catch (e) {
-        showToast('Please provide a valid URL for your BrainLift document', 'warning');
-        return;
-    }
-    
-    showLoading('Extracting BrainLift word count and submitting your goal...');
+    showLoading('Calculating Brain Lift word count and submitting your goal...');
     
     try {
     const requestBody = {
         goal,
-        brainliftLink,
+        brainliftContent,
         alphaXProject,
         // Include AI questions and answers if they exist
         aiQuestions: appState.aiQuestions || null,
@@ -1476,10 +1673,7 @@ async function handleGoalSubmit(e) {
         hideLoading();
         
         if (data.success) {
-            showToast('Goal submitted successfully!', 'success');
-            
-            // Save the BrainLift link for future auto-fill
-            saveBrainliftLinkToPreferences(brainliftLink);
+            showToast('Goal submitted successfully! Starting word count: ' + (data.brainliftEntry?.wordCount || 0) + ' words', 'success');
             
             // Reset form and validation
             document.getElementById('goalForm').reset();
@@ -2117,7 +2311,6 @@ async function tryRecoverAlphaXProject() {
                 appState.currentUser.alphaXProject = goalWithAlphaX.alphaXProject;
                 showApp();
                 loadGoals();
-                autoFillBrainLiftLink();
                 return;
             }
         }
@@ -2126,78 +2319,15 @@ async function tryRecoverAlphaXProject() {
         console.log('No Alpha X project found, but showing app anyway');
         showApp();
         loadGoals();
-        autoFillBrainLiftLink();
     } catch (error) {
         console.error('Failed to recover Alpha X project:', error);
         // Show app anyway - no modal needed
         showApp();
         loadGoals();
-        autoFillBrainLiftLink();
     }
 }
 
-// Save BrainLift link to user preferences for auto-fill
-async function saveBrainliftLinkToPreferences(brainliftLink) {
-    try {
-        if (!brainliftLink) return;
-        
-        const response = await fetch('/api/update-user-preferences', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ lastBrainliftLink: brainliftLink })
-        });
-        
-        if (response.ok) {
-            console.log('BrainLift link saved to user preferences');
-        }
-    } catch (error) {
-        console.error('Failed to save BrainLift link to preferences:', error);
-        // Don't show error to user as this is just a convenience feature
-    }
-}
-
-// Auto-fill BrainLift link from user's last submission
-async function autoFillBrainLiftLink() {
-    try {
-        // First try to get from user preferences (faster)
-        if (appState.currentUser && appState.currentUser.lastBrainliftLink) {
-            const brainliftInput = document.getElementById('brainliftLink');
-            if (brainliftInput && !brainliftInput.value.trim()) {
-                brainliftInput.value = appState.currentUser.lastBrainliftLink;
-                console.log('Auto-filled BrainLift link from user preferences:', appState.currentUser.lastBrainliftLink);
-                showToast('✅ Auto-filled BrainLift link from your preferences', 'success');
-                return;
-            }
-        }
-        
-        // Fallback: get from latest goal
-        const response = await fetch('/api/goals');
-        const data = await response.json();
-        
-        if (data.success && data.goals && data.goals.length > 0) {
-            // Find the most recent goal with a BrainLift link
-            const sortedGoals = data.goals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            const lastGoalWithBrainLift = sortedGoals.find(goal => goal.brainliftLink);
-            
-            if (lastGoalWithBrainLift && lastGoalWithBrainLift.brainliftLink) {
-                const brainliftInput = document.getElementById('brainliftLink');
-                if (brainliftInput && !brainliftInput.value.trim()) {
-                    brainliftInput.value = lastGoalWithBrainLift.brainliftLink;
-                    console.log('Auto-filled BrainLift link from last goal:', lastGoalWithBrainLift.brainliftLink);
-                    showToast('✅ Auto-filled BrainLift link from your last goal', 'success');
-                    
-                    // Save to preferences for next time
-                    saveBrainliftLinkToPreferences(lastGoalWithBrainLift.brainliftLink);
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Failed to auto-fill BrainLift link:', error);
-        // Don't show error to user as this is just a convenience feature
-    }
-}
+// Brain Lift functions are now handled in the upload section above
 
 // Utility function
 function escapeHtml(text) {

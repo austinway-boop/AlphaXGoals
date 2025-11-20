@@ -1,5 +1,5 @@
 // Vercel serverless function for admin user management
-import { getAllUsers, getRedisClient } from './redis.js';
+import { getAllUsers, getRedisClient, getUserBrainLiftHistory } from './redis.js';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -65,12 +65,22 @@ export default async function handler(req, res) {
             console.warn(`Error reading goal ${goalId}:`, goalError);
           }
         }
+        
+        // Get user's Brain Lift history
+        let brainliftEntryCount = 0;
+        try {
+          const brainliftHistory = await getUserBrainLiftHistory(user.id);
+          brainliftEntryCount = brainliftHistory.length;
+        } catch (brainliftError) {
+          console.warn(`Error reading Brain Lift history for ${user.id}:`, brainliftError);
+        }
 
         enrichedUsers.push({
           ...user,
           goalCount,
           activeGoals,
           completedGoals,
+          brainliftEntryCount,
           deleted: user.deleted === 'true'
         });
       } catch (userError) {
@@ -81,6 +91,7 @@ export default async function handler(req, res) {
           goalCount: 0,
           activeGoals: 0,
           completedGoals: 0,
+          brainliftEntryCount: 0,
           deleted: user.deleted === 'true'
         });
       }

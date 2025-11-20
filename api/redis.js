@@ -642,6 +642,65 @@ Based on the original goal and the provided answers, respond with a JSON object 
 Since the user provided clarifying answers, you should approve the goal unless it clearly fails to meet the basic criteria even after their explanation.`;
 }
 
+// Brain Lift tracking functions
+export async function saveBrainLiftEntry(userId, content, wordCount, date = null) {
+  const client = await getRedisClient();
+  const entryDate = date || new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const entryId = `brainlift:${userId}:${entryDate}:${Date.now()}`;
+  
+  const entryData = {
+    userId,
+    content,
+    wordCount: wordCount.toString(),
+    date: entryDate,
+    createdAt: new Date().toISOString()
+  };
+  
+  await client.hSet(entryId, entryData);
+  await client.sAdd(`user_brainlift:${userId}`, entryId);
+  
+  return { id: entryId, ...entryData };
+}
+
+export async function getUserBrainLiftHistory(userId) {
+  const client = await getRedisClient();
+  const entryIds = await client.sMembers(`user_brainlift:${userId}`);
+  
+  const entries = [];
+  for (const entryId of entryIds) {
+    const entry = await client.hGetAll(entryId);
+    if (Object.keys(entry).length > 0) {
+      entries.push({
+        id: entryId,
+        ...entry,
+        wordCount: parseInt(entry.wordCount) || 0
+      });
+    }
+  }
+  
+  // Sort by date (newest first)
+  entries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return entries;
+}
+
+export async function getBrainLiftForDate(userId, date) {
+  const client = await getRedisClient();
+  const entryIds = await client.sMembers(`user_brainlift:${userId}`);
+  
+  for (const entryId of entryIds) {
+    const entry = await client.hGetAll(entryId);
+    if (entry.date === date) {
+      return {
+        id: entryId,
+        ...entry,
+        wordCount: parseInt(entry.wordCount) || 0
+      };
+    }
+  }
+  
+  return null;
+}
+
 // Data protection and backup functions
 export async function triggerAutomaticBackup(reason = 'manual') {
   try {
