@@ -382,8 +382,28 @@ function displayGoals(goals) {
         return;
     }
     
+    // Sort goals by status: Completed first, Active middle, Invalid/Invalidated last
+    const sortedGoals = [...goals].sort((a, b) => {
+        const statusOrder = {
+            'completed': 1,
+            'active': 2,
+            'invalidated': 3,
+            'invalid': 3
+        };
+        
+        const aOrder = statusOrder[a.status] || 4;
+        const bOrder = statusOrder[b.status] || 4;
+        
+        if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+        }
+        
+        // Within same status, sort by creation date (newest first)
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    
     // Create each goal card separately to avoid nesting issues
-    const goalCards = goals.map(goal => {
+    const goalCards = sortedGoals.map(goal => {
         const validationScores = goal.validationData ? `
             <div class="admin-validation-summary">
                 <h5>🤖 AI Validation Analysis</h5>
