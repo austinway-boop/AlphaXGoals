@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goal, brainliftContent, alphaXProject, aiQuestions, aiAnswers, validationData } = req.body;
+  const { goal, brainliftContent, alphaXProject, aiQuestions, aiAnswers, validationData, userEstimatedHours } = req.body;
   
   if (!goal) {
     return res.status(400).json({ success: false, error: 'Goal is required' });
@@ -86,6 +86,7 @@ export default async function handler(req, res) {
     console.log('Brain Lift entry saved:', brainliftEntry.id);
     
     // Save goal to Redis
+    const estimatedHours = parseFloat(userEstimatedHours) || 3;
     const goalData = {
       userId,
       goal,
@@ -93,6 +94,9 @@ export default async function handler(req, res) {
       status: 'active',
       createdAt: new Date().toISOString(),
       completedAt: null,
+      // Store user's time estimate
+      estimatedHours: estimatedHours,
+      meetsHousePointsCriteria: estimatedHours >= 2.5,
       // Store AI questions and answers if they exist
       aiQuestions: aiQuestions || null,
       aiAnswers: aiAnswers || null,

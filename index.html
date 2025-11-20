@@ -175,6 +175,22 @@
                                 <div class="form-hint">This goal will be validated against your Alpha X project</div>
                             </div>
 
+                            <!-- Time Estimate Slider -->
+                            <div class="form-group">
+                                <label for="timeEstimate">⏱️ How long will you work on this goal?</label>
+                                <div class="time-slider-container">
+                                    <input type="range" id="timeEstimate" min="0.5" max="10" step="0.5" value="3" class="time-slider">
+                                    <div class="time-display">
+                                        <span id="timeEstimateValue" class="time-value">3.0 hours</span>
+                                    </div>
+                                </div>
+                                <div class="form-hint">
+                                    <strong>Minimum 30 minutes, Maximum 10 hours.</strong> Goals under 2.5 hours won't earn house points.
+                                </div>
+                                <div id="housePointsWarning" class="form-hint hidden" style="color: var(--danger-color); font-weight: 600; margin-top: 0.5rem;">
+                                    ⚠️ This goal is under 2.5 hours and will NOT earn house points!
+                                </div>
+                            </div>
 
                             <div class="form-actions">
                                 <button type="button" class="btn btn-secondary" onclick="validateGoal()">

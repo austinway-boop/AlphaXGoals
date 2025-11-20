@@ -583,6 +583,19 @@ function displayGoals(goals) {
                             ${goal.invalidatedAt ? `<span class="invalidation-date">❌ Invalidated: ${new Date(goal.invalidatedAt).toLocaleDateString()}</span>` : ''}
                             ${goal.lastEditedBy ? `<span class="last-edited">✏️ Edited by ${escapeHtml(goal.lastEditedBy)}</span>` : ''}
                         </div>
+                        
+                        ${goal.estimatedHours ? `
+                            <div class="estimated-hours-display" style="margin-top: 1rem; padding: 1rem; border-radius: 0.5rem; ${goal.estimatedHours < 2.5 ? 'background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444;' : 'background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981;'}">
+                                <span style="font-size: 1.1rem; font-weight: 600; ${goal.estimatedHours < 2.5 ? 'color: #ef4444;' : 'color: #10b981;'}">
+                                    ⏱️ Time Estimate: ${goal.estimatedHours} hours
+                                </span>
+                                ${goal.estimatedHours < 2.5 ? `
+                                    <div style="margin-top: 0.5rem; font-weight: 600; color: #ef4444;">
+                                        ⚠️ BELOW 2.5 HOURS - DOES NOT MEET HOUSE POINTS CRITERIA
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                     
                     ${goal.status === 'invalidated' && goal.invalidationReason ? `

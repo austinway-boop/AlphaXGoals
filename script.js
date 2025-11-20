@@ -50,6 +50,35 @@ function initializeBrainLiftWordCounter() {
     }
 }
 
+// Initialize time estimate slider
+function initializeTimeSlider() {
+    const slider = document.getElementById('timeEstimate');
+    const valueDisplay = document.getElementById('timeEstimateValue');
+    const warningDiv = document.getElementById('housePointsWarning');
+    
+    if (slider && valueDisplay) {
+        slider.addEventListener('input', (e) => {
+            const hours = parseFloat(e.target.value);
+            valueDisplay.textContent = `${hours.toFixed(1)} hours`;
+            
+            // Update color based on value
+            if (hours < 2.5) {
+                valueDisplay.className = 'time-value danger';
+                if (warningDiv) warningDiv.classList.remove('hidden');
+            } else if (hours < 3.5) {
+                valueDisplay.className = 'time-value warning';
+                if (warningDiv) warningDiv.classList.add('hidden');
+            } else {
+                valueDisplay.className = 'time-value';
+                if (warningDiv) warningDiv.classList.add('hidden');
+            }
+        });
+        
+        // Trigger initial update
+        slider.dispatchEvent(new Event('input'));
+    }
+}
+
 // Brain Lift file upload removed - only text paste is supported now
 
 // Global variable to store selected completion screenshots  
@@ -824,6 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         setupGoalTextMonitoring();
         initializeBrainLiftWordCounter();
+        initializeTimeSlider();
     }, 100);
     setupEventListeners();
 });
@@ -1240,6 +1270,10 @@ async function validateGoal() {
         setTimeout(() => validateBtn.classList.remove('ai-submitting'), 600);
     }
     
+    // Get time estimate from slider
+    const timeSlider = document.getElementById('timeEstimate');
+    const estimatedHours = timeSlider ? parseFloat(timeSlider.value) : 3;
+    
     // Create and show AI loading animation
     showAILoadingAnimation();
     showLoading('Validating your goal with AI...');
@@ -1252,7 +1286,8 @@ async function validateGoal() {
             },
             body: JSON.stringify({
                 goal,
-                alphaXProject
+                alphaXProject,
+                userEstimatedHours: estimatedHours
             })
         });
         
@@ -1525,6 +1560,10 @@ async function handleGoalSubmit(e) {
         return;
     }
     
+    // Get time estimate
+    const timeSlider = document.getElementById('timeEstimate');
+    const userEstimatedHours = timeSlider ? parseFloat(timeSlider.value) : 3;
+    
     showLoading('Calculating Brain Lift word count and submitting your goal...');
     
     try {
@@ -1532,6 +1571,7 @@ async function handleGoalSubmit(e) {
         goal,
         brainliftContent,
         alphaXProject,
+        userEstimatedHours,
         // Include AI questions and answers if they exist
         aiQuestions: appState.aiQuestions || null,
         aiAnswers: appState.aiAnswers || null,

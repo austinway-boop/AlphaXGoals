@@ -28,11 +28,14 @@ export default async function handler(req, res) {
 
   let adminSession;
   try {
-    adminSession = JSON.parse(adminSessionCookie.split('=')[1]);
+    const sessionValue = adminSessionCookie.split('=')[1];
+    const decodedValue = decodeURIComponent(sessionValue);
+    adminSession = JSON.parse(decodedValue);
     if (!adminSession.isAdmin) {
       return res.status(401).json({ success: false, error: 'Admin privileges required' });
     }
   } catch (e) {
+    console.error('Admin session parse error:', e);
     return res.status(401).json({ success: false, error: 'Invalid admin session' });
   }
 
