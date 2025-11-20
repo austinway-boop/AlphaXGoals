@@ -820,6 +820,52 @@ function toggleGoalForm() {
     }
 }
 
+// AI Loading Animation
+function showAILoadingAnimation() {
+    // Remove any existing AI loader
+    const existingLoader = document.getElementById('aiLoadingAnimation');
+    if (existingLoader) {
+        existingLoader.remove();
+    }
+    
+    const loader = document.createElement('div');
+    loader.id = 'aiLoadingAnimation';
+    loader.className = 'ai-loading-container';
+    loader.innerHTML = `
+        <div class="ai-loading-content">
+            <div class="ai-brain-animation">
+                <div class="brain-pulse"></div>
+                <div class="brain-waves">
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                </div>
+            </div>
+            <div class="ai-loading-text">
+                <h3>AI is analyzing your goal...</h3>
+                <p class="loading-subtext">Evaluating ambition, measurability, and relevance</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(loader);
+    
+    // Trigger animation
+    setTimeout(() => {
+        loader.classList.add('active');
+    }, 10);
+}
+
+function hideAILoadingAnimation() {
+    const loader = document.getElementById('aiLoadingAnimation');
+    if (loader) {
+        loader.classList.remove('active');
+        setTimeout(() => {
+            loader.remove();
+        }, 300);
+    }
+}
+
 // Authentication Functions
 function switchToRegister() {
     document.getElementById('loginForm').classList.add('hidden');
@@ -1102,6 +1148,15 @@ async function validateGoal() {
         return;
     }
     
+    // Show submit animation
+    const validateBtn = document.querySelector('.btn.btn-secondary');
+    if (validateBtn) {
+        validateBtn.classList.add('ai-submitting');
+        setTimeout(() => validateBtn.classList.remove('ai-submitting'), 600);
+    }
+    
+    // Create and show AI loading animation
+    showAILoadingAnimation();
     showLoading('Validating your goal with AI...');
     
     try {
@@ -1118,6 +1173,7 @@ async function validateGoal() {
         
         const data = await response.json();
         hideLoading();
+        hideAILoadingAnimation();
         
         if (data.success) {
             appState.validationResult = data.validation;
@@ -1150,6 +1206,10 @@ async function validateGoal() {
 function displayValidationResults(validation) {
     const resultsContainer = document.getElementById('validationResults');
     const contentContainer = document.getElementById('validationContent');
+    
+    // Add response animation
+    resultsContainer.classList.add('ai-response-animation');
+    setTimeout(() => resultsContainer.classList.remove('ai-response-animation'), 800);
     
     // Check if AI has questions
     if (validation.hasQuestions && validation.questions && validation.questions.length > 0) {
