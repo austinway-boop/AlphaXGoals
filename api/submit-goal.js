@@ -54,7 +54,7 @@ export default async function handler(req, res) {
   }
   
   if (!brainliftContent || typeof brainliftContent !== 'string' || brainliftContent.trim().length === 0) {
-    return res.status(400).json({ success: false, error: 'Brain Lift content is required. Please either paste your text or upload a file with your current Brain Lift content.' });
+    return res.status(400).json({ success: false, error: 'Brain Lift content is required. Please paste your current Brain Lift content in the text area.' });
   }
   
   if (!alphaXProject) {

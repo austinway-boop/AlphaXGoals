@@ -2670,3 +2670,116 @@
     <script src="admin.js"></script>
 </body>
 </html>
+        
+        /* Brain Lift History Styles */
+        .brainlift-history-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .brainlift-history-toggle {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .brainlift-history-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+        }
+        
+        .brainlift-history-content {
+            margin-top: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 2px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: var(--surface-light);
+        }
+        
+        .brainlift-history-content.hidden {
+            display: none;
+        }
+        
+        .brainlift-history-list {
+            padding: 1rem;
+        }
+        
+        .brainlift-date-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .brainlift-date-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .brainlift-date-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(var(--primary-color-rgb), 0.1);
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .brainlift-entry {
+            background: var(--background);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .brainlift-entry:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .brainlift-entry:last-child {
+            margin-bottom: 0;
+        }
+        
+        .brainlift-entry-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .brainlift-word-count {
+            font-size: 1rem;
+            color: var(--success-color);
+        }
+        
+        .brainlift-time {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .brainlift-preview {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .brainlift-history-content {
+                max-height: 400px;
+            }
+            
+            .brainlift-entry-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }

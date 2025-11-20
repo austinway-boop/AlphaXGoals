@@ -2086,7 +2086,19 @@ function displayUsers(users) {
                     <span>Total Goals: ${goalCount}</span>
                     <span>Active: ${activeGoals}</span>
                     <span>Completed: ${completedGoals}</span>
+                    <span>Brain Lift Entries: ${user.brainliftEntryCount || 0}</span>
                 </div>
+                
+                ${user.brainliftEntryCount > 0 ? `
+                    <div class="brainlift-history-section">
+                        <button class="btn btn-secondary brainlift-history-toggle" onclick="toggleBrainLiftHistory('${escapeHtml(user.id)}')">
+                            📊 View Brain Lift History (${user.brainliftEntryCount || 0} entries)
+                        </button>
+                        <div id="brainliftHistory_${escapeHtml(user.id)}" class="brainlift-history-content hidden">
+                            <div class="loading">Loading Brain Lift history...</div>
+                        </div>
+                    </div>
+                ` : ''}
                 
                 <div class="user-actions">
                     ${!isDeleted ? `
@@ -2105,6 +2117,99 @@ function displayUsers(users) {
     });
     
     container.innerHTML = `<div class="users-grid">${userCards.join('')}</div>`;
+}
+
+// Brain Lift History Functions
+async function toggleBrainLiftHistory(userId) {
+    const historyContent = document.getElementById(`brainliftHistory_${userId}`);
+    if (!historyContent) return;
+    
+    if (historyContent.classList.contains('hidden')) {
+        // Show and load history
+        historyContent.classList.remove('hidden');
+        await loadBrainLiftHistory(userId);
+    } else {
+        // Hide history
+        historyContent.classList.add('hidden');
+    }
+}
+
+async function loadBrainLiftHistory(userId) {
+    const historyContent = document.getElementById(`brainliftHistory_${userId}`);
+    if (!historyContent) return;
+    
+    historyContent.innerHTML = '<div class="loading">Loading Brain Lift history...</div>';
+    
+    try {
+        const response = await fetch(`/api/admin-brainlift-history?userId=${encodeURIComponent(userId)}`);
+        const data = await response.json();
+        
+        if (data.success && data.groupedByDate) {
+            displayBrainLiftHistory(historyContent, data.groupedByDate);
+        } else {
+            historyContent.innerHTML = `
+                <div class="no-data-message">
+                    <p>Unable to load Brain Lift history</p>
+                    <p class="error-text">${data.error || 'Unknown error'}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading Brain Lift history:', error);
+        historyContent.innerHTML = `
+            <div class="no-data-message">
+                <p>Failed to load Brain Lift history</p>
+                <p class="error-text">Network error</p>
+            </div>
+        `;
+    }
+}
+
+function displayBrainLiftHistory(container, groupedByDate) {
+    if (!groupedByDate || Object.keys(groupedByDate).length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <p>No Brain Lift entries found</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort dates in descending order (newest first)
+    const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+    
+    const historyHTML = sortedDates.map(date => {
+        const entries = groupedByDate[date];
+        const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        return `
+            <div class="brainlift-date-group">
+                <h5 class="brainlift-date-header">📅 ${formattedDate}</h5>
+                ${entries.map(entry => `
+                    <div class="brainlift-entry">
+                        <div class="brainlift-entry-info">
+                            <span class="brainlift-word-count">📊 <strong>${entry.wordCount} words</strong></span>
+                            <span class="brainlift-time">🕐 ${new Date(entry.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="brainlift-preview">
+                            ${escapeHtml(entry.content).substring(0, 150)}${entry.content.length > 150 ? '...' : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = `
+        <div class="brainlift-history-list">
+            ${historyHTML}
+        </div>
+    `;
 }
 
 // User removal function

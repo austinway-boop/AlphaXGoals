@@ -22,42 +22,8 @@ function fileToBase64(file) {
 
 // Brain Lift content handling functions
 function getBrainLiftContent() {
-    // Check which tab is active
-    const textTab = document.getElementById('brainliftTextTab');
-    const fileTab = document.getElementById('brainliftFileTab');
-    
-    if (textTab && textTab.classList.contains('active')) {
-        const textarea = document.getElementById('brainliftContent');
-        return textarea ? textarea.value.trim() : '';
-    } else if (fileTab && fileTab.classList.contains('active')) {
-        // Return stored file content
-        return window.brainliftFileContent || '';
-    }
-    
-    return '';
-}
-
-function switchBrainLiftTab(tabType) {
-    const textTab = document.getElementById('brainliftTextTab');
-    const fileTab = document.getElementById('brainliftFileTab');
-    const textBtn = document.querySelector('.upload-tab[onclick*="text"]');
-    const fileBtn = document.querySelector('.upload-tab[onclick*="file"]');
-    
-    if (tabType === 'text') {
-        textTab?.classList.add('active');
-        textTab?.classList.remove('hidden');
-        fileTab?.classList.remove('active');
-        fileTab?.classList.add('hidden');
-        textBtn?.classList.add('active');
-        fileBtn?.classList.remove('active');
-    } else if (tabType === 'file') {
-        fileTab?.classList.add('active');
-        fileTab?.classList.remove('hidden');
-        textTab?.classList.remove('active');
-        textTab?.classList.add('hidden');
-        fileBtn?.classList.add('active');
-        textBtn?.classList.remove('active');
-    }
+    const textarea = document.getElementById('brainliftContent');
+    return textarea ? textarea.value.trim() : '';
 }
 
 function countWords(text) {
@@ -84,100 +50,7 @@ function initializeBrainLiftWordCounter() {
     }
 }
 
-// Initialize Brain Lift file upload
-function initializeBrainLiftFileUpload() {
-    const fileInput = document.getElementById('brainliftFile');
-    const dropzone = document.getElementById('brainliftDropzone');
-    
-    if (!fileInput || !dropzone) return;
-    
-    // Click to upload
-    dropzone.addEventListener('click', () => {
-        fileInput.click();
-    });
-    
-    // File selected
-    fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            await processBrainLiftFile(file);
-        }
-    });
-    
-    // Drag and drop
-    dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropzone.classList.add('drag-active');
-    });
-    
-    dropzone.addEventListener('dragleave', () => {
-        dropzone.classList.remove('drag-active');
-    });
-    
-    dropzone.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('drag-active');
-        
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            await processBrainLiftFile(file);
-        }
-    });
-}
-
-async function processBrainLiftFile(file) {
-    // Check file type
-    const validTypes = ['.txt', '.doc', '.docx'];
-    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-    
-    if (!validTypes.includes(fileExt)) {
-        showToast('Please upload a TXT, DOC, or DOCX file', 'warning');
-        return;
-    }
-    
-    // Check file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('File is too large. Please use a file under 5MB', 'warning');
-        return;
-    }
-    
-    showLoading('Reading file...');
-    
-    try {
-        const text = await readFileAsText(file);
-        window.brainliftFileContent = text;
-        
-        const wordCount = countWords(text);
-        
-        // Show file preview
-        document.getElementById('brainliftFileName').textContent = file.name;
-        document.getElementById('brainliftFileWordCount').textContent = `${wordCount} words`;
-        document.getElementById('brainliftFilePreview').classList.remove('hidden');
-        
-        hideLoading();
-        showToast(`File loaded: ${wordCount} words`, 'success');
-    } catch (error) {
-        hideLoading();
-        showToast('Failed to read file. Please try again.', 'error');
-        console.error('File reading error:', error);
-    }
-}
-
-function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = (e) => reject(e);
-        reader.readAsText(file);
-    });
-}
-
-function removeBrainLiftFile() {
-    window.brainliftFileContent = '';
-    document.getElementById('brainliftFile').value = '';
-    document.getElementById('brainliftFilePreview').classList.add('hidden');
-    showToast('File removed', 'info');
-}
+// Brain Lift file upload removed - only text paste is supported now
 
 // Global variable to store selected completion screenshots  
 let selectedCompletionScreenshots = [];
@@ -950,7 +823,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         setupGoalTextMonitoring();
         initializeBrainLiftWordCounter();
-        initializeBrainLiftFileUpload();
     }, 100);
     setupEventListeners();
 });
@@ -1648,7 +1520,7 @@ async function handleGoalSubmit(e) {
     
     // Validate Brain Lift content
     if (!brainliftContent || brainliftContent.trim().length === 0) {
-        showToast('Please provide your current Brain Lift content (paste text OR upload a file)', 'warning');
+        showToast('Please paste your current Brain Lift content', 'warning');
         return;
     }
     
