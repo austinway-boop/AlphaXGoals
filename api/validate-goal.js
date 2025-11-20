@@ -3,11 +3,15 @@ import axios from 'axios';
 
 export default async function handler(req, res) {
   console.log('=== VALIDATE GOAL API CALLED ===');
+  console.log('Request Method:', req.method);
+  console.log('Request Headers:', JSON.stringify(req.headers));
+  console.log('Request Body:', JSON.stringify(req.body));
   
   try {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', 'https://alpha-x-goals.vercel.app');
+    const origin = req.headers.origin || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
       'Access-Control-Allow-Headers',
@@ -284,10 +288,12 @@ Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevan
     res.json({ success: true, validation });
 
   } catch (error) {
-    console.error('Error in validate-goal:', {
+    console.error('❌ CRITICAL ERROR in validate-goal:', {
       message: error.message,
+      stack: error.stack,
       status: error.response?.status,
-      data: error.response?.data
+      data: error.response?.data,
+      code: error.code
     });
     
     let errorMessage = 'Failed to validate goal. Please try again.';
@@ -299,10 +305,18 @@ Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevan
       errorMessage = 'Request timed out. Please try again.';
     }
 
-    res.status(500).json({ 
-      success: false, 
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    try {
+      res.status(500).json({ 
+        success: false, 
+        error: errorMessage,
+        details: error.message,
+        stack: error.stack?.split('\n').slice(0, 3).join('\n')
+      });
+    } catch (responseError) {
+      console.error('❌ FAILED TO SEND ERROR RESPONSE:', responseError);
+      if (!res.headersSent) {
+        res.status(500).send('Internal Server Error');
+      }
+    }
   }
 }
