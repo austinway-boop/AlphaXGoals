@@ -466,6 +466,11 @@ function displayGoals(goals) {
                         <strong>👤 ${escapeHtml(goal.user.username)}</strong>
                         <span class="house-badge house-${goal.user.house || 'none'}">${getHouseDisplay(goal.user.house)}</span>
                         <div class="goal-status ${goal.status}">${goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}</div>
+                        ${goal.estimatedHours ? `
+                            <div class="goal-time-badge" style="background: ${goal.estimatedHours < 2.5 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; border: 2px solid ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'}; color: ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'}; font-weight: 700;">
+                                ⏱️ ${goal.estimatedHours}h ${goal.estimatedHours < 2.5 ? '(No HP)' : ''}
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="expand-indicator">
                         <span class="expand-arrow" id="arrow-${escapeHtml(goal.id)}">▼</span>
