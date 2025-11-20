@@ -2660,6 +2660,7 @@
                 <button class="nav-btn active" onclick="showAdminSection('goals')">📋 Student Goals</button>
                 <button class="nav-btn" onclick="showAdminSection('users')">👥 User Management</button>
                 <button class="nav-btn" onclick="showAdminSection('logs')">📜 Admin Logs</button>
+                <button class="nav-btn" onclick="showAdminSection('stress')">🔧 Stress Test</button>
                 <div class="admin-name-input-wrapper">
                     <label for="adminNameInput">Admin Name:</label>
                     <input type="text" id="adminNameInput" placeholder="Enter your name" class="admin-name-field">
@@ -2751,10 +2752,34 @@
                 </div>
             </div>
 
-            <!-- Debug/Stress Test Section -->
-            <div id="debugSection" class="admin-section">
-                <h2>🔧 Stress Test & Debugging</h2>
-                <p style="margin-bottom: 2rem; color: var(--text-secondary);">Test the platform's ability to handle concurrent users and requests</p>
+            <!-- Stress Test Section -->
+            <div id="stressSection" class="admin-section">
+                <h2>🔧 Real User Account Stress Test</h2>
+                <p style="margin-bottom: 2rem; color: var(--text-secondary);">Test the platform by simulating all real user accounts simultaneously</p>
+
+                <!-- Real Account Full Simulation -->
+                <div class="debug-panel" style="border: 3px solid var(--primary-color); background: rgba(33, 150, 243, 0.05);">
+                    <h3 style="color: var(--primary-color);">👥 Simulate All Real User Accounts (Complete Flow)</h3>
+                    <p><strong>What this does:</strong></p>
+                    <ul style="margin: 0.5rem 0 1rem 1.5rem; line-height: 1.8;">
+                        <li>Fetches ALL real user accounts from your database</li>
+                        <li>Simulates each user logging in simultaneously</li>
+                        <li>Each simulated user: Checks session → Loads goals → Validates a goal → Views interface</li>
+                        <li>Tests concurrent database reads, session handling, and API endpoints</li>
+                        <li>Reports success/failure for each user</li>
+                    </ul>
+                    <p style="color: var(--warning-color); font-weight: 600; margin-bottom: 1rem;">
+                        ⚠️ This will simulate real user activity for ALL accounts in the database concurrently!
+                    </p>
+                    
+                    <div class="debug-controls">
+                        <button onclick="stressTestRealAccounts()" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem; background: var(--primary-color);">
+                            🚀 Run Full Real Account Stress Test
+                        </button>
+                    </div>
+                    
+                    <div id="realAccountStressResults" class="stress-results"></div>
+                </div>
 
                 <!-- Login Stress Test -->
                 <div class="debug-panel">

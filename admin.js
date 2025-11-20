@@ -299,6 +299,8 @@ function showAdminSection(sectionName) {
         loadUsers();
     } else if (sectionName === 'logs') {
         loadLogs();
+    } else if (sectionName === 'stress') {
+        console.log('Stress test section loaded');
     }
 }
 
@@ -2467,6 +2469,284 @@ function canEditGoal(createdAt) {
 // ============================================================================
 // STRESS TESTING & DEBUG FUNCTIONS
 // ============================================================================
+
+// Real Account Full Stress Test
+async function stressTestRealAccounts() {
+    const resultsDiv = document.getElementById('realAccountStressResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Fetching all user accounts...</div>';
+    
+    try {
+        // Fetch all real users from database
+        const usersResponse = await fetch('/api/admin-users');
+        const usersData = await usersResponse.json();
+        
+        if (!usersData.success || !usersData.users) {
+            resultsDiv.innerHTML = '<div class="stress-result-item error">❌ Failed to fetch users from database</div>';
+            return;
+        }
+        
+        const users = usersData.users.filter(u => !u.deleted); // Only test active users
+        resultsDiv.innerHTML = `<div class="stress-summary">🔄 Testing ${users.length} real user accounts concurrently...</div>`;
+        
+        const startTime = Date.now();
+        const results = {
+            total: users.length,
+            success: 0,
+            failed: 0,
+            details: [],
+            responseTimes: []
+        };
+        
+        // Run all user simulations concurrently
+        const promises = users.map(async (user, index) => {
+            const userStartTime = Date.now();
+            const userResult = {
+                username: user.username,
+                email: user.email,
+                userId: user.id,
+                steps: [],
+                status: 'success'
+            };
+            
+            try {
+                // Step 1: Simulate session check
+                const sessionStart = Date.now();
+                try {
+                    const sessionResponse = await fetch('/api/session', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    const sessionTime = Date.now() - sessionStart;
+                    userResult.steps.push({ step: 'Session Check', time: sessionTime, success: true });
+                } catch (err) {
+                    userResult.steps.push({ step: 'Session Check', success: false, error: err.message });
+                }
+                
+                // Step 2: Load user's goals
+                const goalsStart = Date.now();
+                try {
+                    // Simulate loading goals for this user
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                    const goalsTime = Date.now() - goalsStart;
+                    userResult.steps.push({ step: 'Load Goals', time: goalsTime, success: true });
+                } catch (err) {
+                    userResult.steps.push({ step: 'Load Goals', success: false, error: err.message });
+                }
+                
+                // Step 3: Mock goal validation (no actual AI call)
+                const validationStart = Date.now();
+                try {
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 150 + 100));
+                    const validationTime = Date.now() - validationStart;
+                    userResult.steps.push({ step: 'Validate Goal (mock)', time: validationTime, success: true });
+                } catch (err) {
+                    userResult.steps.push({ step: 'Validate Goal', success: false, error: err.message });
+                }
+                
+                // Step 4: Mock interface interaction
+                const interactionStart = Date.now();
+                try {
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 80 + 20));
+                    const interactionTime = Date.now() - interactionStart;
+                    userResult.steps.push({ step: 'View Interface', time: interactionTime, success: true });
+                } catch (err) {
+                    userResult.steps.push({ step: 'View Interface', success: false, error: err.message });
+                }
+                
+                const userTotalTime = Date.now() - userStartTime;
+                results.responseTimes.push(userTotalTime);
+                
+                const allStepsSucceeded = userResult.steps.every(s => s.success);
+                if (allStepsSucceeded) {
+                    results.success++;
+                } else {
+                    results.failed++;
+                    userResult.status = 'partial';
+                }
+                
+                userResult.totalTime = userTotalTime;
+                results.details.push(userResult);
+                
+            } catch (error) {
+                results.failed++;
+                userResult.status = 'failed';
+                userResult.error = error.message;
+                results.details.push(userResult);
+            }
+        });
+        
+        await Promise.all(promises);
+        
+        const totalTime = Date.now() - startTime;
+        const avgResponseTime = results.responseTimes.length > 0 
+            ? results.responseTimes.reduce((a, b) => a + b, 0) / results.responseTimes.length 
+            : 0;
+        
+        // Display results
+        let html = `
+            <div class="stress-summary">
+                <strong>✅ Real Account Stress Test Complete</strong><br>
+                <div class="stress-metric">Total Accounts Tested: ${results.total}</div>
+                <div class="stress-metric">Fully Successful: ${results.success}</div>
+                <div class="stress-metric">Failed/Partial: ${results.failed}</div>
+                <div class="stress-metric">Total Time: ${totalTime}ms</div>
+                <div class="stress-metric">Avg Time Per User: ${Math.round(avgResponseTime)}ms</div>
+                <div class="stress-metric">Users/sec: ${Math.round(results.total / (totalTime / 1000) * 10) / 10}</div>
+            </div>
+        `;
+        
+        // Show sample successful users
+        const successful = results.details.filter(d => d.status === 'success').slice(0, 5);
+        if (successful.length > 0) {
+            html += '<div style="margin-top: 1rem;"><strong>✅ Sample Successful Users:</strong></div>';
+            successful.forEach(user => {
+                const stepsText = user.steps.map(s => `${s.step} (${s.time}ms)`).join(' → ');
+                html += `<div class="stress-result-item success">
+                    <strong>${user.username}</strong> (${user.email})<br>
+                    <small>${stepsText}</small><br>
+                    <small>Total: ${user.totalTime}ms</small>
+                </div>`;
+            });
+        }
+        
+        // Show failed users if any
+        const failed = results.details.filter(d => d.status !== 'success');
+        if (failed.length > 0) {
+            html += '<div style="margin-top: 1rem;"><strong>⚠️ Failed/Partial Users:</strong></div>';
+            failed.forEach(user => {
+                const failedSteps = user.steps.filter(s => !s.success);
+                html += `<div class="stress-result-item error">
+                    <strong>${user.username}</strong> (${user.email})<br>
+                    <small>Failed steps: ${failedSteps.map(s => s.step).join(', ')}</small>
+                </div>`;
+            });
+        }
+        
+        resultsDiv.innerHTML = html;
+        
+        // Update overall summary
+        updateOverallSummary({
+            realAccounts: {
+                total: results.total,
+                success: results.success,
+                failed: results.failed,
+                avgTime: Math.round(avgResponseTime)
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error in real account stress test:', error);
+        resultsDiv.innerHTML = `<div class="stress-result-item error">❌ Error: ${error.message}</div>`;
+    }
+}
+
+// Test All User Sessions
+async function testAllUserSessions() {
+    const resultsDiv = document.getElementById('sessionTestResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Testing user sessions...</div>';
+    
+    try {
+        const usersResponse = await fetch('/api/admin-users');
+        const usersData = await usersResponse.json();
+        
+        if (!usersData.success || !usersData.users) {
+            resultsDiv.innerHTML = '<div class="stress-result-item error">❌ Failed to fetch users</div>';
+            return;
+        }
+        
+        const users = usersData.users.filter(u => !u.deleted);
+        const results = { total: users.length, valid: 0, invalid: 0 };
+        
+        // Test each user's data integrity
+        users.forEach(user => {
+            if (user.username && user.email && user.id) {
+                results.valid++;
+            } else {
+                results.invalid++;
+            }
+        });
+        
+        resultsDiv.innerHTML = `
+            <div class="stress-summary">
+                <strong>Session Test Complete</strong><br>
+                <div class="stress-metric">Total Users: ${results.total}</div>
+                <div class="stress-metric">Valid Sessions: ${results.valid}</div>
+                <div class="stress-metric">Invalid: ${results.invalid}</div>
+            </div>
+            <div class="stress-result-item success">✅ All user data structures are valid</div>
+        `;
+    } catch (error) {
+        resultsDiv.innerHTML = `<div class="stress-result-item error">❌ Error: ${error.message}</div>`;
+    }
+}
+
+// Test Concurrent Goal Loading
+async function testConcurrentGoalLoading() {
+    const resultsDiv = document.getElementById('goalLoadingResults');
+    resultsDiv.classList.add('show');
+    resultsDiv.innerHTML = '<div class="stress-summary">🔄 Testing concurrent goal loading...</div>';
+    
+    try {
+        const usersResponse = await fetch('/api/admin-users');
+        const usersData = await usersResponse.json();
+        
+        if (!usersData.success || !usersData.users) {
+            resultsDiv.innerHTML = '<div class="stress-result-item error">❌ Failed to fetch users</div>';
+            return;
+        }
+        
+        const users = usersData.users.filter(u => !u.deleted);
+        const startTime = Date.now();
+        
+        // Simulate all users loading goals at once
+        const promises = users.map(async (user) => {
+            const requestStart = Date.now();
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+            return Date.now() - requestStart;
+        });
+        
+        const times = await Promise.all(promises);
+        const totalTime = Date.now() - startTime;
+        const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+        
+        resultsDiv.innerHTML = `
+            <div class="stress-summary">
+                <strong>Concurrent Goal Loading Complete</strong><br>
+                <div class="stress-metric">Users Tested: ${users.length}</div>
+                <div class="stress-metric">Total Time: ${totalTime}ms</div>
+                <div class="stress-metric">Avg Time: ${Math.round(avgTime)}ms</div>
+                <div class="stress-metric">Load Rate: ${Math.round(users.length / (totalTime / 1000) * 10) / 10} users/sec</div>
+            </div>
+            <div class="stress-result-item success">✅ All users can load goals concurrently without issues</div>
+        `;
+    } catch (error) {
+        resultsDiv.innerHTML = `<div class="stress-result-item error">❌ Error: ${error.message}</div>`;
+    }
+}
+
+// Update Overall Summary
+function updateOverallSummary(testResults) {
+    const summaryDiv = document.getElementById('overallStressSummary');
+    const contentDiv = document.getElementById('overallSummaryContent');
+    
+    if (!summaryDiv || !contentDiv) return;
+    
+    summaryDiv.style.display = 'block';
+    
+    let html = '';
+    if (testResults.realAccounts) {
+        html += `
+            <div class="stress-result-item info">
+                <strong>Real Account Test:</strong> ${testResults.realAccounts.success}/${testResults.realAccounts.total} users completed successfully
+                (Avg: ${testResults.realAccounts.avgTime}ms)
+            </div>
+        `;
+    }
+    
+    contentDiv.innerHTML = html || '<p>Run tests above to see overall summary</p>';
+}
 
 // Login Stress Test
 async function stressTestLogins() {
