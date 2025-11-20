@@ -1520,35 +1520,45 @@ function displayGoals(goals) {
         
         return `
             <div class="goal-card-minimal${isToday ? ' today-goal' : ''}${goal.status === 'completed' ? ' completed' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
+                ${isToday ? '<div class="today-badge">Today</div>' : ''}
+                
                 <div class="goal-header-minimal">
-                    <div class="goal-status-minimal ${goal.status}">
-                        ${goal.status === 'completed' ? '✅' : goal.status === 'active' ? '🎯' : '❌'}
+                    <div class="goal-status-badge ${goal.status}">
+                        ${goal.status === 'completed' ? 'Completed' : goal.status === 'active' ? 'Active' : 'Inactive'}
                     </div>
-                    <div class="goal-content-wrapper">
-                        <div class="goal-title">
-                            ${escapeHtml(goal.goal)}
+                </div>
+                
+                <div class="goal-content-wrapper">
+                    <div class="goal-title">
+                        ${escapeHtml(goal.goal)}
+                    </div>
+                    
+                    ${goal.validationData ? `
+                        <div class="scores-minimal">
+                            <span class="score-badge ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}">
+                                Ambition: ${goal.validationData.ambitionScore}/5
+                            </span>
+                            <span class="score-badge ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}">
+                                Measurable: ${goal.validationData.measurableScore}/10
+                            </span>
+                            <span class="score-badge ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}">
+                                Relevance: ${goal.validationData.relevanceScore}/10
+                            </span>
                         </div>
-                        ${goal.validationData ? `
-                            <div class="scores-minimal">
-                                <span class="score-mini ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}" title="Ambition: ${goal.validationData.ambitionScore || 0}/5">💪 ${goal.validationData.ambitionScore || 0}</span>
-                                <span class="score-mini ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}" title="Measurable: ${goal.validationData.measurableScore || 0}/10">📏 ${goal.validationData.measurableScore || 0}</span>
-                                <span class="score-mini ${goal.validationData.relevanceScore >= 8 ? 'pass' : 'fail'}" title="Relevance: ${goal.validationData.relevanceScore || 0}/10">🎯 ${goal.validationData.relevanceScore || 0}</span>
-                            </div>
-                        ` : ''}
-                    </div>
+                    ` : ''}
                 </div>
                 
                 <div class="goal-footer-minimal">
                     <div class="goal-meta-minimal">
-                        <span class="date-created">📅 ${createdDate}</span>
-                        ${completedDate ? `<span class="date-completed">🎉 ${completedDate}</span>` : ''}
+                        <span class="date-label">Created: ${createdDate}</span>
+                        ${completedDate ? `<span class="date-label">Completed: ${completedDate}</span>` : ''}
                     </div>
                     
                     <div class="goal-actions-minimal">
                     ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
-                            <button class="btn-edit-minimal" onclick="editUserGoal('${goal.id}')" title="Edit goal">
-                                ✏️ Edit
-                            </button>
+                        <button class="btn-edit-minimal" onclick="editUserGoal('${goal.id}')" title="Edit goal">
+                            Edit
+                        </button>
                         <button class="btn-complete-minimal" onclick="showCompletionModal('${goal.id}')">
                             Complete
                         </button>

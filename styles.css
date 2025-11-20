@@ -1269,38 +1269,52 @@ body {
 }
 
 .goal-card-minimal.today-goal {
-    background: linear-gradient(135deg, #fef3c7, #fde68a);
-    border-color: #f59e0b;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
-    margin-top: 1.5rem;
+    border-left: 4px solid #3b82f6;
+    background: var(--surface);
 }
 
-.goal-card-minimal.today-goal::before {
-    content: "⭐ Today";
-    position: absolute;
-    top: -10px;
-    left: 1rem;
-    background: var(--warning-color);
+.today-badge {
+    display: inline-block;
+    background: #3b82f6;
     color: white;
     padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
+    border-radius: 0.375rem;
     font-size: 0.75rem;
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
-    z-index: 2;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .goal-header-minimal {
     display: flex;
     align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
-.goal-status-minimal {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-    margin-top: 0.25rem;
+.goal-status-badge {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.goal-status-badge.completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.goal-status-badge.active {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.goal-status-badge.inactive {
+    background: #f3f4f6;
+    color: #6b7280;
 }
 
 .goal-content-wrapper {
@@ -1331,6 +1345,12 @@ body {
     gap: 1rem;
     font-size: 0.85rem;
     color: var(--text-secondary);
+}
+
+.date-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .goal-actions-minimal {
@@ -1387,26 +1407,31 @@ body {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    margin-top: 0.75rem;
 }
 
-.score-mini {
-    padding: 0.35rem 0.75rem;
-    border-radius: 1rem;
-    display: flex;
+.score-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.813rem;
+    font-weight: 500;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
     font-size: 0.75rem;
     font-weight: 600;
     color: white;
 }
 
-.score-mini.pass {
-    background: var(--success-color);
+.score-badge.pass {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
 }
 
-.score-mini.fail {
-    background: var(--danger-color);
+.score-badge.fail {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
 }
 
 /* Goal Screenshots Display */
