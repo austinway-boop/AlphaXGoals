@@ -197,9 +197,13 @@ AMBITION STANDARDS (4/5 required) - SCALED BY TIME:
 - Score based on whether the ACTUAL work scope matches the TIME ESTIMATE
 - If goal scope matches their time estimate: Give appropriate ambition score
 - If goal is too small for time estimate: Lower ambition score
-- If goal is too large for time estimate: Note it in feedback but don't penalize
+- **CRITICAL: If goal is LARGER/MORE AMBITIOUS than time estimate: ALWAYS APPROVE IT!**
+  * NEVER penalize overambition - just note it in feedback as impressive
+  * Example: 1 hour claimed, 3 hours of work planned = APPROVE with 5/5 ambition!
+  * Example: 30 min claimed, 1000 words BrainLift = APPROVE with 5/5 ambition!
 - Goals requiring 3+ hours of work = 4/5 minimum (if they claim 3+ hours)
 - Shorter goals are acceptable if time estimate is shorter!
+- **Being TOO ambitious is ALWAYS GOOD - never reject for this reason**
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
@@ -239,11 +243,13 @@ Score on these categories:
 SCORING STRATEGY (TIME-AWARE):
 - AMBITION: 
   * Student claims ${userTimeEstimate} hours
-  * If work scope matches or exceeds their time estimate: 4/5 or 5/5
+  * If work scope MATCHES or EXCEEDS their time estimate: 4/5 or 5/5 (ALWAYS APPROVE)
   * If work scope is too small for their time estimate: 2/5 or 3/5
+  * **NEVER PENALIZE OVERAMBITION:** If they're planning more work than time allows = 5/5 ambition!
   * Don't penalize shorter goals if they're realistic for the time allocated
-  * Example: 30 min goal with 200 words BrainLift = VALID if scope matches 30 min
-  * Example: 5 hour goal with 200 words BrainLift = INVALID (too small for time)
+  * Example: 30 min goal with 200 words BrainLift = VALID (4/5)
+  * Example: 30 min goal with 1000 words BrainLift = SUPER VALID (5/5 - overambitious!)
+  * Example: 5 hour goal with 200 words BrainLift = INVALID (2/5 - too small for time)
   
 - MEASURABLE: If it has numbers/specifics, automatically give 8/10+
 

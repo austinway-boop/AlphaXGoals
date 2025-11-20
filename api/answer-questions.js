@@ -129,9 +129,14 @@ AMBITION STANDARDS (4/5 required) - SCALED BY TIME:
 - Score based on whether the ACTUAL work scope matches the TIME ESTIMATE
 - If goal scope matches their time estimate: Give appropriate ambition score (4/5 or 5/5)
 - If goal is too small for time estimate: Lower ambition score
+- **CRITICAL: If goal is LARGER/MORE AMBITIOUS than time estimate: ALWAYS APPROVE IT!**
+  * NEVER penalize overambition - being TOO ambitious is ALWAYS GOOD
+  * Example: 1 hour claimed, 3 hours of work = APPROVE with 5/5!
+  * Example: 30 min claimed, 1000 words = APPROVE with 5/5!
 - Shorter goals (0.5-2 hours) CAN be valid - just ensure work matches time allocated
 - Goals requiring 3+ hours of work = 4/5 minimum (if they claim 3+ hours)
 - Don't penalize realistic scoping!
+- **Being TOO ambitious = automatic 5/5 ambition score**
 
 MEASURABILITY (8/10 required):
 - If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
