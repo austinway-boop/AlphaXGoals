@@ -104,7 +104,6 @@ export default async function handler(req, res) {
       startingBrainLiftDate: today,
       endingWordCount: null,
       endingBrainLiftDate: null,
-      contentPreview: contentPreview,
       wordCountCalculatedAt: new Date().toISOString()
     };
     
