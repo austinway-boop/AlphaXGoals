@@ -53,11 +53,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Goal ID is required' });
   }
   
-  // Require screenshots, text proof, and Brain Lift content
-  if (!screenshotDataArray || !Array.isArray(screenshotDataArray) || screenshotDataArray.length === 0) {
-    return res.status(400).json({ success: false, error: 'Screenshots are required to complete a goal' });
-  }
-  
+  // Require text proof and Brain Lift content (screenshots are optional)
   if (!textProof || textProof.trim().length === 0) {
     return res.status(400).json({ success: false, error: 'Text description is required to complete a goal' });
   }
@@ -139,16 +135,17 @@ export default async function handler(req, res) {
     console.log('Ending Brain Lift entry saved:', endingBrainliftEntry.id);
 
     // Update goal status to completed with proof
-    // NOTE: Screenshots are NOT stored in Redis to save storage space
+    // NOTE: Screenshots are optional and NOT stored in Redis to save storage space
     // We only store that screenshots were provided and the count
+    const hasScreenshots = screenshotDataArray && Array.isArray(screenshotDataArray) && screenshotDataArray.length > 0;
     const updateData = {
       status: 'completed',
       completedAt: new Date().toISOString(),
       // screenshotDataArray: REMOVED - not storing base64 data to save storage
       textProof: textProof.trim(),
-      hasScreenshots: true,
+      hasScreenshots: hasScreenshots,
       hasTextProof: true,
-      screenshotCount: screenshotDataArray.length,
+      screenshotCount: hasScreenshots ? screenshotDataArray.length : 0,
       // Add ending Brain Lift data
       endingBrainLiftEntryId: endingBrainliftEntry.id,
       endingWordCount: endingWordCount,

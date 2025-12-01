@@ -393,14 +393,14 @@ function showCompletionModal(goalId) {
                 </div>
                 
                 <div class="completion-instructions">
-                    <p class="completion-intro">Show us what you accomplished today! All three sections below are required to complete your goal.</p>
+                    <p class="completion-intro">Complete your goal by providing the required information below.</p>
                 </div>
                 
                 <div class="proof-tabs">
                     <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="text" onclick="switchProofTab('text')">📝 1. Write What You Did Today</button>
-                        <button class="tab-btn" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 2. Upload Screenshots</button>
-                        <button class="tab-btn" data-tab="brainlift" onclick="switchProofTab('brainlift')">🧠 3. Upload Updated Brain Lift</button>
+                        <button class="tab-btn active" data-tab="text" onclick="switchProofTab('text')">📝 1. What You Did Today (Required)</button>
+                        <button class="tab-btn" data-tab="brainlift" onclick="switchProofTab('brainlift')">🧠 2. Updated Brain Lift (Required)</button>
+                        <button class="tab-btn" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 3. Screenshots (Optional)</button>
                     </div>
                     
                     <!-- Text Proof Tab (now first) -->
@@ -423,12 +423,12 @@ function showCompletionModal(goalId) {
                         </div>
                     </div>
                     
-                    <!-- Screenshot Tab (now second) -->
+                    <!-- Screenshot Tab (now third and optional) -->
                     <div id="screenshotTab" class="proof-tab hidden">
-                        <h5>📷 Upload Screenshots to Prove What You Did Today</h5>
-                        <p class="tab-description">Upload images that show your completed work:</p>
+                        <h5>📷 Upload Screenshots (Optional)</h5>
+                        <p class="tab-description">Screenshots are optional but can help document your progress:</p>
                         <div class="example-box">
-                            <strong>Examples of good screenshots:</strong> Progress dashboards, completed assignments, code submissions, published content, finished projects, learning progress, certificates earned, or any visual proof of your work.
+                            <strong>Examples:</strong> Progress dashboards, completed assignments, code submissions, published content, or any visual proof of your work.
                         </div>
                         
                         <div class="file-upload-wrapper">
@@ -451,12 +451,12 @@ function showCompletionModal(goalId) {
                         </div>
                     </div>
                     
-                    <!-- Brain Lift Tab (third) -->
+                    <!-- Brain Lift Tab (second and required) -->
                     <div id="brainliftTab" class="proof-tab hidden">
-                        <h5>🧠 Upload Your Updated Brain Lift Content</h5>
+                        <h5>🧠 Upload Your Updated Brain Lift Content (Required)</h5>
                         <p class="tab-description">Paste your current Brain Lift content so we can compare word counts:</p>
                         <div class="example-box">
-                            <strong>Important:</strong> This should be your complete, current Brain Lift with all today's additions and updates. We'll compare the word count with your starting Brain Lift to measure your progress.
+                            <strong>Required:</strong> Paste your complete, current Brain Lift with all today's additions and updates. We'll compare the word count with your starting Brain Lift to measure your progress.
                         </div>
                         
                         <textarea id="completionBrainLift" rows="8" placeholder="Paste your complete, updated Brain Lift content here..." class="completion-textarea"></textarea>
@@ -475,11 +475,11 @@ function showCompletionModal(goalId) {
                 <div class="completion-requirement">
                     <div class="requirement-box">
                         <p><strong>📝 Ready to Complete Your Goal?</strong></p>
-                        <p>Make sure you've completed all three sections above:</p>
+                        <p>Make sure you've completed the required sections:</p>
                         <ul style="text-align: left; margin-top: 0.5rem;">
-                            <li>✍️ Written description of what you did</li>
-                            <li>📷 Screenshots of your work</li>
-                            <li>🧠 Updated Brain Lift content</li>
+                            <li>✍️ Written description of what you did (Required)</li>
+                            <li>🧠 Updated Brain Lift content (Required)</li>
+                            <li>📷 Screenshots of your work (Optional)</li>
                         </ul>
                         </div>
                 </div>
@@ -692,16 +692,10 @@ async function confirmCompletion() {
     const textProof = document.getElementById('completionText')?.value.trim();
     const brainliftContent = document.getElementById('completionBrainLift')?.value.trim();
     
-    // All three sections are required
+    // Require text proof and Brain Lift content (screenshots are optional)
     if (!textProof || textProof.length === 0) {
         showErrorOutsideModal('Please write what you did today - describe how you completed this goal');
         switchProofTab('text');
-        return;
-    }
-    
-    if (!screenshotFiles || screenshotFiles.length === 0) {
-        showErrorOutsideModal('Please upload screenshots to prove what you did today - at least one image is required');
-        switchProofTab('screenshot');
         return;
     }
     

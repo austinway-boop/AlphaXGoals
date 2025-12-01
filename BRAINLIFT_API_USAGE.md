@@ -145,3 +145,5 @@ Your BrainLift extraction now:
 - ✅ Integrated into your existing API
 
 **Ready to use!** Students can now submit BrainLift goals and the system will correctly extract content from only the relevant sections!
+
+
