@@ -240,12 +240,8 @@ function updateCompletionScreenshotPreview() {
     const container = document.getElementById('imagePreviewContainer');
     const dropzone = document.getElementById('completionDropzone');
     
-    console.log('Completion preview element found:', !!preview);
-    console.log('Completion container element found:', !!container);
-    console.log('Completion dropzone element found:', !!dropzone);
-    
+    // Silently return if modal elements don't exist (modal may have been closed)
     if (!preview || !container || !dropzone) {
-        console.error('Missing required elements for completion screenshot preview update');
                 return;
             }
             
@@ -748,6 +744,14 @@ async function confirmCompletion() {
         }
         
         console.log('Sending completion request for goal:', goalId);
+        console.log('Request data:', {
+            goalId,
+            hasScreenshots: screenshotDataArray.length > 0,
+            screenshotCount: screenshotDataArray.length,
+            textProofLength: textProof.length,
+            brainliftContentLength: brainliftContent.length
+        });
+        
         const response = await fetch('/api/complete-goal', {
             method: 'POST',
             headers: {
@@ -767,7 +771,13 @@ async function confirmCompletion() {
             if (response.status === 413) {
                 throw new Error('Request too large - please use smaller files');
             }
-            throw new Error(`Server error: ${response.status}`);
+            // Try to get error message from response
+            try {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server error: ${response.status}`);
+            } catch (e) {
+                throw new Error(`Server error: ${response.status}`);
+            }
         }
         
         const contentType = response.headers.get('content-type');
