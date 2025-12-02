@@ -75,110 +75,64 @@ export default async function handler(req, res) {
     const userContext = await getUserContext(userId);
     const contextInfo = userContext.map(ctx => `- ${ctx.term}: ${ctx.explanation}`).join('\n');
     
-    // Use the same STRICT scoring prompt as validate-goal for consistency
+    // Updated prompt - REMOVED RELEVANCE SCORING
     const userTimeEstimate = userEstimatedHours || 3;
-    const prompt = `You are a STRICT goal validation assistant for Alpha X students. Based on the clarifying answers provided, analyze the goal with rigorous standards and respond with JSON only.
+    const prompt = `You are a goal validation assistant for Alpha X students. Based on the clarifying answers provided, analyze the goal and respond with JSON only.
 
 Goal: "${goal}"
-Alpha X Project: "${alphaXProject}"
+Alpha X Project (their masterpiece): "${alphaXProject}"
 Student's Time Estimate: ${userTimeEstimate} hours
 
-Context: A brain lift is a repository for all of the students' expertise in research about their topic. Ephor is a tool that is used to score brain lifts.
+Context: A brain lift is a repository for students' expertise/research. Ephor scores brain lifts from F-A. Moving up one grade takes ~1.5 hours.
 
-IMPORTANT BRAINLIFT RULES (SCALED BY TIME):
-The BrainLift word count requirements SCALE based on the student's time estimate of ${userTimeEstimate} hours:
-
-**Time-Scaled BrainLift Requirements for BrainLift-ONLY goals:**
-- 0.5 hours (30 min): 150-200 words is sufficient for that time
-- 1 hour: 300-400 words is sufficient
-- 1.5 hours: 500-600 words is sufficient
-- 2 hours: 700-800 words is sufficient
-- 2.5 hours: 900-1000 words is sufficient
-- 3+ hours: 1000+ words is the standard requirement
-
-**For this goal with ${userTimeEstimate} hours:**
-- If BrainLift ONLY: Expect approximately ${Math.round(userTimeEstimate * 300)} words minimum for sufficient ambition
-- If BrainLift + other tasks: Any word count is acceptable as long as the TOTAL work matches the time estimate
-
-**Key Rules:**
-- BrainLift + additional tasks = any word count acceptable (judge based on total work scope)
-- Shorter time estimates = proportionally less work expected
-- Don't penalize students for realistic scoping to their available time
+BRAINLIFT WORD COUNT SCALING (for BrainLift-only goals):
+- 0.5h: 150-200 words | 1h: 300-400 words | 1.5h: 500-600 words
+- 2h: 700-800 words | 2.5h: 900-1000 words | 3+h: 1000+ words
+- BrainLift + other tasks: word count flexible, judge total scope
 
 USER'S LEARNED CONTEXT:
-${contextInfo || '(No previous context learned yet)'}
+${contextInfo || '(No previous context)'}
 
 QUESTIONS AND ANSWERS:
 ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || 'No answer provided'}`).join('\n\n')}
 
-CRITICAL EVALUATION REQUIREMENTS:
+TIME ESTIMATION:
+Calculate realistic time based on actual work and their answers:
+- 3 emails = 30 min | 15+ personalized emails = 3+ hours
+- 500 words = 2-3 hours | 1000 words = 3.5 hours
 
-TIME ESTIMATION - BE REALISTIC:
-- Student claims ${userTimeEstimate} hours - verify if the work scope actually matches
-- Don't trust student time estimates blindly - calculate realistic time yourself based on their answers
-- Examples of time per task:
-  * 3 emails = 30 minutes max
-  * 5-10 emails = 1-2 hours
-  * 15+ personalized emails = 3+ hours
-  * Writing 300 words = 1-1.5 hours of research + writing
-  * Writing 500 words = 2-3 hours of research + writing
-  * Writing 1000 words = 3.5 hours of research + writing + editing
-
-AMBITION STANDARDS (4/5 required) - SCALED BY TIME:
-**For goals with ${userTimeEstimate} hours time estimate:**
-- Score based on whether the ACTUAL work scope matches the TIME ESTIMATE
-- If goal scope matches their time estimate: Give appropriate ambition score (4/5 or 5/5)
-- If goal is too small for time estimate: Lower ambition score
-- **CRITICAL: If goal is LARGER/MORE AMBITIOUS than time estimate: ALWAYS APPROVE IT!**
-  * NEVER penalize overambition - being TOO ambitious is ALWAYS GOOD
-  * Example: 1 hour claimed, 3 hours of work = APPROVE with 5/5!
-  * Example: 30 min claimed, 1000 words = APPROVE with 5/5!
-- Shorter goals (0.5-2 hours) CAN be valid - just ensure work matches time allocated
-- Goals requiring 3+ hours of work = 4/5 minimum (if they claim 3+ hours)
-- Don't penalize realistic scoping!
-- **Being TOO ambitious = automatic 5/5 ambition score**
+AMBITION (4/5 required):
+- Score if work scope matches or exceeds time estimate
+- Work matches estimate = 4/5 | Work exceeds estimate = 5/5
+- Work too small for estimate = 2/5 or 3/5
+- NEVER penalize overambition
 
 MEASURABILITY (8/10 required):
-- If the goal has ANY specific, quantifiable outcomes, give it 8/10 or higher
-- Clear success criteria that can be objectively verified = automatic 8/10+
-- Examples of measurable: "write 500 words", "send 5 emails", "read 3 papers", "post 4 times"
-- Only fail if completely vague like "get better" or "improve skills" with no specifics
-- Be generous with measurability scoring - most goals with numbers should pass
+- ANY specific, quantifiable outcomes = 8/10+
+- Vague like "get better" with no specifics = fail
 
-RELEVANCE (8/10 required):
-- If the goal is AT ALL related to their Alpha X project, give it 8/10 or higher
-- Even loosely related goals should get 8/10+ (be very generous)
-- Examples that should get 8/10+: writing, research, communication, technical skills, project planning
-- Only fail (below 8/10) if completely irrelevant like "learn cooking" for a tech project
-- When in doubt, score high - most educational/professional goals relate to Alpha X projects
-- Be generous - if you can see ANY connection to their project, give 8/10+
+MASTERPIECE RELEVANCE:
+Based on their answer about how the goal relates to their masterpiece:
+- If they provided ANY reasonable explanation of connection = consider it related
+- Be generous - they went through the effort of explaining
+- Only reject if explanation makes no sense at all
 
-Respond with a JSON object containing:
+Respond with JSON:
 {
-  "isValid": boolean,
+  "isValid": boolean (true if ambitionScore >= 4 AND measurableScore >= 8),
   "hasQuestions": false,
   "questions": [],
   "ambitionScore": number (1-5),
   "measurableScore": number (1-10),
-  "relevanceScore": number (1-10),
-  "overallScore": number (1-10),
-  "feedback": "honest, critical assessment incorporating their answers and explaining why scores were given",
-  "estimatedHours": number (YOUR realistic estimate based on their answers, not their claim),
-  "timeReasoning": "explain your time calculation based on their responses",
-  "suggestions": ["specific ways to make goal more ambitious if needed"]
+  "overallScore": number (1-10, for reference only),
+  "feedback": "assessment incorporating their answers",
+  "estimatedHours": number (your realistic estimate),
+  "timeReasoning": "brief time calculation",
+  "suggestions": ["improvements if needed"],
+  "exampleGoal": "An example of a similar goal that would pass - tailored to their project: ${alphaXProject}"
 }
 
-Score on these categories:
-- Ambition: How challenging and growth-oriented is this goal? (4/5 required - BE STRICT HERE)
-- Measurable: How clearly defined and measurable are the success criteria? (8/10 required - BE GENEROUS)
-- Relevance: How relevant is this goal to their Alpha X project? (8/10 required - BE GENEROUS)
-
-SCORING STRATEGY:
-- AMBITION: If 3.5+ hours estimated, give 4/5+. If 4+ hours, give 5/5. Be generous for substantial goals.
-- MEASURABLE: If it has numbers/specifics, automatically give 8/10+
-- RELEVANCE: If it relates to education/skills/project in any way, automatically give 8/10+
-
-Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevance to be valid. The overall score is just for reference - ONLY the three individual scores matter for pass/fail.`;
+CRITICAL: Goals pass if ambitionScore >= 4 AND measurableScore >= 8.`;
 
     const anthropic = new Anthropic({
       apiKey: CLAUDE_API_KEY,
@@ -215,24 +169,23 @@ Goals must achieve 4/5 for ambition AND 8/10 for measurable AND 8/10 for relevan
         questions: [],
         ambitionScore: 5,
         measurableScore: 5,
-        relevanceScore: 5,
         overallScore: 5,
-        feedback: "Unable to validate goal at this time. Please ensure your goal is specific, measurable, and requires at least 3 hours of work.",
+        feedback: "Unable to validate goal at this time. Please ensure your goal is specific and measurable.",
         estimatedHours: 0,
-        suggestions: ["Please rephrase your goal with more specific details and measurable outcomes."]
+        suggestions: ["Please rephrase your goal with more specific details and measurable outcomes."],
+        exampleGoal: `Write 1000 words of research for my ${alphaXProject} project`
       };
     }
 
     // Ensure isValid is correctly set based on scoring requirements
-    if (validation.ambitionScore && validation.measurableScore && validation.relevanceScore) {
-      // ONLY the three category scores matter - overall score is just for reference
+    // Only ambition and measurable matter now - no relevance score
+    if (validation.ambitionScore && validation.measurableScore) {
       const meetsRequirements = validation.ambitionScore >= 4 && 
-                               validation.measurableScore >= 8 && 
-                               validation.relevanceScore >= 8;
+                               validation.measurableScore >= 8;
       validation.isValid = meetsRequirements && !validation.hasQuestions;
       
       if (!meetsRequirements && validation.isValid !== false) {
-        validation.feedback = `Goal needs improvement to meet requirements. Scores: Ambition ${validation.ambitionScore}/5, Measurable ${validation.measurableScore}/10, Relevance ${validation.relevanceScore}/10. Requirements: Ambition 4/5+, Measurable 8/10+, Relevance 8/10+.`;
+        validation.feedback = `Goal needs improvement. Scores: Ambition ${validation.ambitionScore}/5, Measurable ${validation.measurableScore}/10. Requirements: Ambition 4/5+, Measurable 8/10+.`;
       }
     }
 
