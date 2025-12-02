@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Goal Tracker - AI-Powered Goal Validation</title>
+    <title>Goal Tracker</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <!-- Authentication Section -->
         <div id="authSection" class="auth-container">
             <header class="auth-header">
-                <h1>🎯 Goal Tracker</h1>
-                <p class="subtitle">AI-Powered Goal Validation & Progress Tracking</p>
+                <h1>Goal Tracker</h1>
+                <p class="subtitle">AI-Powered Goal Validation</p>
         </header>
 
             <!-- Login Form -->
             <div id="loginForm" class="auth-form">
                 <div class="form-card">
                     <h2>Welcome Back</h2>
-                    <p class="form-description">Sign in to continue tracking your goals</p>
+                    <p class="form-description">Sign in to continue</p>
                     
                     <form id="loginFormElement">
                         <div class="form-group">
@@ -34,14 +33,13 @@
                 </div>
                         
                         <button type="submit" class="btn btn-primary btn-full">
-                            <span class="btn-icon">🔑</span>
                             Sign In
                         </button>
                     </form>
                     
                     <div class="form-switch">
                         <p>Don't have an account? <a href="#" onclick="switchToRegister()">Sign up</a></p>
-                        <p style="margin-top: 1rem;"><a href="#" onclick="showAdminLogin()" style="color: var(--accent); font-size: 0.875rem;">🔐 Admin Access</a></p>
+                        <p style="margin-top: 1rem;"><a href="#" onclick="showAdminLogin()" style="color: var(--gray-500); font-size: 0.813rem;">Admin Access</a></p>
                 </div>
             </div>
         </div>
@@ -50,7 +48,7 @@
             <div id="registerForm" class="auth-form hidden">
                 <div class="form-card">
                     <h2>Create Account</h2>
-                    <p class="form-description">Join Goal Tracker to start achieving your goals</p>
+                    <p class="form-description">Start tracking your goals</p>
                     
                     <form id="registerFormElement">
                         <div class="form-group">
@@ -69,7 +67,6 @@
                         </div>
                         
                         <button type="submit" class="btn btn-primary btn-full">
-                            <span class="btn-icon">✨</span>
                             Create Account
                         </button>
                     </form>
@@ -83,8 +80,8 @@
             <!-- Admin Login Form -->
             <div id="adminLoginForm" class="auth-form hidden">
                 <div class="form-card">
-                    <h2>🔐 Admin Access</h2>
-                    <p class="form-description">Enter admin password to access the dashboard</p>
+                    <h2>Admin Access</h2>
+                    <p class="form-description">Enter admin password</p>
                     
                     <form id="adminLoginFormElement">
                         <div class="form-group">
@@ -93,13 +90,12 @@
                         </div>
                         
                         <button type="submit" class="btn btn-primary btn-full">
-                            <span class="btn-icon">🚀</span>
                             Access Admin Panel
                         </button>
                     </form>
                     
                     <div class="form-switch">
-                        <p><a href="#" onclick="switchToLogin()">← Back to Login</a></p>
+                        <p><a href="#" onclick="switchToLogin()">Back to Login</a></p>
                     </div>
                 </div>
             </div>
@@ -109,11 +105,10 @@
         <div id="appSection" class="hidden">
             <header class="app-header">
                 <div class="header-content">
-                    <h1>🎯 Goal Tracker</h1>
+                    <h1>Goal Tracker</h1>
                     <div class="user-info">
                         <span id="welcomeUser">Welcome!</span>
                         <button class="btn btn-secondary btn-sm" onclick="logout()">
-                            <span class="btn-icon">🚪</span>
                             Logout
                         </button>
                     </div>
@@ -125,10 +120,10 @@
                 <div class="goal-form-section">
                     <div class="section-header" onclick="toggleGoalForm()">
                         <div class="section-title-with-toggle">
-                            <h2>Submit Your Goal</h2>
+                            <h2>New Goal</h2>
                             <span class="toggle-arrow">▼</span>
                         </div>
-                        <p class="section-description">Enter your goal and let AI validate its difficulty and measurability</p>
+                        <p class="section-description">Set a goal and validate it with AI</p>
                     </div>
                     
                     <div class="goal-form-card">
@@ -149,35 +144,32 @@
 
                             <!-- Brain Lift Content Upload -->
                             <div class="form-group">
-                                <label for="brainliftContent">Your Current Brain Lift Content <span class="required">*</span></label>
+                                <label for="brainliftContent">Brain Lift Content <span class="required">*</span></label>
                                 <textarea 
                                     id="brainliftContent" 
-                                    rows="8"
-                                    placeholder="Paste your current Brain Lift content here... (all your notes, research, ideas, etc.)"
-                                    style="width: 100%; padding: 1rem; border: 2px solid var(--border-color); border-radius: 0.5rem; font-family: inherit; font-size: 0.95rem; line-height: 1.6; resize: vertical;"
+                                    rows="6"
+                                    placeholder="Paste your current Brain Lift content here..."
                                 ></textarea>
-                                <div class="word-count-display" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: var(--surface-light); border-radius: 0.5rem; text-align: center; font-weight: 600; color: var(--primary-color);">
+                                <div class="word-count-display">
                                     <span id="brainliftWordCount">0 words</span>
                                 </div>
                                 <div class="form-hint">
-                                    <strong>Required:</strong> Paste your complete Brain Lift content. 
-                                    We'll track your word count today and compare it when you complete your goal to see your progress.
+                                    Paste your Brain Lift content to track word count progress.
                                 </div>
                             </div>
                             
                             <!-- Alpha X Project Display (Read-only) -->
                             <div class="form-group" id="alphaXProjectDisplay">
-                                <label>Alpha X Project</label>
+                                <label>Masterpiece Project</label>
                                 <div class="project-display">
-                                    <span id="currentProject">Loading your project...</span>
-                                    <button type="button" class="btn-edit-project" onclick="editProject()">✏️ Edit</button>
+                                    <span id="currentProject">Loading...</span>
+                                    <button type="button" class="btn-edit-project" onclick="editProject()">Edit</button>
                                 </div>
-                                <div class="form-hint">This goal will be validated against your Alpha X project</div>
                             </div>
 
                             <!-- Time Estimate Slider -->
                             <div class="form-group">
-                                <label for="timeEstimate">⏱️ How long will you work on this goal?</label>
+                                <label for="timeEstimate">Time Estimate</label>
                                 <div class="time-slider-container">
                                     <input type="range" id="timeEstimate" min="0.5" max="10" step="0.5" value="3" class="time-slider">
                                     <div class="time-display">
@@ -185,20 +177,18 @@
                                     </div>
                                 </div>
                                 <div class="form-hint">
-                                    <strong>Minimum 30 minutes, Maximum 10 hours.</strong> Goals under 2.5 hours won't earn house points.
+                                    Goals under 2.5 hours won't earn house points.
                                 </div>
-                                <div id="housePointsWarning" class="form-hint hidden" style="color: var(--danger-color); font-weight: 600; margin-top: 0.5rem;">
-                                    ⚠️ This goal is under 2.5 hours and will NOT earn house points!
+                                <div id="housePointsWarning" class="form-hint hidden" style="color: var(--danger); font-weight: 500; margin-top: 0.5rem;">
+                                    Under 2.5 hours - no house points
                                 </div>
                             </div>
 
                             <div class="form-actions">
                                 <button type="button" class="btn btn-secondary" onclick="validateGoal()">
-                                    <span class="btn-icon">🤖</span>
                                     Validate with AI
                     </button>
                                 <button type="submit" class="btn btn-primary" id="submitGoalBtn" disabled>
-                                    <span class="btn-icon">🎯</span>
                                     Submit Goal
                     </button>
                 </div>
@@ -218,11 +208,10 @@
                 <div class="goals-section">
                     <div class="section-header">
                         <h2>Your Goals</h2>
-                        <p class="section-description">Track your progress and manage your active goals</p>
             </div>
 
                     <div id="goalsList" class="goals-list">
-                        <div class="loading">Loading your goals...</div>
+                        <div class="loading">Loading goals...</div>
                     </div>
                 </div>
             </main>
@@ -245,26 +234,25 @@
         <div id="alphaXModal" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Welcome to Alpha X Goals! 🚀</h2>
-                    <p>Before you start setting goals, please tell us about your Alpha X project.</p>
+                    <h2>Welcome</h2>
+                    <p>Tell us about your masterpiece project to get started.</p>
                 </div>
                 
                 <form id="alphaXSetupForm">
                     <div class="form-group">
-                        <label for="userAlphaXProject">What is your Alpha X project?</label>
+                        <label for="userAlphaXProject">What is your project?</label>
                         <textarea 
                             id="userAlphaXProject" 
-                            placeholder="e.g., AI-powered study assistant that helps students organize their research, Climate change research platform that analyzes environmental data..."
+                            placeholder="Describe your Alpha X project..."
                             rows="4"
                             required
                         ></textarea>
-                        <div class="form-hint">Describe your project in detail - this helps the AI better validate your goals and ensure they're relevant to your work.</div>
+                        <div class="form-hint">This helps validate that your goals relate to your work.</div>
                     </div>
                     
                     <div class="modal-actions">
                         <button type="submit" class="btn btn-primary btn-full">
-                            <span class="btn-icon">💫</span>
-                            Save Project & Continue
+                            Save & Continue
                         </button>
                     </div>
                 </form>
