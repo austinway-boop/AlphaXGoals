@@ -967,53 +967,25 @@ async function handleNewPassword(e) {
     }
 }
 
-// Streak Functions - Weekdays only (Mon-Fri)
-function calculateWeekdayStreak(completedDates) {
-    if (!completedDates || completedDates.length === 0) return 0;
+// Streak Functions - Count consecutive completed goals
+function calculateStreak(goals) {
+    if (!goals || goals.length === 0) return 0;
     
-    // Create a Set of completion dates (as date strings for easy lookup)
-    const dateSet = new Set(completedDates.map(d => {
-        const date = new Date(d);
-        date.setHours(0, 0, 0, 0);
-        return date.toDateString();
-    }));
-    
-    // Sort dates descending (newest first) to find most recent
-    const sortedDates = [...completedDates].sort((a, b) => new Date(b) - new Date(a));
-    
-    // Start from the most recent completion
-    let currentDate = new Date(sortedDates[0]);
-    currentDate.setHours(0, 0, 0, 0);
-    
-    // If most recent completion is on a weekend, find the previous weekday with completion
-    while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
-        currentDate.setDate(currentDate.getDate() - 1);
-        if (!dateSet.has(currentDate.toDateString())) {
-            // If no completion on this weekday either, just use the original date
-            currentDate = new Date(sortedDates[0]);
-            currentDate.setHours(0, 0, 0, 0);
-            break;
-        }
-    }
+    // Sort goals by creation date (newest first)
+    const sortedGoals = [...goals].sort((a, b) => {
+        const dateA = new Date(a.completedAt || a.createdAt);
+        const dateB = new Date(b.completedAt || b.createdAt);
+        return dateB - dateA;
+    });
     
     let streak = 0;
     
-    // Walk backwards through weekdays counting consecutive completions
-    while (true) {
-        const dayOfWeek = currentDate.getDay();
-        
-        // Skip weekends (0 = Sunday, 6 = Saturday)
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            currentDate.setDate(currentDate.getDate() - 1);
-            continue;
-        }
-        
-        // Check if this weekday has a completion
-        if (dateSet.has(currentDate.toDateString())) {
+    // Count consecutive completed goals from the most recent
+    for (const goal of sortedGoals) {
+        if (goal.completed) {
             streak++;
-            currentDate.setDate(currentDate.getDate() - 1);
         } else {
-            // No completion on this weekday - streak ends here
+            // Hit an incomplete/failed/inactive goal - streak ends
             break;
         }
     }
@@ -1145,18 +1117,12 @@ function showSuccessAnimation(message = 'Goal Submitted!') {
 function checkStreakAfterGoalsLoad(goals) {
     if (!goals || goals.length === 0) return;
     
-    // Get completed goal dates
-    const completedDates = goals
-        .filter(g => g.completed && g.completedAt)
-        .map(g => g.completedAt);
-    
-    if (completedDates.length === 0) return;
-    
-    // Calculate current streak based on weekdays
-    const currentStreak = calculateWeekdayStreak(completedDates);
+    // Calculate current streak (consecutive completed goals)
+    const currentStreak = calculateStreak(goals);
     
     console.log('Streak calculation:', {
-        completedDates: completedDates.length,
+        totalGoals: goals.length,
+        completedGoals: goals.filter(g => g.completed).length,
         currentStreak
     });
     
