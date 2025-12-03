@@ -102,6 +102,7 @@
             <div class="header-left">
                 <button class="tab active" data-tab="new" onclick="switchTab('new')">New</button>
                 <button class="tab" data-tab="goals" onclick="switchTab('goals')">Goals</button>
+                <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">Leaderboard</button>
             </div>
             <div class="header-right">
                 <div class="streak-display" id="streakDisplay" onclick="showStreakAnimation()">
@@ -207,6 +208,19 @@
             <div id="goalsTab" class="tab-content hidden">
                 <div id="goalsList" class="goals-list">
                     <div class="loading-state">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Tab -->
+            <div id="leaderboardTab" class="tab-content hidden">
+                <div class="card leaderboard-card">
+                    <div class="leaderboard-header">
+                        <h2>Streak Leaderboard</h2>
+                        <p class="leaderboard-description">Streaks count consecutive completed goals without missing any. Complete a goal every day to build your streak!</p>
+                    </div>
+                    <div id="leaderboardList" class="leaderboard-list">
+                        <div class="loading-state">Loading leaderboard...</div>
+                    </div>
                 </div>
             </div>
         </main>

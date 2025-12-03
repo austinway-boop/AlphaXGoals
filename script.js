@@ -200,6 +200,93 @@ function switchTab(tabName) {
         activeContent.classList.remove('hidden');
         activeContent.classList.add('active');
     }
+    
+    // Load leaderboard when tab is selected
+    if (tabName === 'leaderboard') {
+        loadLeaderboard();
+    }
+}
+
+// Leaderboard Functions
+async function loadLeaderboard() {
+    const leaderboardList = document.getElementById('leaderboardList');
+    if (!leaderboardList) return;
+    
+    leaderboardList.innerHTML = '<div class="loading-state">Loading leaderboard...</div>';
+    
+    try {
+        const response = await fetch('/api/leaderboard');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayLeaderboard(data.leaderboard, data.currentUserId);
+        } else {
+            leaderboardList.innerHTML = `
+                <div class="leaderboard-empty">
+                    <div class="leaderboard-empty-icon">!</div>
+                    <h3>Unable to load leaderboard</h3>
+                    <p>${data.error || 'Please try again later.'}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        leaderboardList.innerHTML = `
+            <div class="leaderboard-empty">
+                <div class="leaderboard-empty-icon">!</div>
+                <h3>Connection Error</h3>
+                <p>Unable to load leaderboard. Please check your connection.</p>
+            </div>
+        `;
+    }
+}
+
+function displayLeaderboard(leaderboard, currentUserId) {
+    const leaderboardList = document.getElementById('leaderboardList');
+    if (!leaderboardList) return;
+    
+    if (!leaderboard || leaderboard.length === 0) {
+        leaderboardList.innerHTML = `
+            <div class="leaderboard-empty">
+                <div class="leaderboard-empty-icon">🔥</div>
+                <h3>No Streaks Yet</h3>
+                <p>Be the first to start a streak! Complete goals on consecutive days to build your streak.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const getHouseDisplay = (house) => {
+        const houses = {
+            'sparta': 'Sparta',
+            'athens': 'Athens',
+            'corinth': 'Corinth',
+            'olympia': 'Olympia',
+            'delphi': 'Delphi'
+        };
+        return houses[house] || 'No House';
+    };
+    
+    const leaderboardHTML = leaderboard.map((user, index) => {
+        const rank = index + 1;
+        const isCurrentUser = user.id === currentUserId || user.isCurrentUser;
+        
+        return `
+            <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}">
+                <div class="leaderboard-rank">${rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : rank}</div>
+                <div class="leaderboard-info">
+                    <div class="leaderboard-name">${escapeHtml(user.username)}${isCurrentUser ? ' (You)' : ''}</div>
+                    <div class="leaderboard-house">${getHouseDisplay(user.house)}</div>
+                </div>
+                <div class="leaderboard-streak">
+                    <span class="leaderboard-streak-icon">🔥</span>
+                    <span class="leaderboard-streak-count">${user.streak}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    leaderboardList.innerHTML = leaderboardHTML;
 }
 
 // Brain Lift file upload removed - only text paste is supported now
