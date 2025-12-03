@@ -1547,6 +1547,10 @@ async function validateGoal() {
     showLoading('Validating your goal with AI...');
     
     try {
+        // Get after school info for validation context
+        const isAfterSchool = document.getElementById('isAfterSchoolGoal')?.checked || false;
+        const xpAmount = isAfterSchool ? (parseInt(document.getElementById('xpAmount')?.value) || 0) : 0;
+        
         const response = await fetch('/api/validate-goal', {
             method: 'POST',
             headers: {
@@ -1555,7 +1559,9 @@ async function validateGoal() {
             body: JSON.stringify({
                 goal,
                 alphaXProject,
-                userEstimatedHours: estimatedHours
+                userEstimatedHours: estimatedHours,
+                isAfterSchool,
+                xpAmount
             })
         });
         
