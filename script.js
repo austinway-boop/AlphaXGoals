@@ -971,21 +971,34 @@ async function handleNewPassword(e) {
 function calculateWeekdayStreak(completedDates) {
     if (!completedDates || completedDates.length === 0) return 0;
     
-    // Sort dates descending (newest first)
+    // Create a Set of completion dates (as date strings for easy lookup)
+    const dateSet = new Set(completedDates.map(d => {
+        const date = new Date(d);
+        date.setHours(0, 0, 0, 0);
+        return date.toDateString();
+    }));
+    
+    // Sort dates descending (newest first) to find most recent
     const sortedDates = [...completedDates].sort((a, b) => new Date(b) - new Date(a));
     
-    let streak = 0;
-    let currentDate = new Date();
+    // Start from the most recent completion
+    let currentDate = new Date(sortedDates[0]);
     currentDate.setHours(0, 0, 0, 0);
     
-    // Get most recent completion
-    const mostRecentCompletion = new Date(sortedDates[0]);
-    mostRecentCompletion.setHours(0, 0, 0, 0);
+    // If most recent completion is on a weekend, find the previous weekday with completion
+    while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+        currentDate.setDate(currentDate.getDate() - 1);
+        if (!dateSet.has(currentDate.toDateString())) {
+            // If no completion on this weekday either, just use the original date
+            currentDate = new Date(sortedDates[0]);
+            currentDate.setHours(0, 0, 0, 0);
+            break;
+        }
+    }
     
-    // Start checking from today backwards
-    const dateSet = new Set(sortedDates.map(d => new Date(d).toDateString()));
+    let streak = 0;
     
-    // Walk backwards through weekdays
+    // Walk backwards through weekdays counting consecutive completions
     while (true) {
         const dayOfWeek = currentDate.getDay();
         
@@ -1000,13 +1013,7 @@ function calculateWeekdayStreak(completedDates) {
             streak++;
             currentDate.setDate(currentDate.getDate() - 1);
         } else {
-            // If today is a weekday and no completion yet, give them a pass
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (currentDate.getTime() === today.getTime()) {
-                currentDate.setDate(currentDate.getDate() - 1);
-                continue;
-            }
+            // No completion on this weekday - streak ends here
             break;
         }
     }
@@ -1091,23 +1098,22 @@ function hideStreakLostModal() {
     }
 }
 
-// Check streak on login/page load
-function checkStreakOnLogin(previousStreak, currentStreak, hasCompletedToday) {
-    // Store last shown streak in localStorage to avoid showing animation every refresh
-    const lastShownStreak = localStorage.getItem('lastShownStreak_' + appState.currentUser?.id);
+// Check streak on login/page load - show animation if user has a streak
+function checkStreakOnLogin(currentStreak) {
+    if (currentStreak <= 0) return;
+    
+    // Get last shown info from localStorage
+    const lastShownStreak = parseInt(localStorage.getItem('lastShownStreak_' + appState.currentUser?.id) || '0');
     const lastShownDate = localStorage.getItem('lastShownDate_' + appState.currentUser?.id);
     const today = new Date().toDateString();
     
-    // If streak increased and we haven't shown today, show celebration
-    if (currentStreak > 0 && hasCompletedToday && lastShownDate !== today) {
-        localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, currentStreak);
+    // Show animation if:
+    // 1. We haven't shown today yet, OR
+    // 2. Streak has increased since last shown
+    if (lastShownDate !== today || currentStreak > lastShownStreak) {
+        localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, currentStreak.toString());
         localStorage.setItem('lastShownDate_' + appState.currentUser?.id, today);
-        setTimeout(() => showStreakAnimation(true), 500);
-    }
-    // If streak was lost (had streak before, now at 0 or less), show lost animation
-    else if (previousStreak > 0 && currentStreak === 0 && lastShownStreak > 0) {
-        localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, '0');
-        setTimeout(() => showStreakLostAnimation(previousStreak), 500);
+        setTimeout(() => showStreakAnimation(), 500);
     }
 }
 
@@ -1144,25 +1150,22 @@ function checkStreakAfterGoalsLoad(goals) {
         .filter(g => g.completed && g.completedAt)
         .map(g => g.completedAt);
     
+    if (completedDates.length === 0) return;
+    
     // Calculate current streak based on weekdays
     const currentStreak = calculateWeekdayStreak(completedDates);
     
+    console.log('Streak calculation:', {
+        completedDates: completedDates.length,
+        currentStreak
+    });
+    
     // Update state
-    const previousStreak = appState.currentUser?.streak || 0;
     appState.currentUser.streak = currentStreak;
     updateStreakDisplay();
     
-    // Check if user completed a goal today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const hasCompletedToday = completedDates.some(d => {
-        const completedDate = new Date(d);
-        completedDate.setHours(0, 0, 0, 0);
-        return completedDate.getTime() === today.getTime();
-    });
-    
-    // Show streak animation if needed
-    checkStreakOnLogin(previousStreak, currentStreak, hasCompletedToday);
+    // Show streak animation if user has a streak
+    checkStreakOnLogin(currentStreak);
 }
 
 // Button animation helper
