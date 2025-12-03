@@ -1023,59 +1023,72 @@ function showStreakAnimation(isNewStreak = false) {
     const modal = document.getElementById('streakModal');
     const streakNumber = document.getElementById('streakNumber');
     const streakMessage = document.getElementById('streakMessage');
-    const streakLabel = document.getElementById('streakLabel');
-    const particlesContainer = document.getElementById('streakParticles');
+    const streakContent = document.getElementById('streakContent');
+    const flashOverlay = document.getElementById('flashOverlay');
     
     if (!modal) return;
     
+    // Set the streak number
     streakNumber.textContent = streak;
-    streakLabel.textContent = streak === 1 ? 'day streak!' : 'day streak!';
     streakMessage.textContent = streakMessages[Math.floor(Math.random() * streakMessages.length)];
     
-    // Create fire particles
-    if (particlesContainer) {
-        particlesContainer.innerHTML = '';
-        const colors = ['#ff9500', '#ff6b00', '#ffcc00', '#ff4500'];
-        for (let i = 0; i < 20; i++) {
-            setTimeout(() => {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = (40 + Math.random() * 20) + '%';
-                particle.style.bottom = '40%';
-                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.animationDuration = (1.5 + Math.random()) + 's';
-                particle.style.animationDelay = (Math.random() * 0.5) + 's';
-                particlesContainer.appendChild(particle);
-                setTimeout(() => particle.remove(), 2500);
-            }, i * 100);
-        }
-    }
+    // Reset animation classes
+    streakContent.classList.remove('reveal');
+    flashOverlay.classList.remove('flash');
     
+    // Show modal (black screen first)
     modal.classList.remove('hidden');
+    
+    // Step 1: Movie bars slide in (handled by CSS)
     setTimeout(() => modal.classList.add('show'), 10);
+    
+    // Step 2: Flash effect
+    setTimeout(() => {
+        flashOverlay.classList.add('flash');
+    }, 400);
+    
+    // Step 3: Reveal content
+    setTimeout(() => {
+        streakContent.classList.add('reveal');
+    }, 500);
 }
 
 function showStreakLostAnimation(previousStreak) {
     const modal = document.getElementById('streakLostModal');
     const message = document.getElementById('streakLostMessage');
+    const content = document.getElementById('streakLostContent');
     
     if (!modal) return;
     
     if (previousStreak > 0) {
-        message.textContent = `You lost your ${previousStreak} day streak. Start fresh today!`;
+        message.textContent = `You lost your ${previousStreak} day streak. Start fresh!`;
     } else {
         message.textContent = 'Start building your streak today!';
     }
     
+    // Reset animation
+    content.classList.remove('streak-lost');
+    
     modal.classList.remove('hidden');
-    setTimeout(() => modal.classList.add('show'), 10);
+    setTimeout(() => {
+        modal.classList.add('show');
+        content.classList.add('streak-lost');
+    }, 10);
 }
 
 function hideStreakModal() {
     const modal = document.getElementById('streakModal');
+    const content = document.getElementById('streakContent');
+    const flash = document.getElementById('flashOverlay');
+    
     if (modal) {
         modal.classList.remove('show');
-        setTimeout(() => modal.classList.add('hidden'), 300);
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            // Reset for next time
+            if (content) content.classList.remove('reveal');
+            if (flash) flash.classList.remove('flash');
+        }, 300);
     }
 }
 

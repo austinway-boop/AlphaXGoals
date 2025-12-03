@@ -187,18 +187,19 @@ body {
     color: white;
 }
 
-/* Streak Modal */
+/* Streak Modal - Cinematic */
 .streak-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.9);
+    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 3000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s;
+    transition: opacity 0.2s;
+    overflow: hidden;
 }
 
 .streak-modal.show {
@@ -206,151 +207,210 @@ body {
     pointer-events: auto;
 }
 
+/* Movie Bars */
+.movie-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 15vh;
+    background: #000;
+    z-index: 10;
+}
+
+.movie-bar.top {
+    top: 0;
+    transform: translateY(-100%);
+    animation: barSlideIn 0.4s 0.1s ease-out forwards;
+}
+
+.movie-bar.bottom {
+    bottom: 0;
+    transform: translateY(100%);
+    animation: barSlideIn 0.4s 0.1s ease-out forwards;
+}
+
+@keyframes barSlideIn {
+    to { transform: translateY(0); }
+}
+
+/* Flash Overlay */
+.flash-overlay {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.flash-overlay.flash {
+    animation: flashSequence 0.8s ease-out;
+}
+
+@keyframes flashSequence {
+    0% { opacity: 0; }
+    10% { opacity: 0.8; }
+    20% { opacity: 0; }
+    30% { opacity: 0.6; }
+    40% { opacity: 0; }
+    50% { opacity: 0.3; }
+    100% { opacity: 0; }
+}
+
+/* Streak Content */
 .streak-modal-content {
     text-align: center;
     position: relative;
-    animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 6;
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.streak-modal-content.reveal {
+    animation: streakReveal 0.6s 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes streakReveal {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 .streak-modal-content.streak-lost {
-    animation: modalShake 0.5s ease-out;
+    animation: lostReveal 0.6s 0.3s ease-out forwards;
 }
 
-@keyframes modalSlideUp {
-    0% { transform: translateY(50px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
+@keyframes lostReveal {
+    0% { opacity: 0; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes modalShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-20px); }
-    40% { transform: translateX(20px); }
-    60% { transform: translateX(-10px); }
-    80% { transform: translateX(10px); }
-}
-
-/* Streak Icon (CSS-based fire/broken) */
+/* Fire Icon */
 .streak-icon {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 20px;
-    background: linear-gradient(135deg, #ff9500 0%, #ff6b00 50%, #ff4500 100%);
-    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
     position: relative;
-    animation: fireGlow 1.5s ease-in-out infinite, firePulse 0.8s ease-in-out infinite;
-    box-shadow: 0 0 60px rgba(255, 149, 0, 0.8), 0 0 100px rgba(255, 107, 0, 0.4);
 }
 
 .streak-icon::before {
     content: '';
     position: absolute;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #ffcc00 0%, #ff9500 100%);
+    inset: 0;
+    background: linear-gradient(0deg, #ff4500 0%, #ff6b00 40%, #ff9500 70%, #ffcc00 100%);
     border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-    top: 20px;
-    left: 20px;
-    animation: innerFire 0.6s ease-in-out infinite alternate;
+    animation: fireFlicker 0.15s ease-in-out infinite alternate;
+    filter: blur(2px);
 }
 
-.streak-icon.lost {
-    background: linear-gradient(135deg, #444 0%, #222 100%);
-    animation: none;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+.streak-icon::after {
+    content: '';
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    top: 25px;
+    left: 25px;
+    background: linear-gradient(0deg, #ffcc00 0%, #fff 100%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: innerFlicker 0.1s ease-in-out infinite alternate;
+    filter: blur(1px);
 }
 
+@keyframes fireFlicker {
+    0% { transform: scale(1) rotate(-2deg); }
+    100% { transform: scale(1.05) rotate(2deg); }
+}
+
+@keyframes innerFlicker {
+    0% { transform: scale(0.95); opacity: 0.9; }
+    100% { transform: scale(1.05); opacity: 1; }
+}
+
+/* Lost state */
 .streak-icon.lost::before {
-    background: linear-gradient(135deg, #555 0%, #333 100%);
+    background: linear-gradient(0deg, #333 0%, #555 100%);
     animation: none;
+    filter: none;
 }
 
 .streak-icon.lost::after {
-    content: '';
+    background: #444;
+    animation: none;
+    filter: none;
+}
+
+/* Glow effect behind fire */
+.fire-glow {
     position: absolute;
-    width: 80px;
-    height: 4px;
-    background: var(--danger);
-    top: 48px;
-    left: 10px;
-    transform: rotate(-45deg);
-    border-radius: 2px;
+    width: 200px;
+    height: 200px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    background: radial-gradient(circle, rgba(255, 149, 0, 0.6) 0%, transparent 70%);
+    animation: glowPulse 1s ease-in-out infinite;
+    z-index: -1;
 }
 
-@keyframes fireGlow {
-    0%, 100% { box-shadow: 0 0 60px rgba(255, 149, 0, 0.8), 0 0 100px rgba(255, 107, 0, 0.4); }
-    50% { box-shadow: 0 0 80px rgba(255, 200, 0, 1), 0 0 120px rgba(255, 149, 0, 0.6); }
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -60%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -60%) scale(1.2); }
 }
 
-@keyframes firePulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-
-@keyframes innerFire {
-    0% { transform: scale(0.9); opacity: 0.8; }
-    100% { transform: scale(1.1); opacity: 1; }
-}
-
-/* Streak Particles */
-.streak-particles {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.particle {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    animation: particleRise 2s ease-out forwards;
-}
-
-@keyframes particleRise {
-    0% { 
-        transform: translateY(0) scale(1); 
-        opacity: 1; 
-    }
-    100% { 
-        transform: translateY(-200px) scale(0); 
-        opacity: 0; 
-    }
-}
-
+/* Number */
 .streak-number {
-    font-size: 80px;
-    font-weight: 800;
-    color: var(--warning);
-    text-shadow: 0 0 40px rgba(255, 149, 0, 0.6);
+    font-size: 100px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 
+        0 0 20px rgba(255, 149, 0, 0.8),
+        0 0 40px rgba(255, 149, 0, 0.6),
+        0 0 60px rgba(255, 149, 0, 0.4);
     line-height: 1;
-    animation: numberPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    letter-spacing: -5px;
+    animation: numberGlow 1.5s ease-in-out infinite;
 }
 
-@keyframes numberPop {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
+@keyframes numberGlow {
+    0%, 100% { 
+        text-shadow: 
+            0 0 20px rgba(255, 149, 0, 0.8),
+            0 0 40px rgba(255, 149, 0, 0.6),
+            0 0 60px rgba(255, 149, 0, 0.4);
+    }
+    50% { 
+        text-shadow: 
+            0 0 30px rgba(255, 200, 0, 1),
+            0 0 60px rgba(255, 149, 0, 0.8),
+            0 0 90px rgba(255, 149, 0, 0.6);
+    }
 }
 
 .streak-label {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
-    color: var(--text);
+    color: #fff;
     margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
 }
 
 .streak-lost-text {
-    font-size: 32px;
-    font-weight: 800;
+    font-size: 36px;
+    font-weight: 900;
     color: var(--danger);
     margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .streak-message {
     font-size: 16px;
-    color: var(--text-muted);
-    margin-bottom: 24px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 32px;
+}
+
+.streak-modal .btn {
+    min-width: 160px;
 }
 
 /* Main Content */

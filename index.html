@@ -111,13 +111,16 @@
             </div>
         </header>
         
-        <!-- Streak Celebration Modal -->
+        <!-- Streak Celebration Modal - Cinematic -->
         <div id="streakModal" class="streak-modal hidden">
-            <div class="streak-modal-content">
-                <div class="streak-particles" id="streakParticles"></div>
-                <div class="streak-icon" id="streakIcon"></div>
+            <div class="movie-bar top"></div>
+            <div class="movie-bar bottom"></div>
+            <div class="flash-overlay" id="flashOverlay"></div>
+            <div class="streak-modal-content" id="streakContent">
+                <div class="fire-glow"></div>
+                <div class="streak-icon"></div>
                 <div class="streak-number" id="streakNumber">0</div>
-                <div class="streak-label" id="streakLabel">day streak!</div>
+                <div class="streak-label">DAY STREAK</div>
                 <div class="streak-message" id="streakMessage">Keep it up!</div>
                 <button class="btn btn-primary" onclick="hideStreakModal()">Continue</button>
             </div>
@@ -125,9 +128,11 @@
         
         <!-- Streak Lost Modal -->
         <div id="streakLostModal" class="streak-modal hidden">
-            <div class="streak-modal-content streak-lost">
+            <div class="movie-bar top"></div>
+            <div class="movie-bar bottom"></div>
+            <div class="streak-modal-content streak-lost" id="streakLostContent">
                 <div class="streak-icon lost"></div>
-                <div class="streak-lost-text">Streak Lost</div>
+                <div class="streak-lost-text">STREAK LOST</div>
                 <div class="streak-message" id="streakLostMessage">Start a new streak today!</div>
                 <button class="btn btn-primary" onclick="hideStreakLostModal()">Let's Go</button>
             </div>
