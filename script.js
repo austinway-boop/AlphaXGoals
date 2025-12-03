@@ -1100,23 +1100,18 @@ function hideStreakLostModal() {
     }
 }
 
-// Check streak on login/page load - show animation if user has a streak
+// Check streak on login/page load - ALWAYS show animation if user has a streak
 function checkStreakOnLogin(currentStreak) {
-    if (currentStreak <= 0) return;
+    console.log('checkStreakOnLogin called with streak:', currentStreak);
     
-    // Get last shown info from localStorage
-    const lastShownStreak = parseInt(localStorage.getItem('lastShownStreak_' + appState.currentUser?.id) || '0');
-    const lastShownDate = localStorage.getItem('lastShownDate_' + appState.currentUser?.id);
-    const today = new Date().toDateString();
-    
-    // Show animation if:
-    // 1. We haven't shown today yet, OR
-    // 2. Streak has increased since last shown
-    if (lastShownDate !== today || currentStreak > lastShownStreak) {
-        localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, currentStreak.toString());
-        localStorage.setItem('lastShownDate_' + appState.currentUser?.id, today);
-        setTimeout(() => showStreakAnimation(), 500);
+    if (currentStreak <= 0) {
+        console.log('No streak to show');
+        return;
     }
+    
+    // Always show the streak animation on login when there's a streak!
+    console.log('Showing streak animation for streak:', currentStreak);
+    setTimeout(() => showStreakAnimation(), 800);
 }
 
 // Success animation for goal submission
