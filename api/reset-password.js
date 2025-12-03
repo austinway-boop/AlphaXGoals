@@ -1,12 +1,12 @@
 // Vercel serverless function for password reset
-import { kv } from '@vercel/kv';
+import { getRedisClient } from './redis.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
   // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
   const origin = req.headers.origin || '*';
   res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -26,34 +26,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Action is required' });
     }
 
+    // Get Redis client
+    const redis = await getRedisClient();
+
     if (action === 'check') {
-      // Check if email exists
       if (!email) {
         return res.status(400).json({ success: false, error: 'Email is required' });
       }
 
-      // Get all users and find by email
-      let userKeys;
-      try {
-        userKeys = await kv.keys('user:*');
-      } catch (kvError) {
-        console.error('KV keys error:', kvError);
-        return res.status(500).json({ success: false, error: 'Database connection failed' });
-      }
-
+      // Get all user keys
+      const userKeys = await redis.keys('user:*');
       let foundUser = null;
 
       for (const key of userKeys) {
         if (key.includes(':goals') || key.includes(':context')) continue;
-        try {
-          const user = await kv.get(key);
-          if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
-            foundUser = { id: user.id, username: user.username };
-            break;
-          }
-        } catch (getUserError) {
-          console.error('Error getting user:', key, getUserError);
-          continue;
+        
+        const userData = await redis.get(key);
+        if (!userData) continue;
+        
+        const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
+        
+        if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
+          foundUser = { id: user.id, username: user.username };
+          break;
         }
       }
 
@@ -65,7 +60,6 @@ export default async function handler(req, res) {
     }
 
     if (action === 'reset') {
-      // Reset the password
       if (!email || !newPassword) {
         return res.status(400).json({ success: false, error: 'Email and new password are required' });
       }
@@ -74,30 +68,23 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'Password must be at least 4 characters' });
       }
 
-      // Find user by email
-      let userKeys;
-      try {
-        userKeys = await kv.keys('user:*');
-      } catch (kvError) {
-        console.error('KV keys error:', kvError);
-        return res.status(500).json({ success: false, error: 'Database connection failed' });
-      }
-
+      // Get all user keys
+      const userKeys = await redis.keys('user:*');
       let foundUser = null;
       let userKey = null;
 
       for (const key of userKeys) {
         if (key.includes(':goals') || key.includes(':context')) continue;
-        try {
-          const user = await kv.get(key);
-          if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
-            foundUser = user;
-            userKey = key;
-            break;
-          }
-        } catch (getUserError) {
-          console.error('Error getting user:', key, getUserError);
-          continue;
+        
+        const userData = await redis.get(key);
+        if (!userData) continue;
+        
+        const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
+        
+        if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
+          foundUser = user;
+          userKey = key;
+          break;
         }
       }
 
@@ -110,13 +97,7 @@ export default async function handler(req, res) {
 
       // Update user with new password
       foundUser.password = hashedPassword;
-      
-      try {
-        await kv.set(userKey, foundUser);
-      } catch (setError) {
-        console.error('KV set error:', setError);
-        return res.status(500).json({ success: false, error: 'Failed to save new password' });
-      }
+      await redis.set(userKey, JSON.stringify(foundUser));
 
       return res.json({ success: true, message: 'Password reset successfully' });
     }
@@ -124,8 +105,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Invalid action' });
 
   } catch (error) {
-    console.error('Password reset error:', error.message, error.stack);
+    console.error('Password reset error:', error.message);
     return res.status(500).json({ success: false, error: 'Server error: ' + error.message });
   }
 }
-
