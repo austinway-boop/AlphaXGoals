@@ -147,3 +147,4 @@ Your BrainLift extraction now:
 **Ready to use!** Students can now submit BrainLift goals and the system will correctly extract content from only the relevant sections!
 
 
+

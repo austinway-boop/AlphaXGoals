@@ -444,6 +444,17 @@ function displayGoals(goals) {
             </div>
         ` : '';
         
+        // Admin complete section for after school goals
+        const adminCompleteSection = goal.status === 'active' && goal.isAfterSchool ? `
+            <div class="admin-complete-section">
+                <h6>Mark as Complete (After School Goal)</h6>
+                <p class="admin-complete-description">After school goals can only be completed by admins.</p>
+                <button class="btn btn-primary admin-complete-btn" data-goal-id="${escapeHtml(goal.id)}" onclick="adminCompleteGoal('${escapeHtml(goal.id)}')">
+                    Mark as Complete
+                </button>
+            </div>
+        ` : '';
+        
         const invalidationSection = goal.status === 'active' ? `
             <div class="quick-invalidate">
                 <h6>⚡ Quick Invalidate</h6>
@@ -668,6 +679,8 @@ function displayGoals(goals) {
                             </div>
                         </div>
                     ` : ''}
+                    
+                    ${adminCompleteSection}
                     
                     ${invalidationSection}
                     
@@ -1725,6 +1738,60 @@ async function saveEditedGoal(goalId) {
 }
 
 // Old inline goal editing functions removed - replaced with goal creation modal workflow
+
+// Admin complete goal function (for after school goals)
+async function adminCompleteGoal(goalId) {
+    console.log('adminCompleteGoal called for goalId:', goalId);
+    
+    // Check if admin name is provided
+    if (!adminState.adminName || adminState.adminName.trim() === '') {
+        showToast('Please enter your admin name in the header before completing goals', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+            adminNameInput.style.border = '2px solid orange';
+            setTimeout(() => {
+                adminNameInput.style.border = '';
+            }, 3000);
+        }
+        return;
+    }
+    
+    if (!confirm(`Mark this after school goal as complete?\n\nAdmin: ${adminState.adminName}\n\nThis action will be logged.`)) {
+        return;
+    }
+    
+    showLoading('Completing goal...');
+    
+    try {
+        console.log('Completing goal:', goalId, 'by admin:', adminState.adminName);
+        const response = await fetch('/api/admin-complete-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ goalId, adminName: adminState.adminName })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        console.log('Complete response:', data);
+        
+        if (data.success) {
+            showToast(`Goal marked as complete by ${adminState.adminName}`, 'success');
+            await logAdminAction('goal_completion', `Completed after school goal`, { goalId });
+            loadGoals(); // Reload goals to show updated status
+        } else {
+            console.error('Complete failed:', data.error);
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Complete error:', error);
+        showToast('Failed to complete goal - network error', 'error');
+    }
+}
 
 // Goal revocation functions
 async function revokeCompletion(goalId) {

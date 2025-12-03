@@ -78,6 +78,14 @@ export default async function handler(req, res) {
       return res.status(403).json({ success: false, error: 'Access denied' });
     }
     
+    // After school goals can only be completed by admins
+    if (goal.isAfterSchool) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'After school goals can only be marked as complete by an admin in the admin panel.' 
+      });
+    }
+    
     // Check if goal was created today (CST)
     const goalCreatedDate = new Date(goal.createdAt);
     const goalCreatedCST = new Date(goalCreatedDate.toLocaleString("en-US", {timeZone: "America/Chicago"}));

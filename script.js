@@ -1989,7 +1989,9 @@ function displayGoals(goals) {
                 <div class="goal-footer">
                     <span class="goal-date">${createdDate}</span>
                     <div class="goal-actions">
-                        ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
+                        ${goal.status === 'active' && goal.isAfterSchool ? `
+                            <span class="admin-complete-msg">Admin will complete</span>
+                        ` : goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
                             <button class="btn-action btn-edit" onclick="editUserGoal('${goal.id}')">Edit</button>
                             <button class="btn-action btn-complete" onclick="showCompletionModal('${goal.id}')">Complete</button>
                         ` : goal.status === 'active' ? `
