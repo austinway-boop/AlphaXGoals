@@ -3,260 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Goal Tracker</title>
+    <title>Goals</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <!-- Authentication Section -->
-        <div id="authSection" class="auth-container">
-            <header class="auth-header">
-                <h1>Goal Tracker</h1>
-                <p class="subtitle">AI-Powered Goal Validation</p>
-        </header>
-
+    <!-- Authentication Section -->
+    <div id="authSection" class="auth-section">
+        <div class="auth-card">
+            <div class="logo">Goals</div>
+            
             <!-- Login Form -->
-            <div id="loginForm" class="auth-form">
-                <div class="form-card">
-                    <h2>Welcome Back</h2>
-                    <p class="form-description">Sign in to continue</p>
-                    
-                    <form id="loginFormElement">
-                        <div class="form-group">
-                            <label for="loginUsername">Username or Email</label>
-                            <input type="text" id="loginUsername" required>
-            </div>
-                        
-                        <div class="form-group">
-                            <label for="loginPassword">Password</label>
-                            <input type="password" id="loginPassword" required>
-                </div>
-                        
-                        <button type="submit" class="btn btn-primary btn-full">
-                            Sign In
-                        </button>
-                    </form>
-                    
-                    <div class="form-switch">
-                        <p>Don't have an account? <a href="#" onclick="switchToRegister()">Sign up</a></p>
-                        <p style="margin-top: 1rem;"><a href="#" onclick="showAdminLogin()" style="color: var(--gray-500); font-size: 0.813rem;">Admin Access</a></p>
-                </div>
-            </div>
-        </div>
-
-            <!-- Register Form -->
-            <div id="registerForm" class="auth-form hidden">
-                <div class="form-card">
-                    <h2>Create Account</h2>
-                    <p class="form-description">Start tracking your goals</p>
-                    
-                    <form id="registerFormElement">
-                        <div class="form-group">
-                            <label for="registerUsername">Username</label>
-                            <input type="text" id="registerUsername" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="registerEmail">Email</label>
-                            <input type="email" id="registerEmail" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="registerPassword">Password</label>
-                            <input type="password" id="registerPassword" required>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary btn-full">
-                            Create Account
-                        </button>
-                    </form>
-                    
-                    <div class="form-switch">
-                        <p>Already have an account? <a href="#" onclick="switchToLogin()">Sign in</a></p>
-                </div>
-            </div>
-        </div>
-
-            <!-- Admin Login Form -->
-            <div id="adminLoginForm" class="auth-form hidden">
-                <div class="form-card">
-                    <h2>Admin Access</h2>
-                    <p class="form-description">Enter admin password</p>
-                    
-                    <form id="adminLoginFormElement">
-                        <div class="form-group">
-                            <label for="adminPassword">Admin Password</label>
-                            <input type="password" id="adminPassword" required placeholder="Enter admin password">
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary btn-full">
-                            Access Admin Panel
-                        </button>
-                    </form>
-                    
-                    <div class="form-switch">
-                        <p><a href="#" onclick="switchToLogin()">Back to Login</a></p>
+            <div id="loginForm">
+                <form id="loginFormElement">
+                    <div class="input-group">
+                        <input type="text" id="loginUsername" placeholder="Username or email" required>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main App Section -->
-        <div id="appSection" class="hidden">
-            <header class="app-header">
-                <div class="header-content">
-                    <h1>Goal Tracker</h1>
-                    <div class="user-info">
-                        <span id="welcomeUser">Welcome!</span>
-                        <button class="btn btn-secondary btn-sm" onclick="logout()">
-                            Logout
-                        </button>
+                    <div class="input-group">
+                        <input type="password" id="loginPassword" placeholder="Password" required>
                     </div>
+                    <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+                </form>
+                <div class="auth-links">
+                    <a href="#" onclick="switchToRegister()">Create account</a>
+                    <a href="#" onclick="showForgotPassword()">Forgot password?</a>
+                    <a href="#" onclick="showAdminLogin()" class="admin-link">Admin</a>
                 </div>
-            </header>
+            </div>
 
-            <main class="main-content">
-                <!-- Goal Submission Form -->
-                <div class="goal-form-section">
-                    <div class="section-header" onclick="toggleGoalForm()">
-                        <div class="section-title-with-toggle">
-                            <h2>New Goal</h2>
-                            <span class="toggle-arrow">▼</span>
-                        </div>
-                        <p class="section-description">Set a goal and validate it with AI</p>
+            <!-- Forgot Password Form -->
+            <div id="forgotPasswordForm" class="hidden">
+                <form id="forgotPasswordFormElement">
+                    <p class="form-info">Enter your email to reset your password</p>
+                    <div class="input-group">
+                        <input type="email" id="resetEmail" placeholder="Your email address" required>
                     </div>
-                    
-                    <div class="goal-form-card">
-                        <form id="goalForm" enctype="multipart/form-data">
-                            <div class="form-group">
-                                <label for="goalInput">Your Goal</label>
-                                <textarea 
-                                    id="goalInput" 
-                                    placeholder="e.g., Send 12 personalized cold emails to potential clients, Write a 2000-word technical blog post, Complete a brainlift with 500+ words of research..."
-                                    rows="4"
-                                    required
-                                ></textarea>
-                                <div class="form-hint">Be specific and measurable.</div>
-                                <div id="revalidationHint" class="form-hint revalidation-hint hidden" style="color: var(--warning-color); font-weight: 600;">
-                                    ⚠️ Goal text changed - validation required before submission
-                                </div>
-                            </div>
-
-                            <!-- Brain Lift Content Upload -->
-                            <div class="form-group">
-                                <label for="brainliftContent">Brain Lift Content <span class="required">*</span></label>
-                                <textarea 
-                                    id="brainliftContent" 
-                                    rows="6"
-                                    placeholder="Paste your current Brain Lift content here..."
-                                ></textarea>
-                                <div class="word-count-display">
-                                    <span id="brainliftWordCount">0 words</span>
-                                </div>
-                                <div class="form-hint">
-                                    Paste your Brain Lift content to track word count progress.
-                                </div>
-                            </div>
-                            
-                            <!-- Alpha X Project Display (Read-only) -->
-                            <div class="form-group" id="alphaXProjectDisplay">
-                                <label>Masterpiece Project</label>
-                                <div class="project-display">
-                                    <span id="currentProject">Loading...</span>
-                                    <button type="button" class="btn-edit-project" onclick="editProject()">Edit</button>
-                                </div>
-                            </div>
-
-                            <!-- Time Estimate Slider -->
-                            <div class="form-group">
-                                <label for="timeEstimate">Time Estimate</label>
-                                <div class="time-slider-container">
-                                    <input type="range" id="timeEstimate" min="0.5" max="10" step="0.5" value="3" class="time-slider">
-                                    <div class="time-display">
-                                        <span id="timeEstimateValue" class="time-value">3.0 hours</span>
-                                    </div>
-                                </div>
-                                <div class="form-hint">
-                                    Goals under 2.5 hours won't earn house points.
-                                </div>
-                                <div id="housePointsWarning" class="form-hint hidden" style="color: var(--danger); font-weight: 500; margin-top: 0.5rem;">
-                                    Under 2.5 hours - no house points
-                                </div>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" onclick="validateGoal()">
-                                    Validate with AI
-                    </button>
-                                <button type="submit" class="btn btn-primary" id="submitGoalBtn" disabled>
-                                    Submit Goal
-                    </button>
-                </div>
-                        </form>
-                        
-                        <!-- Validation Results -->
-                        <div id="validationResults" class="validation-results hidden">
-                            <div class="validation-header">
-                                <h3>AI Validation Results</h3>
-                            </div>
-                            <div id="validationContent"></div>
-            </div>
+                    <button type="submit" class="btn btn-primary btn-full">Reset Password</button>
+                </form>
+                <div class="auth-links">
+                    <a href="#" onclick="switchToLogin()">Back to sign in</a>
                 </div>
             </div>
 
-                <!-- Goals List -->
-                <div class="goals-section">
-                    <div class="section-header">
-                        <h2>Your Goals</h2>
-            </div>
-
-                    <div id="goalsList" class="goals-list">
-                        <div class="loading">Loading goals...</div>
+            <!-- New Password Form -->
+            <div id="newPasswordForm" class="hidden">
+                <form id="newPasswordFormElement">
+                    <p class="form-info">Enter your new password</p>
+                    <div class="input-group">
+                        <input type="password" id="newPassword" placeholder="New password" required>
                     </div>
-                </div>
-            </main>
-            </div>
-
-        <!-- Toast Notification -->
-        <div class="toast" id="toast">
-            <span id="toastMessage"></span>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay" class="loading-overlay hidden">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-                <p id="loadingText">Processing...</p>
-            </div>
-        </div>
-
-        <!-- Alpha X Project Setup Modal -->
-        <div id="alphaXModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Welcome</h2>
-                    <p>Tell us about your masterpiece project to get started.</p>
-                </div>
-                
-                <form id="alphaXSetupForm">
-                    <div class="form-group">
-                        <label for="userAlphaXProject">What is your project?</label>
-                        <textarea 
-                            id="userAlphaXProject" 
-                            placeholder="Describe your Alpha X project..."
-                            rows="4"
-                            required
-                        ></textarea>
-                        <div class="form-hint">This helps validate that your goals relate to your work.</div>
+                    <div class="input-group">
+                        <input type="password" id="confirmPassword" placeholder="Confirm password" required>
                     </div>
-                    
-                    <div class="modal-actions">
-                        <button type="submit" class="btn btn-primary btn-full">
-                            Save & Continue
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Set New Password</button>
                 </form>
             </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <form id="registerFormElement">
+                    <div class="input-group">
+                        <input type="text" id="registerUsername" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="registerEmail" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="registerPassword" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+                </form>
+                <div class="auth-links">
+                    <a href="#" onclick="switchToLogin()">Back to sign in</a>
+                </div>
+            </div>
+
+            <!-- Admin Login -->
+            <div id="adminLoginForm" class="hidden">
+                <form id="adminLoginFormElement">
+                    <div class="input-group">
+                        <input type="password" id="adminPassword" placeholder="Admin password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Access Admin</button>
+                </form>
+                <div class="auth-links">
+                    <a href="#" onclick="switchToLogin()">Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appSection" class="app-section hidden">
+        <!-- Top Nav -->
+        <nav class="top-nav">
+            <div class="nav-brand">Goals</div>
+            <div class="nav-right">
+                <div class="streak-display" id="streakDisplay" onclick="showStreakAnimation()">
+                    <span class="streak-flame">&#128293;</span>
+                    <span class="streak-count" id="streakCount">0</span>
+                </div>
+                <div class="nav-user">
+                    <span id="welcomeUser"></span>
+                    <button class="btn btn-ghost" onclick="logout()">Log out</button>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Streak Celebration Modal -->
+        <div id="streakModal" class="streak-modal hidden">
+            <div class="streak-modal-content">
+                <div class="streak-flame-big" id="streakFlameBig">&#128293;</div>
+                <div class="streak-number" id="streakNumber">0</div>
+                <div class="streak-label">day streak!</div>
+                <div class="streak-message" id="streakMessage">Keep it up!</div>
+                <button class="btn btn-primary" onclick="hideStreakModal()">Nice!</button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-bar">
+            <button class="tab active" data-tab="new" onclick="switchTab('new')">
+                <span class="tab-icon">+</span>
+                <span class="tab-label">New</span>
+            </button>
+            <button class="tab" data-tab="goals" onclick="switchTab('goals')">
+                <span class="tab-icon">&#9776;</span>
+                <span class="tab-label">My Goals</span>
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <main class="main-content">
+            <!-- New Goal Tab -->
+            <div id="newTab" class="tab-content active">
+                <div class="card">
+                    <form id="goalForm">
+                        <div class="input-group">
+                            <label>What's your goal?</label>
+                            <textarea id="goalInput" placeholder="Be specific: Write 1000 words, send 10 emails..." rows="3" required></textarea>
+                            <div id="revalidationHint" class="hint warning hidden">Changed - validate again</div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Brain Lift content</label>
+                            <textarea id="brainliftContent" placeholder="Paste your Brain Lift here..." rows="4"></textarea>
+                            <div class="word-count"><span id="brainliftWordCount">0</span> words</div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Your project</label>
+                            <div class="project-row">
+                                <span id="currentProject" class="project-text">Not set</span>
+                                <button type="button" class="btn btn-small" onclick="editProject()">Edit</button>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Time estimate</label>
+                            <div class="slider-wrapper">
+                                <input type="range" id="timeEstimate" min="0.5" max="10" step="0.5" value="3">
+                                <div class="slider-value"><span id="timeEstimateValue">3.0</span> hrs</div>
+                            </div>
+                            <div id="housePointsWarning" class="hint warning hidden">Under 2.5 hrs = no points</div>
+                        </div>
+
+                        <div class="button-row">
+                            <button type="button" class="btn btn-secondary" onclick="validateGoal()">Validate</button>
+                            <button type="submit" class="btn btn-primary" id="submitGoalBtn" disabled>Submit</button>
+                        </div>
+                    </form>
+
+                    <!-- Validation Results -->
+                    <div id="validationResults" class="validation-box hidden">
+                        <div id="validationContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals Tab -->
+            <div id="goalsTab" class="tab-content hidden">
+                <div id="goalsList" class="goals-list">
+                    <div class="loading-state">Loading...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="overlay hidden">
+        <div class="loader-card">
+            <div class="loader"></div>
+            <p id="loadingText">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Project Setup Modal -->
+    <div id="alphaXModal" class="overlay hidden">
+        <div class="modal-card">
+            <h2>What's your project?</h2>
+            <form id="alphaXSetupForm">
+                <div class="input-group">
+                    <textarea id="userAlphaXProject" placeholder="Describe your Alpha X project..." rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Save</button>
+            </form>
         </div>
     </div>
 

@@ -7,8 +7,21 @@ let appState = {
     aiQuestions: null,
     aiAnswers: null,
     userAlphaXProject: null,
-    lastValidatedGoalText: null // Track the goal text that was last validated
+    lastValidatedGoalText: null,
+    resetEmail: null // For password reset flow
 };
+
+// Streak messages based on streak length
+const streakMessages = [
+    "You're on fire!",
+    "Keep crushing it!",
+    "Unstoppable!",
+    "Legend in the making!",
+    "Pure dedication!",
+    "Nothing can stop you!",
+    "Goal machine!",
+    "Incredible focus!"
+];
 
 // File upload utility functions
 function fileToBase64(file) {
@@ -45,7 +58,7 @@ function initializeBrainLiftWordCounter() {
         textarea.addEventListener('input', () => {
             const text = textarea.value;
             const wordCount = countWords(text);
-            wordCountDisplay.textContent = `${wordCount} words`;
+            wordCountDisplay.textContent = wordCount;
         });
     }
 }
@@ -59,23 +72,41 @@ function initializeTimeSlider() {
     if (slider && valueDisplay) {
         slider.addEventListener('input', (e) => {
             const hours = parseFloat(e.target.value);
-            valueDisplay.textContent = `${hours.toFixed(1)} hours`;
+            valueDisplay.textContent = hours.toFixed(1);
             
-            // Update color based on value
+            // Show warning if under 2.5 hours
             if (hours < 2.5) {
-                valueDisplay.className = 'time-value danger';
                 if (warningDiv) warningDiv.classList.remove('hidden');
-            } else if (hours < 3.5) {
-                valueDisplay.className = 'time-value warning';
-                if (warningDiv) warningDiv.classList.add('hidden');
             } else {
-                valueDisplay.className = 'time-value';
                 if (warningDiv) warningDiv.classList.add('hidden');
             }
         });
         
         // Trigger initial update
         slider.dispatchEvent(new Event('input'));
+    }
+}
+
+// Tab switching
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+        content.classList.add('hidden');
+    });
+    
+    const activeContent = document.getElementById(tabName + 'Tab');
+    if (activeContent) {
+        activeContent.classList.remove('hidden');
+        activeContent.classList.add('active');
     }
 }
 
@@ -791,6 +822,17 @@ async function confirmCompletion() {
         hideLoading();
         
         if (data.success) {
+            // Update streak in state
+            if (data.streak) {
+                appState.currentUser.streak = data.streak;
+                updateStreakDisplay();
+                
+                // Show streak celebration
+                setTimeout(() => {
+                    showStreakAnimation();
+                }, 500);
+            }
+            
             showToast('Goal completed successfully!', 'success');
             hideCompletionModal();
             loadGoals();
@@ -926,12 +968,21 @@ function setupEventListeners() {
     document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
     document.getElementById('adminLoginFormElement').addEventListener('submit', handleAdminLogin);
     
+    // Password reset forms
+    const forgotForm = document.getElementById('forgotPasswordFormElement');
+    if (forgotForm) forgotForm.addEventListener('submit', handleForgotPassword);
+    
+    const newPassForm = document.getElementById('newPasswordFormElement');
+    if (newPassForm) newPassForm.addEventListener('submit', handleNewPassword);
+    
     // Goal form
     document.getElementById('goalForm').addEventListener('submit', handleGoalSubmit);
     
-    
     // Alpha X project setup form
     document.getElementById('alphaXSetupForm').addEventListener('submit', handleAlphaXSetup);
+    
+    // Add button press effects
+    addButtonPressEffect();
 }
 
 // Toggle goal form visibility
@@ -994,18 +1045,175 @@ function hideAILoadingAnimation() {
 function switchToRegister() {
     document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('registerForm').classList.remove('hidden');
+    document.getElementById('forgotPasswordForm')?.classList.add('hidden');
+    document.getElementById('newPasswordForm')?.classList.add('hidden');
 }
 
 function switchToLogin() {
     document.getElementById('registerForm').classList.add('hidden');
     document.getElementById('adminLoginForm').classList.add('hidden');
+    document.getElementById('forgotPasswordForm')?.classList.add('hidden');
+    document.getElementById('newPasswordForm')?.classList.add('hidden');
     document.getElementById('loginForm').classList.remove('hidden');
 }
 
 function showAdminLogin() {
     document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('registerForm').classList.add('hidden');
+    document.getElementById('forgotPasswordForm')?.classList.add('hidden');
     document.getElementById('adminLoginForm').classList.remove('hidden');
+}
+
+function showForgotPassword() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.add('hidden');
+    document.getElementById('adminLoginForm').classList.add('hidden');
+    document.getElementById('forgotPasswordForm').classList.remove('hidden');
+}
+
+// Password Reset Functions
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value.trim();
+    
+    if (!email) {
+        showToast('Please enter your email', 'warning');
+        return;
+    }
+    
+    showLoading('Checking email...');
+    
+    try {
+        const response = await fetch('/api/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, action: 'check' })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            appState.resetEmail = email;
+            document.getElementById('forgotPasswordForm').classList.add('hidden');
+            document.getElementById('newPasswordForm').classList.remove('hidden');
+            showToast('Account found! Set your new password.', 'success');
+        } else {
+            showToast(data.error || 'Email not found', 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to check email. Try again.', 'error');
+    }
+}
+
+async function handleNewPassword(e) {
+    e.preventDefault();
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showToast('Passwords do not match', 'warning');
+        return;
+    }
+    
+    if (newPassword.length < 4) {
+        showToast('Password must be at least 4 characters', 'warning');
+        return;
+    }
+    
+    showLoading('Resetting password...');
+    
+    try {
+        const response = await fetch('/api/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email: appState.resetEmail, 
+                newPassword, 
+                action: 'reset' 
+            })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast('Password reset! You can now sign in.', 'success');
+            appState.resetEmail = null;
+            switchToLogin();
+        } else {
+            showToast(data.error || 'Failed to reset password', 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to reset password. Try again.', 'error');
+    }
+}
+
+// Streak Functions
+function updateStreakDisplay() {
+    const streakCount = document.getElementById('streakCount');
+    const streak = appState.currentUser?.streak || 0;
+    if (streakCount) {
+        streakCount.textContent = streak;
+    }
+}
+
+function showStreakAnimation() {
+    const streak = appState.currentUser?.streak || 0;
+    const modal = document.getElementById('streakModal');
+    const streakNumber = document.getElementById('streakNumber');
+    const streakMessage = document.getElementById('streakMessage');
+    
+    if (!modal) return;
+    
+    streakNumber.textContent = streak;
+    streakMessage.textContent = streakMessages[Math.floor(Math.random() * streakMessages.length)];
+    
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    // Create confetti
+    createConfetti();
+}
+
+function hideStreakModal() {
+    const modal = document.getElementById('streakModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+}
+
+function createConfetti() {
+    const colors = ['#58cc02', '#1cb0f6', '#ff9600', '#ff4b4b', '#ce82ff', '#ffde00'];
+    
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => confetti.remove(), 4000);
+        }, i * 30);
+    }
+}
+
+// Button animation helper
+function addButtonPressEffect() {
+    document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!this.disabled) {
+                this.classList.add('pressed');
+                setTimeout(() => this.classList.remove('pressed'), 200);
+            }
+        });
+    });
 }
 
 async function handleLogin(e) {
@@ -1140,7 +1348,10 @@ function showApp() {
     document.getElementById('alphaXModal').classList.add('hidden');
     
     // Update welcome message
-    document.getElementById('welcomeUser').textContent = `Welcome, ${appState.currentUser.username}!`;
+    document.getElementById('welcomeUser').textContent = appState.currentUser.username;
+    
+    // Update streak display
+    updateStreakDisplay();
     
     // Display Alpha X project
     updateProjectDisplay();
@@ -1153,6 +1364,12 @@ function showApp() {
     
     // Clear any completion screenshots from previous sessions
     selectedCompletionScreenshots = [];
+    
+    // Start on new goal tab
+    switchTab('new');
+    
+    // Re-add button effects for dynamically created buttons
+    setTimeout(addButtonPressEffect, 100);
 }
 
 function updateProjectDisplay() {
@@ -1331,10 +1548,6 @@ function displayValidationResults(validation) {
     const resultsContainer = document.getElementById('validationResults');
     const contentContainer = document.getElementById('validationContent');
     
-    // Add response animation
-    resultsContainer.classList.add('ai-response-animation');
-    setTimeout(() => resultsContainer.classList.remove('ai-response-animation'), 800);
-    
     // Check if AI has questions
     if (validation.hasQuestions && validation.questions && validation.questions.length > 0) {
         displayAIQuestions(validation.questions);
@@ -1342,57 +1555,41 @@ function displayValidationResults(validation) {
     }
     
     const statusClass = validation.isValid ? 'valid' : 'invalid';
-    const statusText = validation.isValid ? 'Goal Approved' : 'Needs Improvement';
+    const statusText = validation.isValid ? 'Approved' : 'Needs Work';
     
-    // Get the current goal text to display
-    const currentGoal = document.getElementById('goalInput').value.trim();
-    
-    const getScoreColor = (score, isAmbition = false) => {
-        const threshold = isAmbition ? 4 : 8;
-        const maxScore = isAmbition ? 5 : 10;
-        if (score >= threshold) return '#10b981';
-        if (score >= (maxScore * 0.6)) return '#f59e0b';
-        return '#ef4444';
-    };
+    const ambitionPass = (validation.ambitionScore || 0) >= 4;
+    const measurablePass = (validation.measurableScore || 0) >= 8;
     
     contentContainer.innerHTML = `
-        <div class="validation-status-clean ${statusClass}">
-            <strong>${statusText}</strong>
+        <div class="validation-status ${statusClass}">
+            ${statusText}
         </div>
         
-        <div class="validation-scores-grid two-cols">
-            <div class="score-item">
+        <div class="validation-scores">
+            <div class="score-card">
                 <div class="score-label">Ambition</div>
-                <div class="score-value" style="color: ${getScoreColor(validation.ambitionScore || 0, true)}">
+                <div class="score-value ${ambitionPass ? 'pass' : 'fail'}">
                     ${validation.ambitionScore || 0}/5
                 </div>
-                <div class="score-requirement">Need 4/5</div>
+                <div class="score-req">Need 4+</div>
             </div>
             
-            <div class="score-item">
+            <div class="score-card">
                 <div class="score-label">Measurable</div>
-                <div class="score-value" style="color: ${getScoreColor(validation.measurableScore || 0)}">
+                <div class="score-value ${measurablePass ? 'pass' : 'fail'}">
                     ${validation.measurableScore || 0}/10
                 </div>
-                <div class="score-requirement">Need 8/10</div>
+                <div class="score-req">Need 8+</div>
             </div>
         </div>
         
-        <div class="validation-feedback-section">
+        <div class="feedback-box">
             <h4>Feedback</h4>
             <p>${validation.feedback}</p>
-            ${validation.suggestions && validation.suggestions.length > 0 ? `
-                <div class="validation-suggestions">
-                    <strong>Suggestions:</strong>
-                    <ul>
-                        ${validation.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
-                    </ul>
-                </div>
-            ` : ''}
             ${validation.exampleGoal ? `
-                <div class="validation-example">
-                    <strong>Example goal that would pass:</strong>
-                    <p class="example-goal-text">${escapeHtml(validation.exampleGoal)}</p>
+                <div class="example-box">
+                    <strong>Example goal:</strong>
+                    <p>${escapeHtml(validation.exampleGoal)}</p>
                 </div>
             ` : ''}
         </div>
@@ -1617,7 +1814,7 @@ async function handleGoalSubmit(e) {
 
 async function loadGoals() {
     const goalsList = document.getElementById('goalsList');
-    goalsList.innerHTML = '<div class="loading">Loading your goals...</div>';
+    goalsList.innerHTML = '<div class="loading-state">Loading...</div>';
     
     try {
         const response = await fetch('/api/goals');
@@ -1659,10 +1856,9 @@ function displayGoals(goals) {
     
     if (!goals || goals.length === 0) {
         goalsList.innerHTML = `
-            <div class="no-data-message">
-                <div class="no-data-icon">🎯</div>
+            <div class="no-goals">
                 <h3>No Goals Yet</h3>
-                <p>Submit your first goal above to get started on your Alpha X journey!</p>
+                <p>Create your first goal to get started!</p>
             </div>
         `;
         return;
@@ -1674,74 +1870,53 @@ function displayGoals(goals) {
         const aIsToday = new Date(a.createdAt).toDateString() === today;
         const bIsToday = new Date(b.createdAt).toDateString() === today;
         
-        // If one is today's goal and the other isn't, today's goal comes first
         if (aIsToday && !bIsToday) return -1;
         if (!aIsToday && bIsToday) return 1;
         
-        // Otherwise sort by creation date (newest first)
         return new Date(b.createdAt) - new Date(a.createdAt);
     });
     
     goalsList.innerHTML = sortedGoals.map(goal => {
         const createdDate = new Date(goal.createdAt).toLocaleDateString();
-        const completedDate = goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : null;
         const isToday = new Date(goal.createdAt).toDateString() === today;
         
         return `
-            <div class="goal-card-minimal${isToday ? ' today-goal' : ''}${goal.status === 'completed' ? ' completed' : ''}" style="animation-delay: ${sortedGoals.indexOf(goal) * 0.1}s">
-                ${isToday ? '<div class="today-badge">Today</div>' : ''}
-                
-                <div class="goal-header-minimal">
-                    <div class="goal-status-badge ${goal.status}">
-                        ${goal.status === 'completed' ? 'Completed' : goal.status === 'active' ? 'Active' : 'Inactive'}
-                    </div>
-                    ${goal.estimatedHours ? `
-                        <div class="goal-time-badge" style="background: ${goal.estimatedHours < 2.5 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; border: 2px solid ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'}; color: ${goal.estimatedHours < 2.5 ? '#ef4444' : '#10b981'};">
-                            ⏱️ ${goal.estimatedHours}h
-                        </div>
-                    ` : ''}
+            <div class="goal-card${isToday ? ' today' : ''}">
+                <div class="goal-header">
+                    ${isToday ? '<span class="badge badge-today">Today</span>' : ''}
+                    <span class="badge ${goal.status === 'completed' ? 'badge-completed' : 'badge-active'}">
+                        ${goal.status === 'completed' ? 'Done' : 'Active'}
+                    </span>
+                    ${goal.estimatedHours ? `<span class="badge badge-time">${goal.estimatedHours}h</span>` : ''}
                 </div>
                 
-                <div class="goal-content-wrapper">
-                    <div class="goal-title">
-                        ${escapeHtml(goal.goal)}
-                    </div>
-                    
-                    ${goal.validationData ? `
-                        <div class="scores-minimal">
-                            <span class="score-badge ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}">
-                                Ambition: ${goal.validationData.ambitionScore}/5
-                            </span>
-                            <span class="score-badge ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}">
-                                Measurable: ${goal.validationData.measurableScore}/10
-                            </span>
-                        </div>
-                    ` : ''}
-                </div>
+                <div class="goal-text">${escapeHtml(goal.goal)}</div>
                 
-                <div class="goal-footer-minimal">
-                    <div class="goal-meta-minimal">
-                        <span class="date-label">Created: ${createdDate}</span>
-                        ${completedDate ? `<span class="date-label">Completed: ${completedDate}</span>` : ''}
+                ${goal.validationData ? `
+                    <div class="goal-scores">
+                        <span class="mini-score ${goal.validationData.ambitionScore >= 4 ? 'pass' : 'fail'}">
+                            Amb: ${goal.validationData.ambitionScore}/5
+                        </span>
+                        <span class="mini-score ${goal.validationData.measurableScore >= 8 ? 'pass' : 'fail'}">
+                            Meas: ${goal.validationData.measurableScore}/10
+                        </span>
                     </div>
-                    
-                    <div class="goal-actions-minimal">
-                    ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
-                        <button class="btn-edit-minimal" onclick="editUserGoal('${goal.id}')" title="Edit goal">
-                            Edit
-                        </button>
-                        <button class="btn-complete-minimal" onclick="showCompletionModal('${goal.id}')">
-                            Complete
-                        </button>
-                    ` : goal.status === 'active' ? `
-                        <div class="deadline-passed">Deadline passed</div>
-                    ` : ''}
+                ` : ''}
+                
+                <div class="goal-footer">
+                    <span class="goal-date">${createdDate}</span>
+                    <div class="goal-actions">
+                        ${goal.status === 'active' && canCompleteGoal(goal.createdAt) ? `
+                            <button class="btn-action btn-edit" onclick="editUserGoal('${goal.id}')">Edit</button>
+                            <button class="btn-action btn-complete" onclick="showCompletionModal('${goal.id}')">Complete</button>
+                        ` : goal.status === 'active' ? `
+                            <span class="deadline-msg">Deadline passed</span>
+                        ` : ''}
                     </div>
                 </div>
             </div>
         `;
     }).join('');
-    
 }
 
 async function completeGoal(goalId) {
@@ -2082,54 +2257,41 @@ function displayEditValidationResults(validation) {
     if (!resultsContainer || !contentContainer) return;
     
     const statusClass = validation.isValid ? 'valid' : 'invalid';
-    const statusText = validation.isValid ? 'Goal Approved' : 'Needs Improvement';
+    const statusText = validation.isValid ? 'Approved' : 'Needs Work';
     
-    const getScoreColor = (score, isAmbition = false) => {
-        const threshold = isAmbition ? 4 : 8;
-        const maxScore = isAmbition ? 5 : 10;
-        if (score >= threshold) return '#10b981';
-        if (score >= (maxScore * 0.6)) return '#f59e0b';
-        return '#ef4444';
-    };
+    const ambitionPass = (validation.ambitionScore || 0) >= 4;
+    const measurablePass = (validation.measurableScore || 0) >= 8;
     
     contentContainer.innerHTML = `
-        <div class="validation-status-clean ${statusClass}">
-            <strong>${statusText}</strong>
+        <div class="validation-status ${statusClass}">
+            ${statusText}
         </div>
         
-        <div class="validation-scores-grid two-cols">
-            <div class="score-item">
+        <div class="validation-scores">
+            <div class="score-card">
                 <div class="score-label">Ambition</div>
-                <div class="score-value" style="color: ${getScoreColor(validation.ambitionScore || 0, true)}">
+                <div class="score-value ${ambitionPass ? 'pass' : 'fail'}">
                     ${validation.ambitionScore || 0}/5
                 </div>
-                <div class="score-requirement">Need 4/5</div>
+                <div class="score-req">Need 4+</div>
             </div>
             
-            <div class="score-item">
+            <div class="score-card">
                 <div class="score-label">Measurable</div>
-                <div class="score-value" style="color: ${getScoreColor(validation.measurableScore || 0)}">
+                <div class="score-value ${measurablePass ? 'pass' : 'fail'}">
                     ${validation.measurableScore || 0}/10
                 </div>
-                <div class="score-requirement">Need 8/10</div>
+                <div class="score-req">Need 8+</div>
             </div>
         </div>
         
-        <div class="validation-feedback-section">
+        <div class="feedback-box">
             <h4>Feedback</h4>
             <p>${validation.feedback}</p>
-            ${validation.suggestions && validation.suggestions.length > 0 ? `
-                <div class="validation-suggestions">
-                    <strong>Suggestions:</strong>
-                    <ul>
-                        ${validation.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
-                    </ul>
-                </div>
-            ` : ''}
             ${validation.exampleGoal ? `
-                <div class="validation-example">
-                    <strong>Example goal that would pass:</strong>
-                    <p class="example-goal-text">${escapeHtml(validation.exampleGoal)}</p>
+                <div class="example-box">
+                    <strong>Example goal:</strong>
+                    <p>${escapeHtml(validation.exampleGoal)}</p>
                 </div>
             ` : ''}
         </div>

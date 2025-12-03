@@ -1,5 +1,5 @@
 // Vercel serverless function for completing goals with BrainLift word count extraction
-import { updateGoal, getGoalById, saveBrainLiftEntry } from './redis.js';
+import { updateGoal, getGoalById, saveBrainLiftEntry, getRedisClient } from './redis.js';
 
 // Word count utility function
 function countWords(text) {
@@ -158,9 +158,50 @@ export default async function handler(req, res) {
     
     const updatedGoal = await updateGoal(goalId, updateData);
     
+    // Update user streak
+    let newStreak = 1;
+    try {
+      const client = await getRedisClient();
+      const userData = await client.hGetAll(userId);
+      
+      if (userData) {
+        const lastCompletedDate = userData.lastGoalCompletedDate;
+        const currentStreak = parseInt(userData.streak) || 0;
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        if (lastCompletedDate === todayStr) {
+          // Already completed a goal today, streak unchanged
+          newStreak = currentStreak;
+        } else {
+          // Check if last completion was yesterday
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          
+          if (lastCompletedDate === yesterdayStr) {
+            // Continue streak
+            newStreak = currentStreak + 1;
+          } else {
+            // Streak broken, start fresh
+            newStreak = 1;
+          }
+        }
+        
+        // Update user with new streak
+        await client.hSet(userId, {
+          streak: newStreak.toString(),
+          lastGoalCompletedDate: todayStr
+        });
+      }
+    } catch (streakError) {
+      console.error('Error updating streak:', streakError);
+      // Don't fail the request if streak update fails
+    }
+    
     res.json({ 
       success: true, 
       goal: updatedGoal,
+      streak: newStreak,
       wordCountComparison: {
         starting: startingWordCount,
         ending: endingWordCount,
