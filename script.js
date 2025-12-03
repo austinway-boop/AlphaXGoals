@@ -971,25 +971,42 @@ async function handleNewPassword(e) {
 function calculateStreak(goals) {
     if (!goals || goals.length === 0) return 0;
     
-    // Sort goals by creation date (newest first)
+    // Sort goals by CREATION date (when submitted) - newest first
     const sortedGoals = [...goals].sort((a, b) => {
-        const dateA = new Date(a.completedAt || a.createdAt);
-        const dateB = new Date(b.completedAt || b.createdAt);
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
         return dateB - dateA;
+    });
+    
+    console.log('=== STREAK CALCULATION ===');
+    console.log('Total goals:', sortedGoals.length);
+    sortedGoals.forEach((g, i) => {
+        console.log(`Goal ${i + 1}:`, {
+            text: g.goal?.substring(0, 40),
+            createdAt: g.createdAt,
+            completed: g.completed,
+            status: g.status
+        });
     });
     
     let streak = 0;
     
     // Count consecutive completed goals from the most recent
     for (const goal of sortedGoals) {
-        if (goal.completed) {
+        // Check both 'completed' boolean and 'status' field
+        const isCompleted = goal.completed === true || goal.status === 'completed';
+        
+        if (isCompleted) {
             streak++;
+            console.log(`+ Goal completed, streak now: ${streak}`);
         } else {
             // Hit an incomplete/failed/inactive goal - streak ends
+            console.log(`X Streak broken by: "${goal.goal?.substring(0, 40)}" (completed: ${goal.completed}, status: ${goal.status})`);
             break;
         }
     }
     
+    console.log('=== FINAL STREAK:', streak, '===');
     return streak;
 }
 
