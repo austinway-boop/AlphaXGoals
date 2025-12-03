@@ -405,119 +405,34 @@ function showCompletionModal(goalId) {
     
     currentCompletionGoal = goal;
     
-    // Create modal HTML dynamically and add to body
+    // Create simple modal HTML
     const modalHTML = `
         <div id="completionModal" class="completion-modal" onclick="handleModalClick(event)">
-            <div class="modal-content" onclick="event.stopPropagation()">
-                <div class="modal-header">
-                    <h3>🎉 Complete Your Goal</h3>
-                    <button class="modal-close" onclick="hideCompletionModal()">&times;</button>
-                </div>
+            <div class="modal-content completion-content" onclick="event.stopPropagation()">
+                <button class="modal-close" onclick="hideCompletionModal()">&times;</button>
                 
-                <div class="goal-preview">
-                    <h4>📝 "${escapeHtml(goal.goal)}"</h4>
-                    ${goal.alphaXProject ? `<p class="alpha-project">🚀 Project: ${escapeHtml(goal.alphaXProject)}</p>` : ''}
-                </div>
+                <h2>Complete Goal</h2>
+                <p class="goal-preview-text">${escapeHtml(goal.goal)}</p>
                 
-                <div class="completion-instructions">
-                    <p class="completion-intro">Complete your goal by providing the required information below.</p>
-                </div>
-                
-                <div class="proof-tabs">
-                    <div class="tab-navigation">
-                        <button class="tab-btn active" data-tab="text" onclick="switchProofTab('text')">📝 1. What You Did Today (Required)</button>
-                        <button class="tab-btn" data-tab="brainlift" onclick="switchProofTab('brainlift')">🧠 2. Updated Brain Lift (Required)</button>
-                        <button class="tab-btn" data-tab="screenshot" onclick="switchProofTab('screenshot')">📷 3. Screenshots (Optional)</button>
+                <div class="completion-form">
+                    <div class="input-group">
+                        <label>What did you accomplish?</label>
+                        <textarea id="completionText" rows="4" placeholder="Describe what you completed..." class="completion-textarea" required></textarea>
                     </div>
                     
-                    <!-- Text Proof Tab (now first) -->
-                    <div id="textTab" class="proof-tab active">
-                        <h5>📝 Write What You Did Today</h5>
-                        <p class="tab-description">Describe your accomplishments and what you completed:</p>
-                        <div class="example-box">
-                            <strong>Example:</strong> "I completed 15 coding challenges on LeetCode, focusing on array manipulation and sorting algorithms. I solved problems #283, #349, and #26, taking detailed notes on time complexity. I also wrote a 500-word blog post about my learning process and published it on Medium."
-                        </div>
-                        <textarea id="completionText" rows="6" placeholder="Write about what you accomplished today, what you learned, and how you completed your goal..." class="completion-textarea" required></textarea>
-                        <div class="character-count">
-                            <span id="textCount">0</span> characters
-                        </div>
-                        
-                        <div id="textPreview" class="content-preview">
-                            <h6>Preview</h6>
-                            <div class="text-preview-container">
-                                <p id="textPreviewContent" class="preview-text">Start writing to see your preview...</p>
-                            </div>
+                    <div class="input-group">
+                        <label>Updated Brain Lift</label>
+                        <textarea id="completionBrainLift" rows="4" placeholder="Paste your updated Brain Lift..." class="completion-textarea"></textarea>
+                        <div class="word-count-row">
+                            <span>Now: <strong id="brainliftCompletionWordCount">0</strong> words</span>
+                            <span>Started: <strong>${goal.startingWordCount || 0}</strong> words</span>
                         </div>
                     </div>
-                    
-                    <!-- Screenshot Tab (now third and optional) -->
-                    <div id="screenshotTab" class="proof-tab hidden">
-                        <h5>📷 Upload Screenshots (Optional)</h5>
-                        <p class="tab-description">Screenshots are optional but can help document your progress:</p>
-                        <div class="example-box">
-                            <strong>Examples:</strong> Progress dashboards, completed assignments, code submissions, published content, or any visual proof of your work.
-                        </div>
-                        
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="completionScreenshot" accept="image/*" multiple>
-                            <div class="file-upload-display" id="completionDropzone">
-                                <div class="file-upload-text">
-                                    <span class="upload-icon">📷</span>
-                                    <span>Click here or drag & drop your screenshots</span>
-                                </div>
-                                <div class="file-upload-hint">Support for multiple images - show us your progress!</div>
-                            </div>
-                            <div class="add-more-images">
-                                <button type="button" class="btn-add-more" id="addMoreCompletionImages" onclick="document.getElementById('completionScreenshot').click()">+ Add More Screenshots</button>
-                            </div>
-                        </div>
-                        
-                        <div id="screenshotPreview" class="content-preview hidden">
-                            <h6>📷 Your Screenshots</h6>
-                            <div id="imagePreviewContainer" class="image-preview-grid"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Brain Lift Tab (second and required) -->
-                    <div id="brainliftTab" class="proof-tab hidden">
-                        <h5>🧠 Upload Your Updated Brain Lift Content (Required)</h5>
-                        <p class="tab-description">Paste your current Brain Lift content so we can compare word counts:</p>
-                        <div class="example-box">
-                            <strong>Required:</strong> Paste your complete, current Brain Lift with all today's additions and updates. We'll compare the word count with your starting Brain Lift to measure your progress.
-                        </div>
-                        
-                        <textarea id="completionBrainLift" rows="8" placeholder="Paste your complete, updated Brain Lift content here..." class="completion-textarea"></textarea>
-                        <div class="word-count-info">
-                            <div class="word-count-display">
-                                <span id="brainliftCompletionWordCount">0 words</span>
-                            </div>
-                            <div class="starting-word-display">
-                                Starting word count: <strong>${goal.startingWordCount || 0} words</strong>
-                            </div>
-                        </div>
-                    </div>
-                    
-                        </div>
-                        
-                <div class="completion-requirement">
-                    <div class="requirement-box">
-                        <p><strong>📝 Ready to Complete Your Goal?</strong></p>
-                        <p>Make sure you've completed the required sections:</p>
-                        <ul style="text-align: left; margin-top: 0.5rem;">
-                            <li>✍️ Written description of what you did (Required)</li>
-                            <li>🧠 Updated Brain Lift content (Required)</li>
-                            <li>📷 Screenshots of your work (Optional)</li>
-                        </ul>
-                        </div>
                 </div>
                 
                 <div class="modal-actions">
-                    <button class="btn btn-success" onclick="confirmCompletion()">
-                        🎉 Complete My Goal
-                    </button>
-                    <button class="btn btn-secondary" onclick="hideCompletionModal()">
-                        Cancel
-                    </button>
+                    <button class="btn btn-secondary" onclick="hideCompletionModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmCompletion()">Complete</button>
                 </div>
             </div>
         </div>
@@ -592,51 +507,6 @@ function switchProofTab(tabType) {
 }
 
 function initializeCompletionModal() {
-    console.log('Initializing completion modal handlers');
-    
-    // Initialize file upload handlers
-    handleCompletionFileUpload();
-    
-    // Initialize character counter and text preview
-    const textarea = document.getElementById('completionText');
-    const counter = document.getElementById('textCount');
-    const textPreview = document.getElementById('textPreviewContent');
-    
-    console.log('Text elements found:', {textarea, counter, textPreview});
-    
-    if (textarea && counter) {
-        // Add input event listener for character counting and preview
-        const handleTextInput = () => {
-            const text = textarea.value;
-            counter.textContent = text.length;
-            console.log('Text length updated:', text.length);
-            
-            // Update live preview
-            if (textPreview) {
-                if (text.trim().length > 0) {
-                    textPreview.textContent = text;
-                    textPreview.classList.remove('empty');
-                } else {
-                    textPreview.textContent = 'Start writing to see your preview...';
-                    textPreview.classList.add('empty');
-                }
-            }
-        };
-        
-        textarea.addEventListener('input', handleTextInput);
-        textarea.addEventListener('keyup', handleTextInput);
-        textarea.addEventListener('paste', () => {
-            setTimeout(handleTextInput, 10); // Handle paste events
-        });
-        
-        // Trigger initial count and preview
-        handleTextInput();
-        
-        console.log('Text input handlers attached successfully');
-    } else {
-        console.error('Text elements not found for initialization');
-    }
-    
     // Initialize Brain Lift word counter
     const brainliftTextarea = document.getElementById('completionBrainLift');
     const brainliftWordCount = document.getElementById('brainliftCompletionWordCount');
@@ -645,19 +515,11 @@ function initializeCompletionModal() {
         const handleBrainLiftInput = () => {
             const text = brainliftTextarea.value;
             const wordCount = countWords(text);
-            brainliftWordCount.textContent = `${wordCount} words`;
+            brainliftWordCount.textContent = wordCount;
         };
         
         brainliftTextarea.addEventListener('input', handleBrainLiftInput);
-        brainliftTextarea.addEventListener('keyup', handleBrainLiftInput);
-        brainliftTextarea.addEventListener('paste', () => {
-            setTimeout(handleBrainLiftInput, 10);
-        });
-        
-        // Trigger initial count
         handleBrainLiftInput();
-        
-        console.log('Brain Lift word counter initialized');
     }
 }
 
@@ -714,75 +576,22 @@ async function confirmCompletion() {
     const goalId = currentCompletionGoal.id;
     console.log('Confirming completion for goalId:', goalId);
     
-    // Check what proof methods are filled
-    const screenshotFiles = window.getSelectedImages ? window.getSelectedImages() : [];
     const textProof = document.getElementById('completionText')?.value.trim();
     const brainliftContent = document.getElementById('completionBrainLift')?.value.trim();
     
-    // Require text proof and Brain Lift content (screenshots are optional)
     if (!textProof || textProof.length === 0) {
-        showErrorOutsideModal('Please write what you did today - describe how you completed this goal');
-        switchProofTab('text');
+        showToast('Please describe what you accomplished', 'warning');
         return;
     }
     
     if (!brainliftContent || brainliftContent.length === 0) {
-        showErrorOutsideModal('Please upload your updated Brain Lift content - we need to compare word counts to verify your progress');
-        switchProofTab('brainlift');
+        showToast('Please paste your updated Brain Lift', 'warning');
         return;
     }
     
-    // No minimum character requirement - any text is acceptable
-    
-    showLoading('Processing proof and completing goal...');
+    showLoading('Completing goal...');
     
     try {
-        // Calculate total file size before processing  
-        let totalSize = 0;
-        for (let i = 0; i < screenshotFiles.length; i++) {
-            totalSize += screenshotFiles[i].size;
-        }
-        
-        // With 30KB per image limit, total should be reasonable
-        // But still check to be safe
-        const estimatedBase64Size = totalSize * 1.33;
-        const maxPayloadSize = 500 * 1024; // 500KB max total (with 30KB per image, max ~16 images)
-        
-        if (estimatedBase64Size > maxPayloadSize) {
-            hideLoading();
-            showErrorOutsideModal('Total image size too large. Please use fewer images or compress them further.');
-            return;
-        }
-        
-        // Process multiple screenshots to base64
-        let screenshotDataArray = [];
-        
-        for (let i = 0; i < screenshotFiles.length; i++) {
-            try {
-                const screenshotData = await fileToBase64(screenshotFiles[i]);
-                screenshotDataArray.push({
-                    data: screenshotData,
-                    filename: screenshotFiles[i].name,
-                    size: screenshotFiles[i].size
-                });
-                console.log(`Screenshot ${i+1} processed, size:`, screenshotData.length);
-            } catch (error) {
-                console.error(`Failed to process screenshot ${i+1}:`, error);
-                hideLoading();
-                showErrorOutsideModal(`Failed to process image "${screenshotFiles[i].name}". Try a smaller image.`);
-                return;
-            }
-        }
-        
-        console.log('Sending completion request for goal:', goalId);
-        console.log('Request data:', {
-            goalId,
-            hasScreenshots: screenshotDataArray.length > 0,
-            screenshotCount: screenshotDataArray.length,
-            textProofLength: textProof.length,
-            brainliftContentLength: brainliftContent.length
-        });
-        
         const response = await fetch('/api/complete-goal', {
             method: 'POST',
             headers: {
@@ -790,7 +599,7 @@ async function confirmCompletion() {
             },
             body: JSON.stringify({ 
                 goalId, 
-                screenshotDataArray,
+                screenshotDataArray: [],
                 textProof,
                 brainliftContent
             })
@@ -822,19 +631,26 @@ async function confirmCompletion() {
         hideLoading();
         
         if (data.success) {
-            // Update streak in state
+            hideCompletionModal();
+            
+            // Show success animation first
+            showSuccessAnimation('Goal Complete!');
+            
+            // Update streak in state and show celebration
             if (data.streak) {
                 appState.currentUser.streak = data.streak;
                 updateStreakDisplay();
                 
-                // Show streak celebration
+                // Store that we showed streak today
+                localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, data.streak);
+                localStorage.setItem('lastShownDate_' + appState.currentUser?.id, new Date().toDateString());
+                
+                // Show streak celebration after success animation
                 setTimeout(() => {
-                    showStreakAnimation();
-                }, 500);
+                    showStreakAnimation(true);
+                }, 1800);
             }
             
-            showToast('Goal completed successfully!', 'success');
-            hideCompletionModal();
             loadGoals();
         } else {
             showToast(data.error, 'error');
@@ -1151,7 +967,53 @@ async function handleNewPassword(e) {
     }
 }
 
-// Streak Functions
+// Streak Functions - Weekdays only (Mon-Fri)
+function calculateWeekdayStreak(completedDates) {
+    if (!completedDates || completedDates.length === 0) return 0;
+    
+    // Sort dates descending (newest first)
+    const sortedDates = [...completedDates].sort((a, b) => new Date(b) - new Date(a));
+    
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    
+    // Get most recent completion
+    const mostRecentCompletion = new Date(sortedDates[0]);
+    mostRecentCompletion.setHours(0, 0, 0, 0);
+    
+    // Start checking from today backwards
+    const dateSet = new Set(sortedDates.map(d => new Date(d).toDateString()));
+    
+    // Walk backwards through weekdays
+    while (true) {
+        const dayOfWeek = currentDate.getDay();
+        
+        // Skip weekends (0 = Sunday, 6 = Saturday)
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            currentDate.setDate(currentDate.getDate() - 1);
+            continue;
+        }
+        
+        // Check if this weekday has a completion
+        if (dateSet.has(currentDate.toDateString())) {
+            streak++;
+            currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+            // If today is a weekday and no completion yet, give them a pass
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (currentDate.getTime() === today.getTime()) {
+                currentDate.setDate(currentDate.getDate() - 1);
+                continue;
+            }
+            break;
+        }
+    }
+    
+    return streak;
+}
+
 function updateStreakDisplay() {
     const streakCount = document.getElementById('streakCount');
     const streak = appState.currentUser?.streak || 0;
@@ -1160,22 +1022,57 @@ function updateStreakDisplay() {
     }
 }
 
-function showStreakAnimation() {
+function showStreakAnimation(isNewStreak = false) {
     const streak = appState.currentUser?.streak || 0;
     const modal = document.getElementById('streakModal');
     const streakNumber = document.getElementById('streakNumber');
     const streakMessage = document.getElementById('streakMessage');
+    const streakLabel = document.getElementById('streakLabel');
+    const particlesContainer = document.getElementById('streakParticles');
     
     if (!modal) return;
     
     streakNumber.textContent = streak;
+    streakLabel.textContent = streak === 1 ? 'day streak!' : 'day streak!';
     streakMessage.textContent = streakMessages[Math.floor(Math.random() * streakMessages.length)];
+    
+    // Create fire particles
+    if (particlesContainer) {
+        particlesContainer.innerHTML = '';
+        const colors = ['#ff9500', '#ff6b00', '#ffcc00', '#ff4500'];
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = (40 + Math.random() * 20) + '%';
+                particle.style.bottom = '40%';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.animationDuration = (1.5 + Math.random()) + 's';
+                particle.style.animationDelay = (Math.random() * 0.5) + 's';
+                particlesContainer.appendChild(particle);
+                setTimeout(() => particle.remove(), 2500);
+            }, i * 100);
+        }
+    }
     
     modal.classList.remove('hidden');
     setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function showStreakLostAnimation(previousStreak) {
+    const modal = document.getElementById('streakLostModal');
+    const message = document.getElementById('streakLostMessage');
     
-    // Create confetti
-    createConfetti();
+    if (!modal) return;
+    
+    if (previousStreak > 0) {
+        message.textContent = `You lost your ${previousStreak} day streak. Start fresh today!`;
+    } else {
+        message.textContent = 'Start building your streak today!';
+    }
+    
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.add('show'), 10);
 }
 
 function hideStreakModal() {
@@ -1186,22 +1083,86 @@ function hideStreakModal() {
     }
 }
 
-function createConfetti() {
-    const colors = ['#58cc02', '#1cb0f6', '#ff9600', '#ff4b4b', '#ce82ff', '#ffde00'];
-    
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            confetti.style.animationDelay = Math.random() * 0.5 + 's';
-            document.body.appendChild(confetti);
-            
-            setTimeout(() => confetti.remove(), 4000);
-        }, i * 30);
+function hideStreakLostModal() {
+    const modal = document.getElementById('streakLostModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.classList.add('hidden'), 300);
     }
+}
+
+// Check streak on login/page load
+function checkStreakOnLogin(previousStreak, currentStreak, hasCompletedToday) {
+    // Store last shown streak in localStorage to avoid showing animation every refresh
+    const lastShownStreak = localStorage.getItem('lastShownStreak_' + appState.currentUser?.id);
+    const lastShownDate = localStorage.getItem('lastShownDate_' + appState.currentUser?.id);
+    const today = new Date().toDateString();
+    
+    // If streak increased and we haven't shown today, show celebration
+    if (currentStreak > 0 && hasCompletedToday && lastShownDate !== today) {
+        localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, currentStreak);
+        localStorage.setItem('lastShownDate_' + appState.currentUser?.id, today);
+        setTimeout(() => showStreakAnimation(true), 500);
+    }
+    // If streak was lost (had streak before, now at 0 or less), show lost animation
+    else if (previousStreak > 0 && currentStreak === 0 && lastShownStreak > 0) {
+        localStorage.setItem('lastShownStreak_' + appState.currentUser?.id, '0');
+        setTimeout(() => showStreakLostAnimation(previousStreak), 500);
+    }
+}
+
+// Success animation for goal submission
+function showSuccessAnimation(message = 'Goal Submitted!') {
+    const overlay = document.createElement('div');
+    overlay.className = 'success-overlay';
+    overlay.innerHTML = `
+        <div class="success-content">
+            <div class="success-checkmark">
+                <svg viewBox="0 0 52 52">
+                    <path d="M14 27l10 10 16-20"/>
+                </svg>
+            </div>
+            <div class="success-text">${message}</div>
+            <div class="success-subtext">Great work!</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s';
+        setTimeout(() => overlay.remove(), 300);
+    }, 1500);
+}
+
+// Check streak after goals are loaded
+function checkStreakAfterGoalsLoad(goals) {
+    if (!goals || goals.length === 0) return;
+    
+    // Get completed goal dates
+    const completedDates = goals
+        .filter(g => g.completed && g.completedAt)
+        .map(g => g.completedAt);
+    
+    // Calculate current streak based on weekdays
+    const currentStreak = calculateWeekdayStreak(completedDates);
+    
+    // Update state
+    const previousStreak = appState.currentUser?.streak || 0;
+    appState.currentUser.streak = currentStreak;
+    updateStreakDisplay();
+    
+    // Check if user completed a goal today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const hasCompletedToday = completedDates.some(d => {
+        const completedDate = new Date(d);
+        completedDate.setHours(0, 0, 0, 0);
+        return completedDate.getTime() === today.getTime();
+    });
+    
+    // Show streak animation if needed
+    checkStreakOnLogin(previousStreak, currentStreak, hasCompletedToday);
 }
 
 // Button animation helper
@@ -1346,9 +1307,6 @@ function showApp() {
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
     document.getElementById('alphaXModal').classList.add('hidden');
-    
-    // Update welcome message
-    document.getElementById('welcomeUser').textContent = appState.currentUser.username;
     
     // Update streak display
     updateStreakDisplay();
@@ -1530,10 +1488,17 @@ async function validateGoal() {
             // Enable submit button if goal is valid
             document.getElementById('submitGoalBtn').disabled = !data.validation.isValid;
             
+            // Add validation animation
+            const validationBox = document.getElementById('validationResults');
+            if (validationBox) {
+                validationBox.classList.add('animating');
+                setTimeout(() => validationBox.classList.remove('animating'), 600);
+            }
+            
             if (data.validation.isValid) {
-                showToast('Goal validated successfully! You can now submit it.', 'success');
+                showToast('Goal validated!', 'success');
             } else {
-                showToast('Goal needs improvement. Check the validation feedback.', 'warning');
+                showToast('Needs improvement', 'warning');
             }
         } else {
             showToast(data.error, 'error');
@@ -1789,7 +1754,15 @@ async function handleGoalSubmit(e) {
         hideLoading();
         
         if (data.success) {
-            showToast('Goal submitted successfully! Starting word count: ' + (data.brainliftEntry?.wordCount || 0) + ' words', 'success');
+            // Show success animation
+            showSuccessAnimation('Goal Submitted!');
+            
+            // Add card animation
+            const card = document.querySelector('#newTab .card');
+            if (card) {
+                card.classList.add('submitting');
+                setTimeout(() => card.classList.remove('submitting'), 500);
+            }
             
             // Reset form and validation
             document.getElementById('goalForm').reset();
@@ -1825,6 +1798,9 @@ async function loadGoals() {
         if (data.success) {
             appState.goals = data.goals || [];
             displayGoals(data.goals || []);
+            
+            // Check streak status and show animation if appropriate
+            checkStreakAfterGoalsLoad(data.goals || []);
             
             if (data.message) {
                 console.log('Goals API message:', data.message);

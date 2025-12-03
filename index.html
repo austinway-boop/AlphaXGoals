@@ -97,42 +97,40 @@
 
     <!-- Main App -->
     <div id="appSection" class="app-section hidden">
-        <!-- Top Nav -->
-        <nav class="top-nav">
-            <div class="nav-brand">Goals</div>
-            <div class="nav-right">
+        <!-- Single Header Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="tab active" data-tab="new" onclick="switchTab('new')">New</button>
+                <button class="tab" data-tab="goals" onclick="switchTab('goals')">Goals</button>
+            </div>
+            <div class="header-right">
                 <div class="streak-display" id="streakDisplay" onclick="showStreakAnimation()">
-                    <span class="streak-flame">&#128293;</span>
                     <span class="streak-count" id="streakCount">0</span>
                 </div>
-                <div class="nav-user">
-                    <span id="welcomeUser"></span>
-                    <button class="btn btn-ghost" onclick="logout()">Log out</button>
-                </div>
+                <button class="btn-logout" onclick="logout()">Log out</button>
             </div>
-        </nav>
+        </header>
         
         <!-- Streak Celebration Modal -->
         <div id="streakModal" class="streak-modal hidden">
             <div class="streak-modal-content">
-                <div class="streak-flame-big" id="streakFlameBig">&#128293;</div>
+                <div class="streak-particles" id="streakParticles"></div>
+                <div class="streak-icon" id="streakIcon"></div>
                 <div class="streak-number" id="streakNumber">0</div>
-                <div class="streak-label">day streak!</div>
+                <div class="streak-label" id="streakLabel">day streak!</div>
                 <div class="streak-message" id="streakMessage">Keep it up!</div>
-                <button class="btn btn-primary" onclick="hideStreakModal()">Nice!</button>
+                <button class="btn btn-primary" onclick="hideStreakModal()">Continue</button>
             </div>
         </div>
-
-        <!-- Tab Navigation -->
-        <div class="tab-bar">
-            <button class="tab active" data-tab="new" onclick="switchTab('new')">
-                <span class="tab-icon">+</span>
-                <span class="tab-label">New</span>
-            </button>
-            <button class="tab" data-tab="goals" onclick="switchTab('goals')">
-                <span class="tab-icon">&#9776;</span>
-                <span class="tab-label">My Goals</span>
-            </button>
+        
+        <!-- Streak Lost Modal -->
+        <div id="streakLostModal" class="streak-modal hidden">
+            <div class="streak-modal-content streak-lost">
+                <div class="streak-icon lost"></div>
+                <div class="streak-lost-text">Streak Lost</div>
+                <div class="streak-message" id="streakLostMessage">Start a new streak today!</div>
+                <button class="btn btn-primary" onclick="hideStreakLostModal()">Let's Go</button>
+            </div>
         </div>
 
         <!-- Content Area -->
