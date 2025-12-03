@@ -1510,6 +1510,54 @@ input[type="range"]::-moz-range-thumb {
     margin-bottom: 4px;
 }
 
+/* After School Checkbox */
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-light);
+    border: 2px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.checkbox-wrapper:hover {
+    border-color: #ce82ff;
+    background: rgba(206, 130, 255, 0.05);
+}
+
+.checkbox-wrapper.checked {
+    border-color: #ce82ff;
+    background: rgba(206, 130, 255, 0.1);
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    accent-color: #ce82ff;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.checkbox-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.checkbox-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.checkbox-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 /* Utility */
 .hidden {
     display: none !important;

@@ -87,6 +87,22 @@ function initializeTimeSlider() {
     }
 }
 
+// After School Goal checkbox toggle
+function toggleAfterSchoolGoal() {
+    const checkbox = document.getElementById('isAfterSchoolGoal');
+    const wrapper = document.getElementById('afterSchoolCheckboxWrapper');
+    
+    if (checkbox && wrapper) {
+        checkbox.checked = !checkbox.checked;
+        
+        if (checkbox.checked) {
+            wrapper.classList.add('checked');
+        } else {
+            wrapper.classList.remove('checked');
+        }
+    }
+}
+
 // Tab switching
 function switchTab(tabName) {
     // Update tab buttons
@@ -1724,6 +1740,9 @@ async function handleGoalSubmit(e) {
     showLoading('Calculating Brain Lift word count and submitting your goal...');
     
     try {
+    // Get after school checkbox value
+    const isAfterSchool = document.getElementById('isAfterSchoolGoal')?.checked || false;
+    
     const requestBody = {
         goal,
         brainliftContent,
@@ -1733,7 +1752,9 @@ async function handleGoalSubmit(e) {
         aiQuestions: appState.aiQuestions || null,
         aiAnswers: appState.aiAnswers || null,
         // Include validation data from AI
-        validationData: appState.validationResult || null
+        validationData: appState.validationResult || null,
+        // Include after school flag
+        isAfterSchool: isAfterSchool
     };
     
         const response = await fetch('/api/submit-goal', {

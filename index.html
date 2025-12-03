@@ -173,6 +173,16 @@
                             <div id="housePointsWarning" class="hint warning hidden">Under 2.5 hrs = no points</div>
                         </div>
 
+                        <div class="input-group">
+                            <div class="checkbox-wrapper" id="afterSchoolCheckboxWrapper" onclick="toggleAfterSchoolGoal()">
+                                <input type="checkbox" id="isAfterSchoolGoal" onclick="event.stopPropagation()">
+                                <div class="checkbox-content">
+                                    <span class="checkbox-title">After School Goal</span>
+                                    <span class="checkbox-hint">Check if this is for after school hours</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="button-row">
                             <button type="button" class="btn btn-secondary" onclick="validateGoal()">Validate</button>
                             <button type="submit" class="btn btn-primary" id="submitGoalBtn" disabled>Submit</button>

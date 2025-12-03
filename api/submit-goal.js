@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goal, brainliftContent, alphaXProject, aiQuestions, aiAnswers, validationData, userEstimatedHours } = req.body;
+  const { goal, brainliftContent, alphaXProject, aiQuestions, aiAnswers, validationData, userEstimatedHours, isAfterSchool } = req.body;
   
   if (!goal) {
     return res.status(400).json({ success: false, error: 'Goal is required' });
@@ -108,7 +108,9 @@ export default async function handler(req, res) {
       startingBrainLiftDate: today,
       endingWordCount: null,
       endingBrainLiftDate: null,
-      wordCountCalculatedAt: new Date().toISOString()
+      wordCountCalculatedAt: new Date().toISOString(),
+      // After school goal flag
+      isAfterSchool: isAfterSchool || false
     };
     
     const newGoal = await createGoal(goalData);
