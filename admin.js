@@ -8,6 +8,9 @@ let adminState = {
     stats: {}
 };
 
+// Goal type filter state
+let currentGoalTypeFilter = 'all'; // 'all', 'regular', 'afterSchool'
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Admin Panel initialized');
@@ -370,12 +373,29 @@ async function loadGoals() {
 function displayGoals(goals) {
     const container = document.getElementById('goalsContainer');
     
-    if (!goals || goals.length === 0) {
+    // Update goal type counts
+    updateGoalTypeCounts(goals || []);
+    
+    // Filter goals based on current goal type filter
+    let filteredByType = goals || [];
+    if (currentGoalTypeFilter === 'regular') {
+        filteredByType = filteredByType.filter(g => !g.isAfterSchool);
+    } else if (currentGoalTypeFilter === 'afterSchool') {
+        filteredByType = filteredByType.filter(g => g.isAfterSchool);
+    }
+    
+    if (!filteredByType || filteredByType.length === 0) {
+        const filterMessage = currentGoalTypeFilter === 'afterSchool' 
+            ? 'No after school goals found.' 
+            : currentGoalTypeFilter === 'regular'
+                ? 'No regular goals found.'
+                : 'No goals match the current filters, or no students have submitted goals yet.';
+        
         container.innerHTML = `
             <div class="no-data-message">
                 <div class="no-data-icon">📋</div>
                 <h3>No Goals Found</h3>
-                <p>No goals match the current filters, or no students have submitted goals yet.</p>
+                <p>${filterMessage}</p>
                 <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
             </div>
         `;
@@ -383,7 +403,7 @@ function displayGoals(goals) {
     }
     
     // Sort goals by status: Completed first, Active middle, Invalid/Invalidated last
-    const sortedGoals = [...goals].sort((a, b) => {
+    const sortedGoals = [...filteredByType].sort((a, b) => {
         const statusOrder = {
             'completed': 1,
             'active': 2,
@@ -460,12 +480,15 @@ function displayGoals(goals) {
         ` : '';
         
         return `
-            <div class="admin-goal-card" onclick="toggleGoalDetails('${escapeHtml(goal.id)}')">
+            <div class="admin-goal-card ${goal.isAfterSchool ? 'after-school-goal' : ''}" onclick="toggleGoalDetails('${escapeHtml(goal.id)}')">
                 <div class="goal-header-simple">
                     <div class="user-info-simple">
                         <strong>👤 ${escapeHtml(goal.user.username)}</strong>
+                        ${goal.isAfterSchool ? `
+                            <span class="after-school-badge">After School</span>
+                        ` : ''}
                         ${goal.estimatedHours && goal.estimatedHours < 2.5 ? `
-                            <span class="no-hp-warning" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; border: 2px solid #ef4444;">
+                            <span class="no-hp-warning">
                                 ⚠️ NO HOUSE POINTS
                             </span>
                         ` : ''}
@@ -678,6 +701,37 @@ function setTimeView(view) {
     }
     
     loadGoals();
+}
+
+// Goal type filter (all, regular, afterSchool)
+function setGoalTypeFilter(type) {
+    currentGoalTypeFilter = type;
+    
+    // Update active tab
+    document.querySelectorAll('.goal-type-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.type === type) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Re-display goals with new filter
+    displayGoals(adminState.goals);
+}
+
+// Update goal type counts
+function updateGoalTypeCounts(goals) {
+    const allCount = goals.length;
+    const regularCount = goals.filter(g => !g.isAfterSchool).length;
+    const afterSchoolCount = goals.filter(g => g.isAfterSchool).length;
+    
+    const allCountEl = document.getElementById('allGoalsCount');
+    const regularCountEl = document.getElementById('regularGoalsCount');
+    const afterSchoolCountEl = document.getElementById('afterSchoolGoalsCount');
+    
+    if (allCountEl) allCountEl.textContent = allCount;
+    if (regularCountEl) regularCountEl.textContent = regularCount;
+    if (afterSchoolCountEl) afterSchoolCountEl.textContent = afterSchoolCount;
 }
 
 function applyFilters() {
@@ -1138,6 +1192,16 @@ function showGoalCreationModalWithUsers() {
                             ></textarea>
                         </div>
                         
+                        <div class="form-group">
+                            <div class="checkbox-group" id="afterSchoolCheckboxGroup" onclick="toggleAfterSchoolCheckbox()">
+                                <input type="checkbox" id="isAfterSchoolCheckbox" onclick="event.stopPropagation()">
+                                <div class="checkbox-label">
+                                    <strong>After School Goal</strong>
+                                    <span>Check this if this goal is for after school hours work</span>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div id="goalCreationFeedback" class="validation-feedback-section" style="display: none;"></div>
                         
                         <div class="admin-info">
@@ -1185,6 +1249,19 @@ function updateAlphaXProject() {
         if (selectedUser && selectedUser.alphaXProject) {
             alphaXInput.value = selectedUser.alphaXProject;
         }
+    }
+}
+
+function toggleAfterSchoolCheckbox() {
+    const checkbox = document.getElementById('isAfterSchoolCheckbox');
+    const checkboxGroup = document.getElementById('afterSchoolCheckboxGroup');
+    
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
+        checkboxGroup.classList.add('checked');
+    } else {
+        checkboxGroup.classList.remove('checked');
     }
 }
 
@@ -1245,7 +1322,9 @@ async function createGoalForStudent() {
     createBtn.disabled = true;
     
     try {
-        console.log('Creating goal for student:', studentSelect.value, 'goal:', goalText, 'project:', alphaXProject);
+        const isAfterSchool = document.getElementById('isAfterSchoolCheckbox')?.checked || false;
+        
+        console.log('Creating goal for student:', studentSelect.value, 'goal:', goalText, 'project:', alphaXProject, 'isAfterSchool:', isAfterSchool);
         
         const response = await fetch('/api/admin-create-goal', {
             method: 'POST',
@@ -1257,7 +1336,8 @@ async function createGoalForStudent() {
                 goal: goalText,
                 brainliftLink: brainliftLink,
                 alphaXProject: alphaXProject,
-                adminName: adminState.adminName 
+                adminName: adminState.adminName,
+                isAfterSchool: isAfterSchool
             })
         });
         

@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const { userId, goal, brainliftLink, alphaXProject, adminName } = req.body;
+  const { userId, goal, brainliftLink, alphaXProject, adminName, isAfterSchool } = req.body;
   
   // Check admin authentication
   const adminCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('admin_session='));
@@ -466,7 +466,9 @@ Respond with a JSON array of exactly ${aiQuestions.length} answers corresponding
       endingWordCount: null,
       wordCountExtractionMethod: extractionMethod,
       contentPreview: contentPreview,
-      wordCountExtractedAt: new Date().toISOString()
+      wordCountExtractedAt: new Date().toISOString(),
+      // After school goal flag
+      isAfterSchool: isAfterSchool || false
     };
     
     const newGoal = await createGoal(goalData);
