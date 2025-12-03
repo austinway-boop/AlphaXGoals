@@ -1,4 +1,4 @@
-// Vercel serverless function for password reset
+// Vercel serverless function for password reset - v2
 import { getRedisClient } from './redis.js';
 import bcrypt from 'bcryptjs';
 
