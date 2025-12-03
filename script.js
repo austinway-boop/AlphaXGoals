@@ -67,23 +67,24 @@ function initializeBrainLiftWordCounter() {
 function initializeTimeSlider() {
     const slider = document.getElementById('timeEstimate');
     const valueDisplay = document.getElementById('timeEstimateValue');
-    const warningDiv = document.getElementById('housePointsWarning');
     
     if (slider && valueDisplay) {
         slider.addEventListener('input', (e) => {
             const hours = parseFloat(e.target.value);
             valueDisplay.textContent = hours.toFixed(1);
             
-            // Show warning if under 2.5 hours
-            if (hours < 2.5) {
-                if (warningDiv) warningDiv.classList.remove('hidden');
-            } else {
-                if (warningDiv) warningDiv.classList.add('hidden');
-            }
+            // Use the centralized warning update function
+            updateHousePointsWarning();
         });
         
         // Trigger initial update
         slider.dispatchEvent(new Event('input'));
+    }
+    
+    // Initialize XP input listener
+    const xpInput = document.getElementById('xpAmount');
+    if (xpInput) {
+        xpInput.addEventListener('input', updateXpTimeConversion);
     }
 }
 
@@ -91,16 +92,91 @@ function initializeTimeSlider() {
 function toggleAfterSchoolGoal() {
     const checkbox = document.getElementById('isAfterSchoolGoal');
     const wrapper = document.getElementById('afterSchoolCheckboxWrapper');
+    const xpInputGroup = document.getElementById('xpInputGroup');
+    const housePointsWarning = document.getElementById('housePointsWarning');
     
     if (checkbox && wrapper) {
         checkbox.checked = !checkbox.checked;
         
         if (checkbox.checked) {
             wrapper.classList.add('checked');
+            // Show XP input for after school goals
+            if (xpInputGroup) xpInputGroup.classList.remove('hidden');
+            // Hide house points warning for after school goals (they always get points)
+            if (housePointsWarning) housePointsWarning.classList.add('hidden');
         } else {
             wrapper.classList.remove('checked');
+            // Hide XP input
+            if (xpInputGroup) xpInputGroup.classList.add('hidden');
+            // Reset XP input
+            const xpInput = document.getElementById('xpAmount');
+            if (xpInput) xpInput.value = '';
+            const xpConversion = document.getElementById('xpTimeConversion');
+            if (xpConversion) xpConversion.textContent = '';
+            // Re-check if warning should show based on time estimate
+            updateHousePointsWarning();
         }
     }
+}
+
+// Update house points warning based on time estimate and after school status
+function updateHousePointsWarning() {
+    const isAfterSchool = document.getElementById('isAfterSchoolGoal')?.checked || false;
+    const warningDiv = document.getElementById('housePointsWarning');
+    const slider = document.getElementById('timeEstimate');
+    
+    if (!warningDiv || !slider) return;
+    
+    // After school goals always qualify for points
+    if (isAfterSchool) {
+        warningDiv.classList.add('hidden');
+        return;
+    }
+    
+    // Regular goals need 2.5+ hours
+    const hours = parseFloat(slider.value);
+    if (hours < 2.5) {
+        warningDiv.classList.remove('hidden');
+    } else {
+        warningDiv.classList.add('hidden');
+    }
+}
+
+// XP to time conversion (1 XP = 2 minutes)
+function updateXpTimeConversion() {
+    const xpInput = document.getElementById('xpAmount');
+    const conversionDisplay = document.getElementById('xpTimeConversion');
+    
+    if (!xpInput || !conversionDisplay) return;
+    
+    const xp = parseInt(xpInput.value) || 0;
+    if (xp > 0) {
+        const minutes = xp * 2;
+        const hours = (minutes / 60).toFixed(1);
+        conversionDisplay.textContent = `= ${minutes} minutes (${hours} hours) of work`;
+        conversionDisplay.style.color = '#ce82ff';
+        conversionDisplay.style.fontWeight = '600';
+    } else {
+        conversionDisplay.textContent = '';
+    }
+}
+
+// Reset after school inputs
+function resetAfterSchoolInputs() {
+    const checkbox = document.getElementById('isAfterSchoolGoal');
+    const wrapper = document.getElementById('afterSchoolCheckboxWrapper');
+    const xpInputGroup = document.getElementById('xpInputGroup');
+    const xpInput = document.getElementById('xpAmount');
+    const xpConversion = document.getElementById('xpTimeConversion');
+    
+    if (checkbox) checkbox.checked = false;
+    if (wrapper) wrapper.classList.remove('checked');
+    if (xpInputGroup) xpInputGroup.classList.add('hidden');
+    if (xpInput) xpInput.value = '';
+    if (xpConversion) xpConversion.textContent = '';
+    
+    // Re-check house points warning
+    updateHousePointsWarning();
 }
 
 // Tab switching
@@ -1330,6 +1406,9 @@ function showApp() {
     document.getElementById('submitGoalBtn').disabled = true;
     appState.validationResult = null;
     
+    // Reset after school checkbox and XP input
+    resetAfterSchoolInputs();
+    
     // Clear any completion screenshots from previous sessions
     selectedCompletionScreenshots = [];
     
@@ -1743,6 +1822,9 @@ async function handleGoalSubmit(e) {
     // Get after school checkbox value
     const isAfterSchool = document.getElementById('isAfterSchoolGoal')?.checked || false;
     
+    // Get XP amount for after school goals
+    const xpAmount = isAfterSchool ? (parseInt(document.getElementById('xpAmount')?.value) || 0) : 0;
+    
     const requestBody = {
         goal,
         brainliftContent,
@@ -1754,7 +1836,9 @@ async function handleGoalSubmit(e) {
         // Include validation data from AI
         validationData: appState.validationResult || null,
         // Include after school flag
-        isAfterSchool: isAfterSchool
+        isAfterSchool: isAfterSchool,
+        // Include XP amount for after school goals (1 XP = 2 minutes)
+        xpAmount: xpAmount
     };
     
         const response = await fetch('/api/submit-goal', {
@@ -1788,6 +1872,8 @@ async function handleGoalSubmit(e) {
             appState.aiQuestions = null;
             appState.aiAnswers = null;
             
+            // Reset after school checkbox and XP input
+            resetAfterSchoolInputs();
             
             // Reload goals
             loadGoals();

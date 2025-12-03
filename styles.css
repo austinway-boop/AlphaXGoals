@@ -1558,6 +1558,20 @@ input[type="range"]::-moz-range-thumb {
     color: var(--text-muted);
 }
 
+/* XP Time Conversion Display */
+.xp-time-conversion {
+    margin-top: 8px;
+    font-size: 14px;
+    padding: 8px 12px;
+    background: rgba(206, 130, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(206, 130, 255, 0.3);
+}
+
+.xp-time-conversion:empty {
+    display: none;
+}
+
 /* Utility */
 .hidden {
     display: none !important;

@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ success: false, error: 'Invalid session' });
   }
 
-  const { goal, brainliftContent, alphaXProject, aiQuestions, aiAnswers, validationData, userEstimatedHours, isAfterSchool } = req.body;
+  const { goal, brainliftContent, alphaXProject, aiQuestions, aiAnswers, validationData, userEstimatedHours, isAfterSchool, xpAmount } = req.body;
   
   if (!goal) {
     return res.status(400).json({ success: false, error: 'Goal is required' });
@@ -87,6 +87,9 @@ export default async function handler(req, res) {
     
     // Save goal to Redis
     const estimatedHours = parseFloat(userEstimatedHours) || 3;
+    // Calculate XP time equivalent (1 XP = 2 minutes = 0.0333 hours)
+    const xpTimeHours = (xpAmount || 0) * (2 / 60);
+    
     const goalData = {
       userId,
       goal,
@@ -96,7 +99,11 @@ export default async function handler(req, res) {
       completedAt: null,
       // Store user's time estimate
       estimatedHours: estimatedHours,
-      meetsHousePointsCriteria: estimatedHours >= 2.5,
+      // After school goals always qualify for house points
+      meetsHousePointsCriteria: isAfterSchool ? true : (estimatedHours >= 2.5),
+      // Store XP data for after school goals
+      xpAmount: xpAmount || 0,
+      xpTimeHours: xpTimeHours,
       // Store AI questions and answers if they exist
       aiQuestions: aiQuestions || null,
       aiAnswers: aiAnswers || null,
