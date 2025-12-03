@@ -1,14 +1,20 @@
-// Vercel serverless function for password reset - v2
-import { getRedisClient } from './redis.js';
+// Vercel serverless function for password reset
+import { findUser, updateUser, getRedisClient } from './redis.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
+  console.log('=== RESET PASSWORD API CALLED ===');
+  console.log('Method:', req.method);
+  
   // Enable CORS
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -19,44 +25,28 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  const { email, newPassword, action } = req.body;
+  console.log('Reset password request:', { email: email ? '[PROVIDED]' : '[MISSING]', action });
+
+  if (!action) {
+    return res.status(400).json({ success: false, error: 'Action is required' });
+  }
+
   try {
-    const { email, newPassword, action } = req.body || {};
-
-    if (!action) {
-      return res.status(400).json({ success: false, error: 'Action is required' });
-    }
-
-    // Get Redis client
-    const redis = await getRedisClient();
-
     if (action === 'check') {
       if (!email) {
         return res.status(400).json({ success: false, error: 'Email is required' });
       }
 
-      // Get all user keys
-      const userKeys = await redis.keys('user:*');
-      let foundUser = null;
-
-      for (const key of userKeys) {
-        if (key.includes(':goals') || key.includes(':context')) continue;
-        
-        const userData = await redis.get(key);
-        if (!userData) continue;
-        
-        const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
-        
-        if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
-          foundUser = { id: user.id, username: user.username };
-          break;
-        }
-      }
-
-      if (!foundUser) {
+      // Use findUser to check if email exists
+      const user = await findUser(null, email);
+      
+      if (!user) {
         return res.status(404).json({ success: false, error: 'No account found with that email' });
       }
 
-      return res.json({ success: true, userId: foundUser.id, username: foundUser.username });
+      console.log('Found user for email:', user.username);
+      return res.json({ success: true, userId: user.id, username: user.username });
     }
 
     if (action === 'reset') {
@@ -68,27 +58,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'Password must be at least 4 characters' });
       }
 
-      // Get all user keys
-      const userKeys = await redis.keys('user:*');
-      let foundUser = null;
-      let userKey = null;
-
-      for (const key of userKeys) {
-        if (key.includes(':goals') || key.includes(':context')) continue;
-        
-        const userData = await redis.get(key);
-        if (!userData) continue;
-        
-        const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
-        
-        if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
-          foundUser = user;
-          userKey = key;
-          break;
-        }
-      }
-
-      if (!foundUser) {
+      // Find user by email
+      const user = await findUser(null, email);
+      
+      if (!user) {
         return res.status(404).json({ success: false, error: 'No account found with that email' });
       }
 
@@ -96,9 +69,9 @@ export default async function handler(req, res) {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
       // Update user with new password
-      foundUser.password = hashedPassword;
-      await redis.set(userKey, JSON.stringify(foundUser));
+      await updateUser(user.id, { password: hashedPassword });
 
+      console.log('Password reset successful for:', user.username);
       return res.json({ success: true, message: 'Password reset successfully' });
     }
 
