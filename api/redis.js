@@ -220,8 +220,10 @@ export async function getGoalById(goalId) {
     return null;
   }
   
-  // Parse JSON fields back to objects
+  // Parse fields back to appropriate types
   const parsedGoal = { ...goal };
+  
+  // Parse JSON fields
   ['aiQuestions', 'aiAnswers', 'validationData'].forEach(field => {
     if (parsedGoal[field]) {
       try {
@@ -229,6 +231,20 @@ export async function getGoalById(goalId) {
       } catch (e) {
         // Keep as string if parsing fails
       }
+    }
+  });
+  
+  // Parse boolean fields
+  ['isAfterSchool', 'hasScreenshot', 'meetsHousePointsCriteria', 'adminCompleted'].forEach(field => {
+    if (parsedGoal[field] !== undefined) {
+      parsedGoal[field] = parsedGoal[field] === 'true';
+    }
+  });
+  
+  // Parse numeric fields
+  ['xpAmount'].forEach(field => {
+    if (parsedGoal[field]) {
+      parsedGoal[field] = parseInt(parsedGoal[field]) || null;
     }
   });
   
