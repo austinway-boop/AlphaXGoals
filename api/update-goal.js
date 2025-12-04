@@ -34,9 +34,12 @@ export default async function handler(req, res) {
     }
     
     try {
-      const sessionData = JSON.parse(sessionCookie.split('=')[1]);
+      const sessionValue = sessionCookie.split('=')[1];
+      const decodedSession = decodeURIComponent(sessionValue);
+      const sessionData = JSON.parse(decodedSession);
       userId = sessionData.userId;
     } catch (e) {
+      console.error('Session parse error:', e);
       return res.status(401).json({ success: false, error: 'Invalid session' });
     }
   } else {
@@ -48,12 +51,15 @@ export default async function handler(req, res) {
 
     let adminSession;
     try {
-      adminSession = JSON.parse(adminCookie.split('=')[1]);
+      const adminValue = adminCookie.split('=')[1];
+      const decodedAdmin = decodeURIComponent(adminValue);
+      adminSession = JSON.parse(decodedAdmin);
       if (!adminSession.isAdmin) {
         return res.status(401).json({ success: false, error: 'Admin privileges required' });
       }
       isAdminEdit = true;
     } catch (e) {
+      console.error('Admin session parse error:', e);
       return res.status(401).json({ success: false, error: 'Invalid admin session' });
     }
   }
@@ -82,10 +88,13 @@ export default async function handler(req, res) {
   try {
     const client = await getRedisClient();
     
-    console.log(`Updating goal for goalId: ${goalId}, to: ${newGoalText}, by ${isUserEdit ? 'user' : 'admin'}: ${adminName}`);
+    // Ensure goalId has proper format
+    const formattedGoalId = goalId.startsWith('goal:') ? goalId : `goal:${goalId}`;
+    
+    console.log(`Updating goal for goalId: ${formattedGoalId}, to: ${newGoalText}, by ${isUserEdit ? 'user' : 'admin'}: ${adminName}`);
     
     // Check if goal exists
-    const goal = await client.hGetAll(goalId);
+    const goal = await client.hGetAll(formattedGoalId);
     console.log('Found goal:', goal ? 'exists' : 'not found', Object.keys(goal || {}));
     
     if (!goal || Object.keys(goal).length === 0) {
@@ -298,8 +307,8 @@ The goal must pass all criteria to be valid. If it has clarifying questions, mar
         validationData: validation
       };
       
-      const updatedGoal = await updateGoal(goalId, updateData);
-      console.log('Successfully updated goal after validation:', goalId);
+      const updatedGoal = await updateGoal(formattedGoalId, updateData);
+      console.log('Successfully updated goal after validation:', formattedGoalId);
 
       res.json({ 
         success: true, 

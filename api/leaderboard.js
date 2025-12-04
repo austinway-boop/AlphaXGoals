@@ -2,7 +2,7 @@
 import { getAllUsers, getAllGoals } from './redis.js';
 
 // Calculate streak from goals - consecutive completed goals
-// Active goals don't break streak (still in progress), only invalidated goals break it
+// Active goals past deadline break streak, active goals today are skipped
 function calculateStreakFromGoals(goals) {
   if (!goals || goals.length === 0) return 0;
   
@@ -13,11 +13,22 @@ function calculateStreakFromGoals(goals) {
     return dateB - dateA;
   });
   
+  // Helper to check if a goal is past its deadline (created on a previous day)
+  function isGoalPastDeadline(goalCreatedAt) {
+    const now = new Date();
+    const cstNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    const goalDate = new Date(goalCreatedAt);
+    const goalDateCST = new Date(goalDate.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+    
+    // Compare dates (not times) - if goal was created on a different day, deadline passed
+    return cstNow.toDateString() !== goalDateCST.toDateString();
+  }
+  
   let streak = 0;
   
   // Count consecutive completed goals
-  // Skip active goals (they're still in progress, don't break streak)
-  // Only invalidated goals break the streak
+  // Active goals past deadline = failed = breaks streak
+  // Active goals today are skipped (still in progress)
   for (const goal of sortedGoals) {
     const isCompleted = goal.status === 'completed';
     const isActive = goal.status === 'active';
@@ -26,14 +37,20 @@ function calculateStreakFromGoals(goals) {
     if (isCompleted) {
       streak++;
     } else if (isActive) {
-      // Active goals don't break the streak - they're still in progress
-      continue;
+      // Check if this active goal is past its deadline
+      if (isGoalPastDeadline(goal.createdAt)) {
+        // Active but past deadline = failed = breaks streak
+        break;
+      } else {
+        // Active and still within deadline - skip it
+        continue;
+      }
     } else if (isInvalidated) {
       // Invalidated goals break the streak
       break;
     } else {
-      // Unknown status - skip it
-      continue;
+      // Unknown status - breaks streak
+      break;
     }
   }
   

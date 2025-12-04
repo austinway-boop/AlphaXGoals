@@ -1160,20 +1160,24 @@ function calculateStreak(goals) {
     
     console.log('=== STREAK CALCULATION ===');
     console.log('Total goals:', sortedGoals.length);
-    sortedGoals.forEach((g, i) => {
-        console.log(`Goal ${i + 1}:`, {
-            text: g.goal?.substring(0, 40),
-            createdAt: g.createdAt,
-            completed: g.completed,
-            status: g.status
-        });
-    });
     
     let streak = 0;
     
+    // Helper to check if a goal is past its deadline (created on a previous day)
+    function isGoalPastDeadline(goalCreatedAt) {
+        const now = new Date();
+        const cstNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+        const goalDate = new Date(goalCreatedAt);
+        const goalDateCST = new Date(goalDate.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+        
+        // Compare dates (not times) - if goal was created on a different day, deadline passed
+        return cstNow.toDateString() !== goalDateCST.toDateString();
+    }
+    
     // Count consecutive completed goals
-    // Skip active goals (they're still in progress, don't break streak)
-    // Only invalidated goals break the streak
+    // Active goals that are still within deadline are skipped
+    // Active goals past deadline = failed = breaks streak
+    // Invalidated goals break the streak
     for (const goal of sortedGoals) {
         const isCompleted = goal.completed === true || goal.status === 'completed';
         const isActive = goal.status === 'active';
@@ -1183,17 +1187,24 @@ function calculateStreak(goals) {
             streak++;
             console.log(`+ Goal completed, streak now: ${streak}`);
         } else if (isActive) {
-            // Active goals don't break the streak - they're still in progress
-            console.log(`~ Skipping active goal: "${goal.goal?.substring(0, 40)}"`);
-            continue;
+            // Check if this active goal is past its deadline
+            if (isGoalPastDeadline(goal.createdAt)) {
+                // Active but past deadline = failed to complete = breaks streak
+                console.log(`X Streak broken by expired active goal: "${goal.goal?.substring(0, 40)}" (created: ${goal.createdAt})`);
+                break;
+            } else {
+                // Active and still within deadline - skip it (in progress today)
+                console.log(`~ Skipping today's active goal: "${goal.goal?.substring(0, 40)}"`);
+                continue;
+            }
         } else if (isInvalidated) {
             // Invalidated goals break the streak
             console.log(`X Streak broken by invalidated goal: "${goal.goal?.substring(0, 40)}"`);
             break;
         } else {
-            // Unknown status - skip it
-            console.log(`? Unknown status "${goal.status}" for goal: "${goal.goal?.substring(0, 40)}"`);
-            continue;
+            // Unknown status - treat as breaking streak to be safe
+            console.log(`X Unknown status "${goal.status}" breaks streak: "${goal.goal?.substring(0, 40)}"`);
+            break;
         }
     }
     
