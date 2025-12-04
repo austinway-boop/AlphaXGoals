@@ -288,7 +288,7 @@ export async function getUserGoals(userId) {
           for (const [key, value] of Object.entries(goal)) {
             if (key === 'xpAmount') {
               parsedGoal[key] = value ? parseInt(value) : null;
-            } else if (key === 'hasScreenshot') {
+            } else if (key === 'hasScreenshot' || key === 'isAfterSchool' || key === 'meetsHousePointsCriteria' || key === 'adminCompleted') {
               parsedGoal[key] = value === 'true';
             } else if (key === 'aiQuestions' || key === 'aiAnswers' || key === 'validationData') {
               // Parse JSON arrays for AI questions, answers, and validation data
@@ -342,7 +342,7 @@ export async function updateGoal(goalId, updates) {
     for (const [key, value] of Object.entries(goal)) {
       if (key === 'xpAmount') {
         parsedGoal[key] = value ? parseInt(value) : null;
-      } else if (key === 'hasScreenshot') {
+      } else if (key === 'hasScreenshot' || key === 'isAfterSchool' || key === 'meetsHousePointsCriteria' || key === 'adminCompleted') {
         parsedGoal[key] = value === 'true';
       } else if (key === 'aiQuestions' || key === 'aiAnswers') {
         // Parse JSON arrays for AI questions and answers
@@ -442,7 +442,7 @@ export async function getAllGoals() {
           for (const [key, value] of Object.entries(goal)) {
             if (key === 'xpAmount') {
               parsedGoal[key] = value ? parseInt(value) : null;
-            } else if (key === 'hasScreenshot') {
+            } else if (key === 'hasScreenshot' || key === 'isAfterSchool' || key === 'meetsHousePointsCriteria' || key === 'adminCompleted') {
               parsedGoal[key] = value === 'true';
             } else if (key === 'aiQuestions' || key === 'aiAnswers' || key === 'validationData') {
               // Parse JSON arrays for AI questions, answers, and validation data
