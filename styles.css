@@ -1433,6 +1433,33 @@ input[type="range"]::-moz-range-thumb {
 /* User Edit Modal */
 .user-edit-modal {
     max-width: 560px;
+    width: 90%;
+}
+
+.user-edit-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.user-edit-modal .modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.user-edit-modal .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    line-height: 1;
+}
+
+.user-edit-modal .modal-close:hover {
+    color: var(--text);
 }
 
 .edit-instructions {
@@ -1441,6 +1468,136 @@ input[type="range"]::-moz-range-thumb {
     border-radius: var(--radius-sm);
     padding: 16px;
     margin-bottom: 20px;
+}
+
+.edit-instructions p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.goal-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.goal-edit-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.goal-edit-form label {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.goal-edit-form textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.goal-edit-form textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.goal-edit-form .form-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.alpha-x-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.alpha-x-display label {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.project-display-readonly {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    justify-content: center;
+}
+
+.edit-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.edit-actions .btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.edit-actions .btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
+.edit-actions .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.edit-actions .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.edit-actions .btn-secondary:hover {
+    background: var(--bg);
+}
+
+.edit-actions .btn-icon {
+    font-size: 1rem;
+}
+
+/* Validation results in edit modal */
+#editValidationResults {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+#editValidationResults .validation-header h3 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
 }
 
 .edit-instructions p {
