@@ -1,7 +1,8 @@
 // Vercel serverless function for getting streak leaderboard
 import { getAllUsers, getAllGoals } from './redis.js';
 
-// Calculate streak from goals - consecutive completed goals without any incomplete/invalidated in between
+// Calculate streak from goals - consecutive completed goals
+// Active goals don't break streak (still in progress), only invalidated goals break it
 function calculateStreakFromGoals(goals) {
   if (!goals || goals.length === 0) return 0;
   
@@ -14,15 +15,25 @@ function calculateStreakFromGoals(goals) {
   
   let streak = 0;
   
-  // Count consecutive completed goals from the most recent
+  // Count consecutive completed goals
+  // Skip active goals (they're still in progress, don't break streak)
+  // Only invalidated goals break the streak
   for (const goal of sortedGoals) {
     const isCompleted = goal.status === 'completed';
+    const isActive = goal.status === 'active';
+    const isInvalidated = goal.status === 'invalidated' || goal.status === 'invalid';
     
     if (isCompleted) {
       streak++;
-    } else {
-      // Hit an incomplete/invalidated goal - streak ends
+    } else if (isActive) {
+      // Active goals don't break the streak - they're still in progress
+      continue;
+    } else if (isInvalidated) {
+      // Invalidated goals break the streak
       break;
+    } else {
+      // Unknown status - skip it
+      continue;
     }
   }
   

@@ -1171,18 +1171,29 @@ function calculateStreak(goals) {
     
     let streak = 0;
     
-    // Count consecutive completed goals from the most recent
+    // Count consecutive completed goals
+    // Skip active goals (they're still in progress, don't break streak)
+    // Only invalidated goals break the streak
     for (const goal of sortedGoals) {
-        // Check both 'completed' boolean and 'status' field
         const isCompleted = goal.completed === true || goal.status === 'completed';
+        const isActive = goal.status === 'active';
+        const isInvalidated = goal.status === 'invalidated' || goal.status === 'invalid';
         
         if (isCompleted) {
             streak++;
             console.log(`+ Goal completed, streak now: ${streak}`);
-        } else {
-            // Hit an incomplete/failed/inactive goal - streak ends
-            console.log(`X Streak broken by: "${goal.goal?.substring(0, 40)}" (completed: ${goal.completed}, status: ${goal.status})`);
+        } else if (isActive) {
+            // Active goals don't break the streak - they're still in progress
+            console.log(`~ Skipping active goal: "${goal.goal?.substring(0, 40)}"`);
+            continue;
+        } else if (isInvalidated) {
+            // Invalidated goals break the streak
+            console.log(`X Streak broken by invalidated goal: "${goal.goal?.substring(0, 40)}"`);
             break;
+        } else {
+            // Unknown status - skip it
+            console.log(`? Unknown status "${goal.status}" for goal: "${goal.goal?.substring(0, 40)}"`);
+            continue;
         }
     }
     
