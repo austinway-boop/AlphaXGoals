@@ -1,5 +1,33 @@
 // Vercel serverless function for getting streak leaderboard
-import { getAllUsers } from './redis.js';
+import { getAllUsers, getAllGoals } from './redis.js';
+
+// Calculate streak from goals - consecutive completed goals without any incomplete/invalidated in between
+function calculateStreakFromGoals(goals) {
+  if (!goals || goals.length === 0) return 0;
+  
+  // Sort goals by creation date (newest first)
+  const sortedGoals = [...goals].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+    return dateB - dateA;
+  });
+  
+  let streak = 0;
+  
+  // Count consecutive completed goals from the most recent
+  for (const goal of sortedGoals) {
+    const isCompleted = goal.status === 'completed';
+    
+    if (isCompleted) {
+      streak++;
+    } else {
+      // Hit an incomplete/invalidated goal - streak ends
+      break;
+    }
+  }
+  
+  return streak;
+}
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -20,7 +48,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  // Check authentication (optional - leaderboard can be public or require login)
+  // Check authentication to identify current user
   const sessionCookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith('session='));
   let currentUserId = null;
   
@@ -36,22 +64,46 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get all users
-    const users = await getAllUsers();
+    // Get all users and all goals
+    const [users, allGoals] = await Promise.all([
+      getAllUsers(),
+      getAllGoals()
+    ]);
     
-    // Filter out deleted users and map to leaderboard format
+    // Group goals by userId
+    const goalsByUser = {};
+    for (const goal of allGoals) {
+      if (!goalsByUser[goal.userId]) {
+        goalsByUser[goal.userId] = [];
+      }
+      goalsByUser[goal.userId].push(goal);
+    }
+    
+    // Calculate streak for each user and build leaderboard
     const leaderboardData = users
       .filter(user => !user.deleted)
-      .map(user => ({
-        id: user.id,
-        username: user.username || 'Anonymous',
-        house: user.house || null,
-        streak: parseInt(user.streak) || 0,
-        isCurrentUser: user.id === currentUserId
-      }))
-      .filter(user => user.streak > 0) // Only show users with active streaks
-      .sort((a, b) => b.streak - a.streak) // Sort by streak descending
-      .slice(0, 50); // Limit to top 50
+      .map(user => {
+        const userGoals = goalsByUser[user.id] || [];
+        const streak = calculateStreakFromGoals(userGoals);
+        const totalGoals = userGoals.length;
+        const completedGoals = userGoals.filter(g => g.status === 'completed').length;
+        
+        return {
+          id: user.id,
+          username: user.username || 'Anonymous',
+          house: user.house || null,
+          streak: streak,
+          totalGoals: totalGoals,
+          completedGoals: completedGoals,
+          isCurrentUser: user.id === currentUserId
+        };
+      })
+      .sort((a, b) => {
+        // Sort by streak descending, then by completed goals, then by username
+        if (b.streak !== a.streak) return b.streak - a.streak;
+        if (b.completedGoals !== a.completedGoals) return b.completedGoals - a.completedGoals;
+        return a.username.localeCompare(b.username);
+      });
 
     res.json({ 
       success: true, 
@@ -66,4 +118,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

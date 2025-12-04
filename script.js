@@ -249,8 +249,8 @@ function displayLeaderboard(leaderboard, currentUserId) {
         leaderboardList.innerHTML = `
             <div class="leaderboard-empty">
                 <div class="leaderboard-empty-icon">🔥</div>
-                <h3>No Streaks Yet</h3>
-                <p>Be the first to start a streak! Complete goals on consecutive days to build your streak.</p>
+                <h3>No Users Yet</h3>
+                <p>Be the first to join and start completing goals!</p>
             </div>
         `;
         return;
@@ -270,16 +270,17 @@ function displayLeaderboard(leaderboard, currentUserId) {
     const leaderboardHTML = leaderboard.map((user, index) => {
         const rank = index + 1;
         const isCurrentUser = user.id === currentUserId || user.isCurrentUser;
+        const hasStreak = user.streak > 0;
         
         return `
-            <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}">
-                <div class="leaderboard-rank">${rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : rank}</div>
+            <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''} ${!hasStreak ? 'no-streak' : ''}">
+                <div class="leaderboard-rank">${rank <= 3 && hasStreak ? ['🥇', '🥈', '🥉'][rank - 1] : rank}</div>
                 <div class="leaderboard-info">
                     <div class="leaderboard-name">${escapeHtml(user.username)}${isCurrentUser ? ' (You)' : ''}</div>
-                    <div class="leaderboard-house">${getHouseDisplay(user.house)}</div>
+                    <div class="leaderboard-house">${getHouseDisplay(user.house)} • ${user.completedGoals || 0} completed</div>
                 </div>
-                <div class="leaderboard-streak">
-                    <span class="leaderboard-streak-icon">🔥</span>
+                <div class="leaderboard-streak ${!hasStreak ? 'no-streak' : ''}">
+                    <span class="leaderboard-streak-icon">${hasStreak ? '🔥' : '💤'}</span>
                     <span class="leaderboard-streak-count">${user.streak}</span>
                 </div>
             </div>

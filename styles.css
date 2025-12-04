@@ -1729,6 +1729,19 @@ input[type="range"]::-moz-range-thumb {
     font-size: 14px;
 }
 
+.leaderboard-item.no-streak {
+    opacity: 0.7;
+}
+
+.leaderboard-streak.no-streak {
+    background: rgba(139, 157, 165, 0.15);
+    border-color: var(--text-muted);
+}
+
+.leaderboard-streak.no-streak .leaderboard-streak-count {
+    color: var(--text-muted);
+}
+
 /* Utility */
 .hidden {
     display: none !important;
