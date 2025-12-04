@@ -62,11 +62,18 @@ export default async function handler(req, res) {
       }
       
       // Filter goals based on query parameters
-      const { date, house, username, email } = req.query || {};
+      const { date, specificDate, house, username, email } = req.query || {};
       let filteredGoals = enrichedGoals;
       
       // Date filtering with CST timezone
-      if (date === 'today') {
+      if (date === 'specific' && specificDate) {
+        // Filter by specific date (YYYY-MM-DD format)
+        filteredGoals = filteredGoals.filter(goal => {
+          if (!goal.createdAt) return false;
+          const goalDateCST = getCSTDateString(new Date(goal.createdAt));
+          return goalDateCST === specificDate;
+        });
+      } else if (date === 'today') {
         const todayCST = getCSTDateString();
         filteredGoals = filteredGoals.filter(goal => {
           if (!goal.createdAt) return false;

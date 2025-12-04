@@ -324,11 +324,15 @@ async function loadGoals() {
     try {
         const params = new URLSearchParams();
         const dateFilter = document.getElementById('dateFilter').value;
+        const specificDate = document.getElementById('specificDateFilter')?.value;
         const houseFilter = document.getElementById('houseFilter').value;
         const usernameFilter = document.getElementById('usernameFilter').value;
         const emailFilter = document.getElementById('emailFilter').value;
         
-        if (dateFilter !== 'all') {
+        if (dateFilter === 'specific' && specificDate) {
+            params.append('date', 'specific');
+            params.append('specificDate', specificDate);
+        } else if (dateFilter !== 'all') {
             params.append('date', dateFilter);
         }
         if (houseFilter !== 'all') {
@@ -751,11 +755,34 @@ function applyFilters() {
     loadGoals();
 }
 
+function handleDateFilterChange() {
+    const dateFilter = document.getElementById('dateFilter');
+    const specificDateInput = document.getElementById('specificDateFilter');
+    
+    if (dateFilter.value === 'specific') {
+        specificDateInput.classList.remove('hidden');
+        // Set default to today if not set
+        if (!specificDateInput.value) {
+            const today = new Date();
+            specificDateInput.value = today.toISOString().split('T')[0];
+        }
+        specificDateInput.focus();
+    } else {
+        specificDateInput.classList.add('hidden');
+        applyFilters();
+    }
+}
+
 function clearFilters() {
     document.getElementById('dateFilter').value = 'today';
     document.getElementById('houseFilter').value = 'all';
     document.getElementById('usernameFilter').value = '';
     document.getElementById('emailFilter').value = '';
+    const specificDateInput = document.getElementById('specificDateFilter');
+    if (specificDateInput) {
+        specificDateInput.value = '';
+        specificDateInput.classList.add('hidden');
+    }
     loadGoals();
 }
 

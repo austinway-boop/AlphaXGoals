@@ -1819,13 +1819,15 @@
                 </div>
                 
                 <div class="filters">
-                    <select id="dateFilter" class="filter-input">
+                    <select id="dateFilter" class="filter-input" onchange="handleDateFilterChange()">
                         <option value="all">All Time</option>
                         <option value="today" selected>Today (CST)</option>
                         <option value="yesterday">Yesterday</option>
                         <option value="week">This Week</option>
                         <option value="month">This Month</option>
+                        <option value="specific">Specific Date...</option>
                     </select>
+                    <input type="date" id="specificDateFilter" class="filter-input hidden" onchange="applyFilters()">
                     <select id="houseFilter" class="filter-input">
                         <option value="all">All Houses</option>
                         <option value="sparta">Sparta</option>
