@@ -903,8 +903,8 @@ function updateQuickCompletionView(goals) {
     
     // Sort both by name (A-Z)
     const sortByName = (a, b) => {
-        const nameA = (a.displayName || a.username || '').toLowerCase();
-        const nameB = (b.displayName || b.username || '').toLowerCase();
+        const nameA = (a.displayName || a.user?.username || a.username || '').toLowerCase();
+        const nameB = (b.displayName || b.user?.username || b.username || '').toLowerCase();
         return nameA.localeCompare(nameB);
     };
     
@@ -933,18 +933,46 @@ function updateQuickCompletionView(goals) {
     document.querySelectorAll('.draggable-goal').forEach(card => {
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
+        
+        // Add click-to-complete for active goals
+        if (card.dataset.status === 'active') {
+            card.addEventListener('click', handleGoalCardClick);
+            card.style.cursor = 'pointer';
+        }
     });
 }
 
+// Click on a goal card to complete it instantly
+async function handleGoalCardClick(e) {
+    const card = e.currentTarget;
+    const goalId = card.dataset.goalId;
+    const studentName = card.dataset.studentName || 'Student';
+    
+    const goal = adminState.goals.find(g => g.id === goalId);
+    if (!goal || goal.status !== 'active') return;
+    
+    await adminCompleteGoalQuick(goalId, goal, studentName);
+}
+
 function createDraggableGoalCard(goal) {
-    const studentName = escapeHtml(goal.displayName || goal.username || 'Unknown');
-    const goalText = escapeHtml(goal.goal || 'No goal text');
+    // Get name from nested user object or direct properties
+    const studentName = escapeHtml(
+        goal.displayName || 
+        goal.user?.username || 
+        goal.user?.displayName ||
+        goal.userName || 
+        goal.username || 
+        goal.user?.email?.split('@')[0] || 
+        'Unknown'
+    );
+    const goalText = escapeHtml(goal.goal || goal.goalText || 'No goal text');
     const isCompleted = goal.status === 'completed';
     
     return `
         <div class="draggable-goal ${isCompleted ? 'completed' : ''}" 
              draggable="${!isCompleted}" 
              data-goal-id="${escapeHtml(goal.id)}"
+             data-student-name="${studentName}"
              data-status="${goal.status}">
             <div class="student-name">${studentName}</div>
             <div class="goal-text">${goalText}</div>
@@ -982,22 +1010,26 @@ async function handleDrop(e, targetStatus) {
     const goalId = e.dataTransfer.getData('text/plain');
     if (!goalId) return;
     
+    // Find the dragged element to get the student name
+    const draggedElement = document.querySelector(`[data-goal-id="${goalId}"]`);
+    const studentName = draggedElement?.dataset.studentName || 'Student';
+    
     // Find the goal
     const goal = adminState.goals.find(g => g.id === goalId);
     if (!goal) return;
     
     // Only allow moving active goals to completed
     if (targetStatus === 'completed' && goal.status === 'active') {
-        await adminCompleteGoalQuick(goalId, goal);
+        await adminCompleteGoalQuick(goalId, goal, studentName);
     }
     // Don't allow moving completed goals back to active in this view
 }
 
-// Quick completion for drag-and-drop view
-async function adminCompleteGoalQuick(goalId, goal) {
+// Quick completion for drag-and-drop view - NO CONFIRMATION, instant update
+async function adminCompleteGoalQuick(goalId, goal, studentName) {
     // Check if admin name is provided
     if (!adminState.adminName || adminState.adminName.trim() === '') {
-        showToast('Please enter your admin name in the header before completing goals', 'warning');
+        showToast('Please enter your admin name first', 'warning');
         const adminNameInput = document.getElementById('adminNameInput');
         if (adminNameInput) {
             adminNameInput.focus();
@@ -1009,13 +1041,15 @@ async function adminCompleteGoalQuick(goalId, goal) {
         return;
     }
     
-    const studentName = goal.displayName || goal.username || 'this student';
-    if (!confirm(`Mark ${studentName}'s goal as complete?\n\nAdmin: ${adminState.adminName}`)) {
-        return;
-    }
+    // Immediately update the UI (optimistic update)
+    goal.status = 'completed';
+    const afterSchoolGoals = (adminState.goals || []).filter(g => g.isAfterSchool);
+    updateQuickCompletionView(afterSchoolGoals);
     
-    showLoading('Completing goal...');
+    // Show quick toast
+    showToast(`${studentName} completed`, 'success');
     
+    // Send to server in background (no loading spinner)
     try {
         const response = await fetch('/api/admin-complete-goal', {
             method: 'POST',
@@ -1026,18 +1060,22 @@ async function adminCompleteGoalQuick(goalId, goal) {
         });
         
         const data = await response.json();
-        hideLoading();
         
         if (data.success) {
-            showToast(`${studentName}'s goal marked as complete`, 'success');
-            await logAdminAction('goal_completion', `Completed after school goal for ${studentName}`, { goalId });
-            loadGoals(); // Reload to update both views
+            // Log the action silently
+            logAdminAction('goal_completion', `Completed after school goal for ${studentName}`, { goalId });
         } else {
-            showToast(data.error, 'error');
+            // Revert on failure
+            goal.status = 'active';
+            updateQuickCompletionView(afterSchoolGoals);
+            showToast(data.error || 'Failed to complete', 'error');
         }
     } catch (error) {
-        hideLoading();
-        showToast('Failed to complete goal - network error', 'error');
+        // Revert on error
+        goal.status = 'active';
+        const afterSchoolGoals2 = (adminState.goals || []).filter(g => g.isAfterSchool);
+        updateQuickCompletionView(afterSchoolGoals2);
+        showToast('Network error - reverted', 'error');
     }
 }
 
