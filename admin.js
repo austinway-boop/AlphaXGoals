@@ -10,6 +10,8 @@ let adminState = {
 
 // Goal type filter state
 let currentGoalTypeFilter = 'all'; // 'all', 'regular', 'afterSchool'
+let currentAfterSchoolSort = 'status'; // 'status', 'nameAZ', 'nameZA', 'newest', 'oldest'
+let isQuickCompletionViewActive = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -403,28 +405,44 @@ function displayGoals(goals) {
                 <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
             </div>
         `;
+        
+        // Also update quick completion view if active
+        if (isQuickCompletionViewActive) {
+            updateQuickCompletionView([]);
+        }
         return;
     }
     
-    // Sort goals by status: Completed first, Active middle, Invalid/Invalidated last
-    const sortedGoals = [...filteredByType].sort((a, b) => {
-        const statusOrder = {
-            'completed': 1,
-            'active': 2,
-            'invalidated': 3,
-            'invalid': 3
-        };
-        
-        const aOrder = statusOrder[a.status] || 4;
-        const bOrder = statusOrder[b.status] || 4;
-        
-        if (aOrder !== bOrder) {
-            return aOrder - bOrder;
-        }
-        
-        // Within same status, sort by creation date (newest first)
-        return new Date(b.createdAt) - new Date(a.createdAt);
-    });
+    // Sort goals based on current view and filter
+    let sortedGoals;
+    if (currentGoalTypeFilter === 'afterSchool') {
+        sortedGoals = sortAfterSchoolGoals([...filteredByType]);
+    } else {
+        // Default sort: Completed first, Active middle, Invalid/Invalidated last
+        sortedGoals = [...filteredByType].sort((a, b) => {
+            const statusOrder = {
+                'completed': 1,
+                'active': 2,
+                'invalidated': 3,
+                'invalid': 3
+            };
+            
+            const aOrder = statusOrder[a.status] || 4;
+            const bOrder = statusOrder[b.status] || 4;
+            
+            if (aOrder !== bOrder) {
+                return aOrder - bOrder;
+            }
+            
+            // Within same status, sort by creation date (newest first)
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+    }
+    
+    // Update quick completion view if active
+    if (isQuickCompletionViewActive && currentGoalTypeFilter === 'afterSchool') {
+        updateQuickCompletionView(sortedGoals);
+    }
     
     // Create each goal card separately to avoid nesting issues
     const goalCards = sortedGoals.map(goal => {
@@ -732,6 +750,20 @@ function setGoalTypeFilter(type) {
         }
     });
     
+    // Show/hide after school controls
+    const afterSchoolControls = document.getElementById('afterSchoolControls');
+    if (afterSchoolControls) {
+        if (type === 'afterSchool') {
+            afterSchoolControls.classList.remove('hidden');
+        } else {
+            afterSchoolControls.classList.add('hidden');
+            // Also hide quick completion view when switching away
+            if (isQuickCompletionViewActive) {
+                toggleQuickCompletionView();
+            }
+        }
+    }
+    
     // Re-display goals with new filter
     displayGoals(adminState.goals);
 }
@@ -784,6 +816,229 @@ function clearFilters() {
         specificDateInput.classList.add('hidden');
     }
     loadGoals();
+}
+
+// After School Sorting
+function sortAfterSchoolGoals(goals) {
+    const sortType = currentAfterSchoolSort;
+    
+    return goals.sort((a, b) => {
+        switch (sortType) {
+            case 'nameAZ':
+                const nameA = (a.displayName || a.username || '').toLowerCase();
+                const nameB = (b.displayName || b.username || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            
+            case 'nameZA':
+                const nameA2 = (a.displayName || a.username || '').toLowerCase();
+                const nameB2 = (b.displayName || b.username || '').toLowerCase();
+                return nameB2.localeCompare(nameA2);
+            
+            case 'newest':
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            
+            case 'oldest':
+                return new Date(a.createdAt) - new Date(b.createdAt);
+            
+            case 'status':
+            default:
+                // Completed first, Active middle, Invalid last
+                const statusOrder = {
+                    'completed': 1,
+                    'active': 2,
+                    'invalidated': 3,
+                    'invalid': 3
+                };
+                const aOrder = statusOrder[a.status] || 4;
+                const bOrder = statusOrder[b.status] || 4;
+                if (aOrder !== bOrder) {
+                    return aOrder - bOrder;
+                }
+                return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+    });
+}
+
+function applyAfterSchoolSort() {
+    const sortSelect = document.getElementById('afterSchoolSort');
+    if (sortSelect) {
+        currentAfterSchoolSort = sortSelect.value;
+    }
+    displayGoals(adminState.goals);
+}
+
+// Quick Completion View (Drag & Drop)
+function toggleQuickCompletionView() {
+    isQuickCompletionViewActive = !isQuickCompletionViewActive;
+    
+    const quickView = document.getElementById('quickCompletionView');
+    const goalsContainer = document.getElementById('goalsContainer');
+    const filtersContainer = document.querySelector('.filters');
+    
+    if (isQuickCompletionViewActive) {
+        quickView.classList.remove('hidden');
+        goalsContainer.classList.add('hidden');
+        if (filtersContainer) filtersContainer.classList.add('hidden');
+        
+        // Populate the drag-drop view
+        const afterSchoolGoals = (adminState.goals || []).filter(g => g.isAfterSchool);
+        updateQuickCompletionView(afterSchoolGoals);
+    } else {
+        quickView.classList.add('hidden');
+        goalsContainer.classList.remove('hidden');
+        if (filtersContainer) filtersContainer.classList.remove('hidden');
+    }
+}
+
+function updateQuickCompletionView(goals) {
+    const activeZone = document.getElementById('activeDropZone');
+    const completedZone = document.getElementById('completedDropZone');
+    const activeCount = document.getElementById('activeColumnCount');
+    const completedCount = document.getElementById('completedColumnCount');
+    
+    if (!activeZone || !completedZone) return;
+    
+    const activeGoals = goals.filter(g => g.status === 'active');
+    const completedGoals = goals.filter(g => g.status === 'completed');
+    
+    // Sort both by name (A-Z)
+    const sortByName = (a, b) => {
+        const nameA = (a.displayName || a.username || '').toLowerCase();
+        const nameB = (b.displayName || b.username || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+    };
+    
+    activeGoals.sort(sortByName);
+    completedGoals.sort(sortByName);
+    
+    // Update counts
+    if (activeCount) activeCount.textContent = activeGoals.length;
+    if (completedCount) completedCount.textContent = completedGoals.length;
+    
+    // Render active goals
+    if (activeGoals.length === 0) {
+        activeZone.innerHTML = '<div class="empty-column-message">No active goals</div>';
+    } else {
+        activeZone.innerHTML = activeGoals.map(goal => createDraggableGoalCard(goal)).join('');
+    }
+    
+    // Render completed goals
+    if (completedGoals.length === 0) {
+        completedZone.innerHTML = '<div class="empty-column-message">No completed goals yet</div>';
+    } else {
+        completedZone.innerHTML = completedGoals.map(goal => createDraggableGoalCard(goal)).join('');
+    }
+    
+    // Add drag listeners to all draggable cards
+    document.querySelectorAll('.draggable-goal').forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+function createDraggableGoalCard(goal) {
+    const studentName = escapeHtml(goal.displayName || goal.username || 'Unknown');
+    const goalText = escapeHtml(goal.goal || 'No goal text');
+    const isCompleted = goal.status === 'completed';
+    
+    return `
+        <div class="draggable-goal ${isCompleted ? 'completed' : ''}" 
+             draggable="${!isCompleted}" 
+             data-goal-id="${escapeHtml(goal.id)}"
+             data-status="${goal.status}">
+            <div class="student-name">${studentName}</div>
+            <div class="goal-text">${goalText}</div>
+        </div>
+    `;
+}
+
+// Drag and Drop Handlers
+function handleDragStart(e) {
+    e.target.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', e.target.dataset.goalId);
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.drag-zone').forEach(zone => {
+        zone.classList.remove('drag-over');
+    });
+}
+
+function allowDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
+
+async function handleDrop(e, targetStatus) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const goalId = e.dataTransfer.getData('text/plain');
+    if (!goalId) return;
+    
+    // Find the goal
+    const goal = adminState.goals.find(g => g.id === goalId);
+    if (!goal) return;
+    
+    // Only allow moving active goals to completed
+    if (targetStatus === 'completed' && goal.status === 'active') {
+        await adminCompleteGoalQuick(goalId, goal);
+    }
+    // Don't allow moving completed goals back to active in this view
+}
+
+// Quick completion for drag-and-drop view
+async function adminCompleteGoalQuick(goalId, goal) {
+    // Check if admin name is provided
+    if (!adminState.adminName || adminState.adminName.trim() === '') {
+        showToast('Please enter your admin name in the header before completing goals', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+            adminNameInput.style.border = '2px solid orange';
+            setTimeout(() => {
+                adminNameInput.style.border = '';
+            }, 3000);
+        }
+        return;
+    }
+    
+    const studentName = goal.displayName || goal.username || 'this student';
+    if (!confirm(`Mark ${studentName}'s goal as complete?\n\nAdmin: ${adminState.adminName}`)) {
+        return;
+    }
+    
+    showLoading('Completing goal...');
+    
+    try {
+        const response = await fetch('/api/admin-complete-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ goalId, adminName: adminState.adminName })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showToast(`${studentName}'s goal marked as complete`, 'success');
+            await logAdminAction('goal_completion', `Completed after school goal for ${studentName}`, { goalId });
+            loadGoals(); // Reload to update both views
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Failed to complete goal - network error', 'error');
+    }
 }
 
 // House management functions

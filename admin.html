@@ -1676,6 +1676,214 @@
             font-size: 16px;
         }
         
+        /* After School Controls */
+        .after-school-controls {
+            background: var(--card);
+            border: 2px solid var(--purple);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .after-school-controls .control-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .after-school-controls .sort-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .after-school-controls .sort-control label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        
+        .quick-view-btn {
+            margin-left: auto;
+            background: var(--purple) !important;
+            color: white !important;
+            border-color: var(--purple-dark) !important;
+        }
+        
+        .quick-view-btn:hover {
+            background: var(--purple-dark) !important;
+        }
+        
+        /* Quick Completion View */
+        .quick-completion-view {
+            margin-bottom: 24px;
+        }
+        
+        .quick-view-header {
+            background: var(--card);
+            border: 2px solid var(--purple);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .quick-view-header h3 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--purple);
+            margin-bottom: 8px;
+        }
+        
+        .quick-view-header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .drag-drop-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 400px;
+        }
+        
+        .drag-column {
+            background: var(--card);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        
+        .drag-column.active-column {
+            border-color: var(--warning);
+        }
+        
+        .drag-column.completed-column {
+            border-color: var(--primary);
+        }
+        
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 2px solid var(--card-border);
+        }
+        
+        .active-column .column-header {
+            background: rgba(255, 150, 0, 0.1);
+            border-bottom-color: var(--warning);
+        }
+        
+        .completed-column .column-header {
+            background: rgba(88, 204, 2, 0.1);
+            border-bottom-color: var(--primary);
+        }
+        
+        .column-header h4 {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 0;
+        }
+        
+        .active-column .column-header h4 {
+            color: var(--warning);
+        }
+        
+        .completed-column .column-header h4 {
+            color: var(--primary);
+        }
+        
+        .column-count {
+            background: var(--bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        
+        .drag-zone {
+            min-height: 300px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+        
+        .drag-zone.drag-over {
+            background: rgba(206, 130, 255, 0.1);
+        }
+        
+        /* Draggable Goal Card */
+        .draggable-goal {
+            background: var(--bg);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            cursor: grab;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        
+        .draggable-goal:hover {
+            border-color: var(--purple);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        .draggable-goal:active {
+            cursor: grabbing;
+        }
+        
+        .draggable-goal.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        .draggable-goal .student-name {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        
+        .draggable-goal .goal-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .empty-column-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .drag-drop-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .after-school-controls .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .quick-view-btn {
+                margin-left: 0;
+                margin-top: 12px;
+            }
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .admin-container {
@@ -1810,6 +2018,54 @@
                     <div class="view-tab active" onclick="setTimeView('daily')">Daily</div>
                     <div class="view-tab" onclick="setTimeView('weekly')">Weekly</div>
                     <div class="view-tab" onclick="setTimeView('monthly')">Monthly</div>
+                </div>
+                
+                <!-- After School Controls (only shown when After School tab is active) -->
+                <div id="afterSchoolControls" class="after-school-controls hidden">
+                    <div class="control-row">
+                        <div class="sort-control">
+                            <label>Sort by:</label>
+                            <select id="afterSchoolSort" class="filter-input" onchange="applyAfterSchoolSort()">
+                                <option value="status">Status (Completed first)</option>
+                                <option value="nameAZ">Name (A-Z)</option>
+                                <option value="nameZA">Name (Z-A)</option>
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary quick-view-btn" onclick="toggleQuickCompletionView()">
+                            Quick Completion View
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Completion View (Drag & Drop) -->
+                <div id="quickCompletionView" class="quick-completion-view hidden">
+                    <div class="quick-view-header">
+                        <h3>Quick Completion View</h3>
+                        <p>Drag students from "Active" to "Completed" to mark their goals as done</p>
+                        <button class="btn btn-secondary" onclick="toggleQuickCompletionView()">Back to Full View</button>
+                    </div>
+                    <div class="drag-drop-container">
+                        <div class="drag-column active-column" id="activeGoalsColumn">
+                            <div class="column-header">
+                                <h4>Active Goals</h4>
+                                <span class="column-count" id="activeColumnCount">0</span>
+                            </div>
+                            <div class="drag-zone" id="activeDropZone" ondrop="handleDrop(event, 'active')" ondragover="allowDrop(event)" ondragleave="handleDragLeave(event)">
+                                <!-- Active goals will be populated here -->
+                            </div>
+                        </div>
+                        <div class="drag-column completed-column" id="completedGoalsColumn">
+                            <div class="column-header">
+                                <h4>Completed</h4>
+                                <span class="column-count" id="completedColumnCount">0</span>
+                            </div>
+                            <div class="drag-zone" id="completedDropZone" ondrop="handleDrop(event, 'completed')" ondragover="allowDrop(event)" ondragleave="handleDragLeave(event)">
+                                <!-- Completed goals will be populated here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="admin-actions">
