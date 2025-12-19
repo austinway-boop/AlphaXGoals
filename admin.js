@@ -825,13 +825,13 @@ function sortAfterSchoolGoals(goals) {
     return goals.sort((a, b) => {
         switch (sortType) {
             case 'nameAZ':
-                const nameA = (a.displayName || a.username || '').toLowerCase();
-                const nameB = (b.displayName || b.username || '').toLowerCase();
+                const nameA = (a.displayName || a.user?.username || a.username || '').toLowerCase();
+                const nameB = (b.displayName || b.user?.username || b.username || '').toLowerCase();
                 return nameA.localeCompare(nameB);
             
             case 'nameZA':
-                const nameA2 = (a.displayName || a.username || '').toLowerCase();
-                const nameB2 = (b.displayName || b.username || '').toLowerCase();
+                const nameA2 = (a.displayName || a.user?.username || a.username || '').toLowerCase();
+                const nameB2 = (b.displayName || b.user?.username || b.username || '').toLowerCase();
                 return nameB2.localeCompare(nameA2);
             
             case 'newest':
@@ -898,18 +898,12 @@ function updateQuickCompletionView(goals) {
     
     if (!activeZone || !completedZone) return;
     
-    const activeGoals = goals.filter(g => g.status === 'active');
-    const completedGoals = goals.filter(g => g.status === 'completed');
+    let activeGoals = goals.filter(g => g.status === 'active');
+    let completedGoals = goals.filter(g => g.status === 'completed');
     
-    // Sort both by name (A-Z)
-    const sortByName = (a, b) => {
-        const nameA = (a.displayName || a.user?.username || a.username || '').toLowerCase();
-        const nameB = (b.displayName || b.user?.username || b.username || '').toLowerCase();
-        return nameA.localeCompare(nameB);
-    };
-    
-    activeGoals.sort(sortByName);
-    completedGoals.sort(sortByName);
+    // Apply selected sort to both columns
+    activeGoals = sortAfterSchoolGoals([...activeGoals]);
+    completedGoals = sortAfterSchoolGoals([...completedGoals]);
     
     // Update counts
     if (activeCount) activeCount.textContent = activeGoals.length;
