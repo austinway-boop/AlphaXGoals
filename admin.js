@@ -929,29 +929,77 @@ function updateQuickCompletionView(goals) {
         completedZone.innerHTML = completedGoals.map(goal => createDraggableGoalCard(goal)).join('');
     }
     
-    // Add drag listeners to all draggable cards
+    // Add drag listeners and click handlers to all cards
     document.querySelectorAll('.draggable-goal').forEach(card => {
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
-        
-        // Add click-to-complete for active goals
-        if (card.dataset.status === 'active') {
-            card.addEventListener('click', handleGoalCardClick);
-            card.style.cursor = 'pointer';
-        }
+        card.addEventListener('click', handleGoalCardClick);
+        card.style.cursor = 'pointer';
     });
 }
 
-// Click on a goal card to complete it instantly
+// Click on a goal card to toggle completion
 async function handleGoalCardClick(e) {
     const card = e.currentTarget;
     const goalId = card.dataset.goalId;
     const studentName = card.dataset.studentName || 'Student';
     
     const goal = adminState.goals.find(g => g.id === goalId);
-    if (!goal || goal.status !== 'active') return;
+    if (!goal) return;
     
-    await adminCompleteGoalQuick(goalId, goal, studentName);
+    if (goal.status === 'active') {
+        await adminCompleteGoalQuick(goalId, goal, studentName);
+    } else if (goal.status === 'completed') {
+        await adminRevokeGoalQuick(goalId, goal, studentName);
+    }
+}
+
+// Quick revoke for drag-and-drop view - instant update
+async function adminRevokeGoalQuick(goalId, goal, studentName) {
+    // Check if admin name is provided
+    if (!adminState.adminName || adminState.adminName.trim() === '') {
+        showToast('Please enter your admin name first', 'warning');
+        const adminNameInput = document.getElementById('adminNameInput');
+        if (adminNameInput) {
+            adminNameInput.focus();
+        }
+        return;
+    }
+    
+    // Immediately update the UI (optimistic update)
+    goal.status = 'active';
+    const afterSchoolGoals = (adminState.goals || []).filter(g => g.isAfterSchool);
+    updateQuickCompletionView(afterSchoolGoals);
+    
+    showToast(`${studentName} moved back to active`, 'warning');
+    
+    // Send to server in background
+    try {
+        const response = await fetch('/api/revoke-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ goalId, adminName: adminState.adminName })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            logAdminAction('goal_revocation', `Revoked after school goal for ${studentName}`, { goalId });
+        } else {
+            // Revert on failure
+            goal.status = 'completed';
+            updateQuickCompletionView(afterSchoolGoals);
+            showToast(data.error || 'Failed to revoke', 'error');
+        }
+    } catch (error) {
+        // Revert on error
+        goal.status = 'completed';
+        const afterSchoolGoals2 = (adminState.goals || []).filter(g => g.isAfterSchool);
+        updateQuickCompletionView(afterSchoolGoals2);
+        showToast('Network error - reverted', 'error');
+    }
 }
 
 function createDraggableGoalCard(goal) {
@@ -968,9 +1016,10 @@ function createDraggableGoalCard(goal) {
     const goalText = escapeHtml(goal.goal || goal.goalText || 'No goal text');
     const isCompleted = goal.status === 'completed';
     
+    // All cards are draggable - can drag back out of completed
     return `
         <div class="draggable-goal ${isCompleted ? 'completed' : ''}" 
-             draggable="${!isCompleted}" 
+             draggable="true" 
              data-goal-id="${escapeHtml(goal.id)}"
              data-student-name="${studentName}"
              data-status="${goal.status}">
@@ -1018,11 +1067,14 @@ async function handleDrop(e, targetStatus) {
     const goal = adminState.goals.find(g => g.id === goalId);
     if (!goal) return;
     
-    // Only allow moving active goals to completed
+    // Move active to completed
     if (targetStatus === 'completed' && goal.status === 'active') {
         await adminCompleteGoalQuick(goalId, goal, studentName);
     }
-    // Don't allow moving completed goals back to active in this view
+    // Move completed back to active (revoke)
+    else if (targetStatus === 'active' && goal.status === 'completed') {
+        await adminRevokeGoalQuick(goalId, goal, studentName);
+    }
 }
 
 // Quick completion for drag-and-drop view - NO CONFIRMATION, instant update

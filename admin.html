@@ -1746,7 +1746,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            min-height: 400px;
+            min-height: calc(100vh - 400px);
         }
         
         .drag-column {
@@ -1754,6 +1754,9 @@
             border: 2px solid var(--card-border);
             border-radius: var(--radius);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
         }
         
         .drag-column.active-column {
@@ -1770,6 +1773,7 @@
             align-items: center;
             padding: 16px 20px;
             border-bottom: 2px solid var(--card-border);
+            flex-shrink: 0;
         }
         
         .active-column .column-header {
@@ -1805,16 +1809,19 @@
         }
         
         .drag-zone {
-            min-height: 300px;
+            flex: 1;
             padding: 16px;
             display: flex;
             flex-direction: column;
             gap: 12px;
             transition: background 0.2s;
+            overflow-y: auto;
         }
         
         .drag-zone.drag-over {
-            background: rgba(206, 130, 255, 0.1);
+            background: rgba(206, 130, 255, 0.15);
+            outline: 3px dashed var(--purple);
+            outline-offset: -8px;
         }
         
         /* Draggable Goal Card */
